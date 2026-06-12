@@ -1,27 +1,36 @@
-import { execFileSync } from "child_process";
-import fs from "fs";
-import path from "path";
-
-const REPO_ROOTS: Record<string, string> = {
-  "go-repo-new": "/Users/opyjo/Desktop/go-repo-new",
-  "node-mono-real": "/Users/opyjo/Desktop/node-mono-real",
+const GITHUB_REPOS: Record<string, string> = {
+  "go-repo-new": "opyjo/go-repo-new",
+  "node-mono-real": "opyjo/node-mono-real",
 };
 
-function resolveSafePath(filePath: string): string {
+function getGitHubToken(): string {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error("GITHUB_TOKEN is not configured. Add it to .env.local");
+  }
+  return token;
+}
+
+function githubHeaders(accept?: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${getGitHubToken()}`,
+    Accept: accept ?? "application/vnd.github.v3+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+}
+
+function parseRepoPath(filePath: string): { owner: string; repo: string; path: string } {
   const parts = filePath.split("/");
   const repoName = parts[0];
-  const root = REPO_ROOTS[repoName];
-  if (!root) {
+  const fullName = GITHUB_REPOS[repoName];
+  if (!fullName) {
     throw new Error(
       `Path must start with "go-repo-new/" or "node-mono-real/". Got: "${filePath}"`
     );
   }
-  const resolved = path.resolve(root, "..", filePath);
-  const allowedBase = path.resolve(root);
-  if (!resolved.startsWith(allowedBase)) {
-    throw new Error("Path traversal detected");
-  }
-  return resolved;
+  const [owner, repo] = fullName.split("/");
+  const repoPath = parts.slice(1).join("/");
+  return { owner, repo, path: repoPath };
 }
 
 export const toolDefinitions = [
@@ -52,13 +61,13 @@ export const toolDefinitions = [
   {
     name: "search_files" as const,
     description:
-      "Search for a pattern (regex) across files in either repo using ripgrep. Returns matching lines with file paths.",
+      "Search for a text pattern across files in either repo using GitHub Code Search. Returns matching file paths with text fragments. Note: only plain text queries are supported (no regex). Use read_file to see exact line numbers.",
     input_schema: {
       type: "object" as const,
       properties: {
         pattern: {
           type: "string" as const,
-          description: "Regex pattern to search for",
+          description: "Text pattern to search for (plain text, not regex)",
         },
         path: {
           type: "string" as const,
@@ -67,7 +76,7 @@ export const toolDefinitions = [
         },
         glob: {
           type: "string" as const,
-          description: 'File glob filter (e.g. "*.go", "*.tsx")',
+          description: 'File extension filter (e.g. "*.go", "*.tsx")',
         },
       },
       required: ["pattern", "path"] as const,
@@ -93,26 +102,26 @@ export const toolDefinitions = [
 
 export type ToolName = (typeof toolDefinitions)[number]["name"];
 
-export function executeTool(
+export async function executeTool(
   name: ToolName,
   input: Record<string, unknown>
-): string {
+): Promise<string> {
   try {
     switch (name) {
       case "read_file":
-        return readFile(
+        return await readFile(
           input.path as string,
           (input.offset as number) ?? 0,
           (input.limit as number) ?? 500
         );
       case "search_files":
-        return searchFiles(
+        return await searchFiles(
           input.pattern as string,
           input.path as string,
           input.glob as string | undefined
         );
       case "list_directory":
-        return listDirectory(input.path as string);
+        return await listDirectory(input.path as string);
       default:
         return `Unknown tool: ${name}`;
     }
@@ -121,95 +130,135 @@ export function executeTool(
   }
 }
 
-function readFile(filePath: string, offset: number, limit: number): string {
-  const resolved = resolveSafePath(filePath);
-  if (!fs.existsSync(resolved)) {
+async function readFile(filePath: string, offset: number, limit: number): Promise<string> {
+  const { owner, repo, path } = parseRepoPath(filePath);
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const res = await fetch(url, { headers: githubHeaders() });
+
+  if (res.status === 404) {
     return `File not found: ${filePath}`;
   }
-  const stat = fs.statSync(resolved);
-  if (stat.isDirectory()) {
+  if (!res.ok) {
+    return `GitHub API error (${res.status}): ${await res.text()}`;
+  }
+
+  const data = await res.json();
+
+  if (Array.isArray(data)) {
     return `Path is a directory, not a file: ${filePath}`;
   }
-  const content = fs.readFileSync(resolved, "utf-8");
+
+  if (data.type !== "file" || !data.content) {
+    return `Path is not a readable file: ${filePath}`;
+  }
+
+  const content = Buffer.from(data.content, "base64").toString("utf-8");
   const lines = content.split("\n");
   const sliced = lines.slice(offset, offset + limit);
-  const numbered = sliced.map((line, i) => `${offset + i + 1}: ${line}`);
+  const numbered = sliced.map((line: string, i: number) => `${offset + i + 1}: ${line}`);
   const result = numbered.join("\n");
   const totalLines = lines.length;
   const header = `File: ${filePath} (${totalLines} lines total, showing ${offset + 1}-${Math.min(offset + limit, totalLines)})\n`;
   return header + result;
 }
 
-function searchFiles(
+async function searchFiles(
   pattern: string,
   searchPath: string,
   glob?: string
-): string {
-  const resolved = resolveSafePath(searchPath);
-  if (!fs.existsSync(resolved)) {
-    return `Path not found: ${searchPath}`;
+): Promise<string> {
+  const parts = searchPath.split("/");
+  const repoName = parts[0];
+  const fullName = GITHUB_REPOS[repoName];
+  if (!fullName) {
+    throw new Error(
+      `Path must start with "go-repo-new/" or "node-mono-real/". Got: "${searchPath}"`
+    );
   }
 
-  const args = ["--no-heading", "-n", "--max-count=50"];
+  // Build GitHub Code Search query
+  let query = `${pattern} repo:${fullName}`;
+
+  // Add path qualifier if searching in a subdirectory
+  const subPath = parts.slice(1).join("/");
+  if (subPath) {
+    query += ` path:${subPath}`;
+  }
+
+  // Map glob pattern to extension qualifier
   if (glob) {
-    args.push("--glob", glob);
-  }
-  args.push("--", pattern, resolved);
-
-  try {
-    const output = execFileSync("rg", args, {
-      timeout: 10000,
-      maxBuffer: 1024 * 1024,
-      encoding: "utf-8",
-    });
-
-    // Replace absolute paths with relative repo paths
-    const repoBase = path.resolve(resolved, "..");
-    const relativized = output
-      .split("\n")
-      .slice(0, 50)
-      .map((line) => {
-        for (const [repoName, root] of Object.entries(REPO_ROOTS)) {
-          if (line.startsWith(root)) {
-            return line.replace(root, repoName);
-          }
-        }
-        return line.replace(repoBase + "/", "");
-      })
-      .join("\n");
-
-    return relativized || "No matches found.";
-  } catch (err) {
-    if (
-      err instanceof Error &&
-      "status" in err &&
-      (err as NodeJS.ErrnoException & { status: number }).status === 1
-    ) {
-      return "No matches found.";
+    const extMatch = glob.match(/^\*\.(\w+)$/);
+    if (extMatch) {
+      query += ` extension:${extMatch[1]}`;
     }
-    return `Search error: ${err instanceof Error ? err.message : String(err)}`;
   }
+
+  const url = `https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=50`;
+  const res = await fetch(url, {
+    headers: githubHeaders("application/vnd.github.text-match+json"),
+  });
+
+  if (res.status === 403 || res.status === 429) {
+    return `GitHub API rate limit exceeded. Please wait a moment and try again.`;
+  }
+  if (!res.ok) {
+    return `GitHub Search API error (${res.status}): ${await res.text()}`;
+  }
+
+  const data = await res.json();
+
+  if (!data.items || data.items.length === 0) {
+    return "No matches found.";
+  }
+
+  const lines: string[] = [];
+  for (const item of data.items.slice(0, 50)) {
+    const filePath = `${repoName}/${item.path}`;
+    if (item.text_matches && item.text_matches.length > 0) {
+      for (const match of item.text_matches) {
+        const fragment = (match.fragment as string)
+          .split("\n")
+          .map((l: string) => l.trim())
+          .filter((l: string) => l.length > 0)
+          .join(" | ");
+        lines.push(`${filePath}: ${fragment}`);
+      }
+    } else {
+      lines.push(filePath);
+    }
+  }
+
+  return lines.join("\n") || "No matches found.";
 }
 
-function listDirectory(dirPath: string): string {
-  const resolved = resolveSafePath(dirPath);
-  if (!fs.existsSync(resolved)) {
+async function listDirectory(dirPath: string): Promise<string> {
+  const { owner, repo, path } = parseRepoPath(dirPath);
+  const url = path
+    ? `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
+    : `https://api.github.com/repos/${owner}/${repo}/contents`;
+  const res = await fetch(url, { headers: githubHeaders() });
+
+  if (res.status === 404) {
     return `Directory not found: ${dirPath}`;
   }
-  const stat = fs.statSync(resolved);
-  if (!stat.isDirectory()) {
+  if (!res.ok) {
+    return `GitHub API error (${res.status}): ${await res.text()}`;
+  }
+
+  const data = await res.json();
+
+  if (!Array.isArray(data)) {
     return `Path is a file, not a directory: ${dirPath}`;
   }
 
-  const entries = fs.readdirSync(resolved, { withFileTypes: true });
-  const dirs = entries
-    .filter((e) => e.isDirectory())
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((e) => `${e.name}/`);
-  const files = entries
-    .filter((e) => e.isFile())
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((e) => e.name);
+  const dirs = data
+    .filter((e: { type: string }) => e.type === "dir")
+    .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+    .map((e: { name: string }) => `${e.name}/`);
+  const files = data
+    .filter((e: { type: string }) => e.type === "file")
+    .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+    .map((e: { name: string }) => e.name);
 
   return `Directory: ${dirPath}\n${[...dirs, ...files].join("\n")}`;
 }

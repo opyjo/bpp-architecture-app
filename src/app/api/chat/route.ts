@@ -177,7 +177,7 @@ async function streamAnthropic(
 
             // Execute tool ONCE and cache the result
             const startTime = Date.now();
-            const output = executeTool(currentToolName as ToolName, parsedInput);
+            const output = await executeTool(currentToolName as ToolName, parsedInput);
             const durationMs = Date.now() - startTime;
             toolResultsCache.set(blockIndex, output);
             totalToolCalls++;
@@ -409,7 +409,7 @@ async function streamOpenAICompatible(
       });
 
       const startTime = Date.now();
-      const output = executeTool(tc.name as ToolName, parsedInput);
+      const output = await executeTool(tc.name as ToolName, parsedInput);
       const durationMs = Date.now() - startTime;
       totalToolCalls++;
 
