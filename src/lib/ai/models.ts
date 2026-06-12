@@ -79,7 +79,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
   },
 ];
 
-export const DEFAULT_MODEL_ID = "claude-sonnet-4.6";
+export const DEFAULT_MODEL_ID = "kimi-k2.7-code";
 
 export function getModel(id: string): ModelOption {
   return MODEL_OPTIONS.find((m) => m.id === id) ?? MODEL_OPTIONS[0];
