@@ -218,6 +218,15 @@ export const steps: Record<string, Step> = {
     edges: [],
     nodes: [],
   },
+  dependencies: {
+    num: "",
+    title: "Service Dependencies",
+    body: `Visual map of <strong>all service-to-service</strong> and <strong>service-to-infrastructure</strong> connections.<br/><br/>Use this diagram to understand which services depend on each other and which infrastructure components they share.`,
+    services: [],
+    notes: "• UI never calls Go services directly<br/>• All mutations route through AppSync<br/>• Reads bypass AppSync via aggregator-api<br/>• Kafka decouples write-side from consumers<br/>• Redis used by catalog-api and token-api",
+    edges: [],
+    nodes: [],
+  },
 };
 
 export const nodeDetails: Record<string, { title: string; body: string }> = {
@@ -287,6 +296,57 @@ export const nodeDetails: Record<string, { title: string; body: string }> = {
   },
 };
 
+export const serviceDependencyDiagram = `graph LR
+  UI["Subscription Manager<br/>(Next.js MFE)"]
+  BFF["Next.js BFF<br/>/api/protected/*"]
+  AppSync["AWS AppSync<br/>(GraphQL)"]
+  AGG["subscriptions-<br/>aggregator-api"]
+  AUTH["auth-api"]
+  SESSION["session-api"]
+  HOUSEHOLD["household-api"]
+  RESELLER["reseller-service"]
+  CATALOG["catalog-api"]
+  TOKEN["token-api"]
+  AUDIT["audit-api"]
+  BANGO["merchant-api-<br/>bango-v1"]
+  NETFLIX["merchant-api-<br/>netflix"]
+  DISNEY["merchant-api-<br/>disney"]
+  BELLMEDIA["merchant-api-<br/>bellmedia"]
+  RADIOCAN["merchant-api-<br/>radiocanada"]
+
+  PG[(PostgreSQL)]
+  DYNAMO[(DynamoDB)]
+  REDIS[(Redis)]
+  KAFKA[(Kafka)]
+  CPM[(CPM)]
+
+  UI --> BFF
+  BFF --> AUTH
+  BFF --> AGG
+  BFF --> AppSync
+  AGG --> PG
+  AGG --> CPM
+  AppSync --> SESSION
+  AppSync --> HOUSEHOLD
+  AppSync --> RESELLER
+  AppSync --> CATALOG
+  SESSION --> DYNAMO
+  HOUSEHOLD --> CPM
+  RESELLER --> CATALOG
+  RESELLER --> PG
+  RESELLER --> KAFKA
+  RESELLER --> AUDIT
+  RESELLER --> BANGO
+  RESELLER --> NETFLIX
+  RESELLER --> DISNEY
+  RESELLER --> BELLMEDIA
+  RESELLER --> RADIOCAN
+  CATALOG --> REDIS
+  TOKEN --> REDIS
+  AUDIT --> PG
+  KAFKA --> AUDIT
+`;
+
 export const allEdges = [
   "e-ui-bff",
   "e-bff-appsync",
@@ -333,6 +393,7 @@ export const sidebarSteps = [
   { key: "cancel", label: "7 — Cancel" },
   { key: "agent", label: "8 — Agent-assisted" },
   { key: "overview", label: "System overview" },
+  { key: "dependencies", label: "Service dependencies" },
 ];
 
 export const legendItems = [

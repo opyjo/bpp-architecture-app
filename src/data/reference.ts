@@ -83,6 +83,142 @@ export const glossary = [
   { term: "Module Fed.", full: "Webpack Module Federation", meaning: "Mechanism allowing subscription-manager to be embedded in a host shell at runtime" },
 ];
 
+export const onboardingChecklist = `# Day-1 Onboarding Checklist
+
+## Local Setup
+
+- [ ] Clone **subscription-manager** (Next.js MFE) and **go-repo-new** (all Go services)
+- [ ] Run \`npm install\` in subscription-manager
+- [ ] Copy \`.env.example\` → \`.env.local\` and fill in values (ask your lead for secrets)
+- [ ] Run \`npm run dev\` — app should start on \`localhost:3000\`
+- [ ] Verify you can log in via Auth0 (DIT environment)
+
+## Key Repositories
+
+| Repo | What it contains |
+|------|-----------------|
+| **subscription-manager** | Next.js MFE — UI + BFF (/api/protected/*) |
+| **go-repo-new** | All Go microservices (reseller-service, catalog-api, session-api, etc.) |
+| **infrastructure** | Terraform / EKS / CI-CD pipeline definitions |
+| **api-contracts** | OpenAPI specs and GraphQL schemas |
+
+## Important Slack Channels
+
+- **#subscription-manager** — main dev channel, ask questions here
+- **#go-services-alerts** — production alerts for Go services
+- **#deploy-notifications** — CI/CD deployment updates
+- **#architecture-discussions** — RFCs and design proposals
+
+## Your First PR
+
+1. Pick up a \`good-first-issue\` ticket from Jira
+2. Create a feature branch: \`feature/TICKET-123-short-description\`
+3. Write code + tests (Jest for UI, Go test for services)
+4. Open a PR — at least 2 approvals required
+5. CI runs lint, type-check, unit tests, and integration tests
+6. Merge to \`main\` → auto-deploys to Dev
+7. Promote to Staging → manual trigger in CI
+
+## Learn More
+
+- **Architecture tab** → walk through all 8 lifecycle flows
+- **Services tab** → explore each Go service in detail
+- **Data flow tab** → see mutation payloads and Kafka events
+- **Reference tab → Happy path trace** → follow a complete "Add Netflix" request end to end
+`;
+
+export interface HappyPathStep {
+  num: number;
+  title: string;
+  service: string;
+  apiCall: string;
+  description: string;
+  dataFlow: string;
+}
+
+export const happyPathTrace: HappyPathStep[] = [
+  {
+    num: 1,
+    title: "Customer logs in",
+    service: "auth-api",
+    apiCall: "POST /oauth2/token (client_credentials)",
+    description: "Customer authenticates via SAML SSO (BoxyHQ). The BFF obtains an OAuth2 Bearer token with scopes subscription-manager/query and subscriptions-aggregator-api/read.",
+    dataFlow: "Browser → next-auth → SAML IdP → BFF → auth-api → Bearer token stored server-side",
+  },
+  {
+    num: 2,
+    title: "Subscriptions load",
+    service: "subscriptions-aggregator-api",
+    apiCall: "GET /subscriptions?tvAccountNumber=...",
+    description: "The landing page fetches the customer's existing subscriptions. This is a REST read that bypasses AppSync entirely.",
+    dataFlow: "UI → BFF → subscriptions-aggregator-api → PostgreSQL + CPM → merged response",
+  },
+  {
+    num: 3,
+    title: "Customer clicks 'Add'",
+    service: "session-api",
+    apiCall: "generateSession(customerInfo, BAN)",
+    description: "A new session is created in DynamoDB with a 30-minute TTL. household-api validates the account against CPM.",
+    dataFlow: "UI → BFF → AppSync → session-api → DynamoDB + household-api → CPM",
+  },
+  {
+    num: 4,
+    title: "Catalog loads eligible plans",
+    service: "catalog-api (via reseller-service)",
+    apiCall: "subscriptionQualification(sessionId, APPLY_TO_ORDER)",
+    description: "reseller-service calls catalog-api to fetch eligible plans. catalog-api serves from Redis cache for sub-100ms reads.",
+    dataFlow: "UI → BFF → AppSync → reseller-service → catalog-api → Redis cache → product offerings",
+  },
+  {
+    num: 5,
+    title: "Customer selects Netflix",
+    service: "catalog-api (re-qualification)",
+    apiCall: "subscriptionQualification(sessionId, APPLY_TO_ORDER)",
+    description: "Re-qualification fires on plan selection to verify eligibility with the specific plan. catalog-api is called again from Redis cache.",
+    dataFlow: "UI → BFF → AppSync → reseller-service → catalog-api → confirmed eligibility",
+  },
+  {
+    num: 6,
+    title: "Review page renders",
+    service: "Client-side only",
+    apiCall: "None (local state)",
+    description: "The review page is entirely client-side. It displays the selected plan, price, and terms from the previous qualification response. No backend call.",
+    dataFlow: "React state → review screen render (no API call)",
+  },
+  {
+    num: 7,
+    title: "Submit order",
+    service: "reseller-service → merchant-api-netflix",
+    apiCall: "submitSubscription(sessionId, selectedPlan)",
+    description: "reseller-service writes the order to PostgreSQL, calls merchant-api-netflix for provisioning, publishes OrderCreated to Kafka, and logs to audit-api.",
+    dataFlow: "UI → BFF → AppSync → reseller-service → PostgreSQL + merchant-api-netflix + Kafka + audit-api",
+  },
+  {
+    num: 8,
+    title: "Kafka events fire",
+    service: "subscription-consumer, audit-api, notification-consumer",
+    apiCall: "Kafka topic: OrderCreated",
+    description: "Downstream consumers react to the OrderCreated event. subscription-consumer updates read models, audit-api persists the audit trail, notification-consumer sends confirmation email.",
+    dataFlow: "Kafka → subscription-consumer + audit-api + notification-consumer (parallel)",
+  },
+  {
+    num: 9,
+    title: "Activate subscription",
+    service: "reseller-service → merchant-api-netflix",
+    apiCall: "activateSubscription(subscriptionId)",
+    description: "Status changes from PENDING to ACTIVE in PostgreSQL. merchant-api-netflix provisions the Netflix account and returns an activationUrl.",
+    dataFlow: "UI → BFF → AppSync → reseller-service → PostgreSQL (ACTIVE) + merchant-api-netflix → activationUrl",
+  },
+  {
+    num: 10,
+    title: "Redirect to Netflix",
+    service: "Client-side redirect",
+    apiCall: "window.location = activationUrl",
+    description: "The UI redirects the customer to Netflix's activation URL where they complete account setup. On return, the UI re-fetches subscriptions from the aggregator.",
+    dataFlow: "UI redirect → Netflix activation → return → UI → aggregator-api (refresh)",
+  },
+];
+
 export const changelog = [
   { date: "TBD", change: "Initial architecture document created", reason: "Baseline for new team members" },
   { date: "TBD", change: "subscription-manager-api decommissioned → replaced by reseller-service + subscriptions-aggregator-api", reason: "Single-responsibility principle" },

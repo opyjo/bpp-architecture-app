@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { steps, nodeDetails, sidebarSteps, legendItems } from "@/data/architecture";
+import { steps, nodeDetails, sidebarSteps, legendItems, serviceDependencyDiagram } from "@/data/architecture";
 import ArchitectureSvg from "@/components/ArchitectureSvg";
 import SystemOverview from "@/components/SystemOverview";
+import MermaidDiagram from "@/components/ui/MermaidDiagram";
 
 export default function ArchitectureTab() {
   const [activeStep, setActiveStep] = useState("all");
@@ -25,6 +26,7 @@ export default function ArchitectureTab() {
   const infoBody = nodeInfo ? nodeInfo.body : step.body;
 
   const isOverview = activeStep === "overview";
+  const isDependencies = activeStep === "dependencies";
 
   return (
     <div className="grid grid-cols-[206px_1fr_272px] min-h-[calc(100vh-108px)]">
@@ -69,7 +71,11 @@ export default function ArchitectureTab() {
 
       {/* Main Content Area */}
       <main className="overflow-auto p-5 flex items-start justify-center">
-        {isOverview ? (
+        {isDependencies ? (
+          <div className="w-full max-w-[900px]">
+            <MermaidDiagram chart={serviceDependencyDiagram} />
+          </div>
+        ) : isOverview ? (
           <div className="w-full max-w-[800px]">
             <SystemOverview />
           </div>

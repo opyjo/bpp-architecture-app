@@ -2,14 +2,18 @@
 
 import SectionLayout from "@/components/ui/SectionLayout";
 import CodeBlock from "@/components/ui/CodeBlock";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import {
   uiEnvironments, goServicePatterns, bilingualRouting,
   authContexts, tokenFlow, accountIsolation,
   featureFlags, featureFlagUseCases,
   designDecisions, glossary, changelog,
+  onboardingChecklist, happyPathTrace,
 } from "@/data/reference";
 
 const sidebarItems = [
+  { id: "r-onboarding", label: "Onboarding checklist" },
+  { id: "r-happypath", label: "Happy path trace" },
   { id: "r-env", label: "Environments" },
   { id: "r-auth", label: "Auth & security" },
   { id: "r-flags", label: "Feature flags" },
@@ -44,6 +48,37 @@ export default function ReferenceTab() {
   return (
     <SectionLayout label="Sections" items={sidebarItems}>
       {(activeId) => {
+        if (activeId === "r-onboarding") {
+          return <MarkdownRenderer content={onboardingChecklist} />;
+        }
+
+        if (activeId === "r-happypath") {
+          return (
+            <div>
+              <div className="text-sm font-semibold text-arch-text mb-1">Happy path trace — &quot;Add Netflix&quot;</div>
+              <div className="text-[11.5px] text-arch-text3 mb-4">Follow a complete Add Netflix request from login to activation across every service.</div>
+              <div className="space-y-3">
+                {happyPathTrace.map((step) => (
+                  <div key={step.num} className="bg-arch-bg2 border border-arch-border rounded-lg p-3.5 flex gap-3">
+                    <div className="w-7 h-7 rounded-full bg-[rgba(74,143,232,0.12)] border border-arch-blue text-arch-blue text-[12px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {step.num}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12.5px] font-semibold text-arch-text mb-0.5">{step.title}</div>
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        <span className="inline-block font-mono text-[9px] px-1.5 py-px rounded bg-[rgba(124,111,205,0.12)] border border-[rgba(124,111,205,0.22)] text-arch-purple">{step.service}</span>
+                        <span className="inline-block font-mono text-[9px] px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-teal">{step.apiCall}</span>
+                      </div>
+                      <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-1.5">{step.description}</div>
+                      <div className="text-[10px] text-arch-text3 font-mono leading-[1.5] bg-arch-bg3 border border-arch-border rounded px-2 py-1.5">{step.dataFlow}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
         if (activeId === "r-env") {
           return (
             <div>
