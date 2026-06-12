@@ -252,24 +252,39 @@ async function streamAnthropic(
   // Force a final text-only synthesis if we hit any limit
   // (max iterations, max tool calls, or timeout)
   if (needsForcedSynthesis || iterations >= MAX_ITERATIONS) {
-    const finalResponse = await client.messages.create({
-      model: modelId,
-      max_tokens: 8192,
-      system:
-        SYSTEM_PROMPT +
-        "\n\nIMPORTANT: You have already gathered information using tools. Now you MUST synthesize everything you have learned into a clear, comprehensive response. Do NOT request any more tools. Provide your answer directly based on the file contents you have already read.",
-      messages,
-      tools: [],          // no tools available — forces text response
-      stream: true,
+    // Add a user message to prompt synthesis
+    messages.push({
+      role: "user",
+      content:
+        "Now please synthesize all the information you gathered from the tools into a clear, comprehensive response.",
     });
 
-    for await (const event of finalResponse) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
-        sendEvent(controller, { type: "text_delta", text: event.delta.text });
+    try {
+      const finalResponse = await client.messages.create({
+        model: modelId,
+        max_tokens: 8192,
+        system:
+          SYSTEM_PROMPT +
+          "\n\nIMPORTANT: You have already gathered information using tools. Now you MUST synthesize everything you have learned into a clear, comprehensive response. Do NOT request any more tools. Provide your answer directly based on the file contents you have already read.",
+        messages,
+        tools: [],          // no tools available — forces text response
+        stream: true,
+      });
+
+      for await (const event of finalResponse) {
+        if (
+          event.type === "content_block_delta" &&
+          event.delta.type === "text_delta"
+        ) {
+          sendEvent(controller, { type: "text_delta", text: event.delta.text });
+        }
       }
+    } catch (err) {
+      console.error("[Anthropic] Forced synthesis failed:", err);
+      sendEvent(controller, {
+        type: "text_delta",
+        text: "\n\n[I gathered information from the codebase but encountered an error generating the final response. Please try again.]",
+      });
     }
   }
 }
@@ -436,30 +451,61 @@ async function streamOpenAICompatible(
 
   // Force a final text-only synthesis if we hit any limit
   if (needsForcedSynthesis || iterations >= MAX_ITERATIONS) {
+    // Strip tool_calls from assistant messages and tool-role messages
+    // so the API doesn't reject the request when no tools are defined
+    const synthesisMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
+      messages
+        .filter((m) => m.role !== "tool")
+        .map((m) => {
+          if (m.role === "assistant" && "tool_calls" in m) {
+            return {
+              role: "assistant" as const,
+              content:
+                (m.content as string | null) ||
+                "[Used tools to gather information]",
+            };
+          }
+          return m;
+        });
+
     // Replace system message with one that forces synthesis
-    messages[0] = {
+    synthesisMessages[0] = {
       role: "system",
       content:
         SYSTEM_PROMPT +
         "\n\nIMPORTANT: You have already gathered information using tools. Now you MUST synthesize everything you have learned into a clear, comprehensive response. Do NOT request any more tools. Provide your answer directly based on the file contents you have already read.",
     };
 
-    const finalStream = await client.chat.completions.create({
-      model: modelId,
-      max_tokens: 8192,
-      messages,
-      stream: true,
-      // No tools — forces text response
+    // Add a user message to prompt synthesis
+    synthesisMessages.push({
+      role: "user",
+      content:
+        "Now please synthesize all the information you gathered from the tools into a clear, comprehensive response.",
     });
 
-    for await (const chunk of finalStream) {
-      const choice = chunk.choices[0];
-      if (choice?.delta?.content) {
-        sendEvent(controller, {
-          type: "text_delta",
-          text: choice.delta.content,
-        });
+    try {
+      const finalStream = await client.chat.completions.create({
+        model: modelId,
+        max_tokens: 8192,
+        messages: synthesisMessages,
+        stream: true,
+      });
+
+      for await (const chunk of finalStream) {
+        const choice = chunk.choices[0];
+        if (choice?.delta?.content) {
+          sendEvent(controller, {
+            type: "text_delta",
+            text: choice.delta.content,
+          });
+        }
       }
+    } catch (err) {
+      console.error("[OpenAI] Forced synthesis failed:", err);
+      sendEvent(controller, {
+        type: "text_delta",
+        text: "\n\n[I gathered information from the codebase but encountered an error generating the final response. Please try again.]",
+      });
     }
   }
 }
