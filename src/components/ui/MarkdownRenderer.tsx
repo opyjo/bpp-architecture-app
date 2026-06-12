@@ -58,23 +58,19 @@ const components: Components = {
   strong: ({ children }) => (
     <strong className="font-semibold text-arch-text">{children}</strong>
   ),
-  code: ({ className, children }) => {
-    const isBlock = className?.includes("language-");
-    if (isBlock) {
-      return (
-        <code className="text-[10.5px] text-arch-text2 leading-[1.7]">
-          {children}
-        </code>
-      );
-    }
-    return (
-      <code className="bg-arch-bg3 text-arch-teal text-[10.5px] px-1 py-0.5 rounded border border-arch-border">
-        {children}
-      </code>
-    );
-  },
+  code: ({ children }) => (
+    <code className="bg-arch-bg3 text-arch-teal text-[10.5px] px-1 py-0.5 rounded border border-arch-border">
+      {children}
+    </code>
+  ),
   pre: ({ children }) => (
-    <pre className="bg-arch-bg3 border border-arch-border rounded-lg px-3.5 py-3 font-mono text-[10.5px] text-arch-text2 leading-[1.7] overflow-x-auto my-2 whitespace-pre">
+    <pre
+      className="markdown-pre bg-arch-bg3 border border-arch-border rounded-lg px-3.5 py-3 text-[11.5px] text-arch-text2 leading-[1.4] overflow-x-auto my-2 whitespace-pre font-mono"
+      style={{
+        fontVariantLigatures: "none",
+        fontFeatureSettings: "'calt' 0, 'liga' 0",
+      }}
+    >
       {children}
     </pre>
   ),

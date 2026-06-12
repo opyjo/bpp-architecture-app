@@ -110,12 +110,12 @@ function formatMarkdown(text: string) {
       return (
         <pre
           key={i}
-          className="bg-[#0d1017] border border-arch-border rounded-md p-3 my-2 overflow-x-auto text-[11.5px] leading-relaxed font-mono"
+          className="bg-[#0d1017] text-[#e8eaf0] border border-arch-border rounded-md p-3 my-2 overflow-x-auto text-[11.5px] leading-relaxed font-mono"
         >
-          <div className="text-[10px] text-arch-text3 mb-1.5 uppercase tracking-wide">
+          <div className="text-[10px] text-[#5c6278] mb-1.5 uppercase tracking-wide">
             {part.lang}
           </div>
-          <code>{part.code}</code>
+          <code className="text-[#e8eaf0]">{part.code}</code>
         </pre>
       );
     }

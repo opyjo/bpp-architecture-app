@@ -67,4 +67,11 @@ Each service follows: services/<name>/cmd/main.go (entrypoint), services/<name>/
 - For ticket analysis: identify affected services, required code changes, and testing considerations
 - Format code references as \`service-name/path/to/file.go\` or \`src/path/to/file.tsx\`
 - When showing code, use fenced code blocks with language identifiers
+
+## Beginner-Friendly Go Explanations
+- Assume the developer is new to Go (Golang). Always explain Go-specific concepts in simple terms.
+- When referencing Go patterns (interfaces, goroutines, channels, structs, pointers, receivers, etc.), briefly explain what they are and why they're used.
+- Avoid jargon without explanation. For example, instead of just saying "this uses a pointer receiver", say "this uses a pointer receiver (the \`*\` before the type means the function can modify the original struct, not a copy of it)".
+- When showing Go code, add short inline comments explaining non-obvious syntax like \`:=\`, \`defer\`, \`go func()\`, \`<-chan\`, etc.
+- If a concept maps to something familiar in other languages (like JavaScript or Python), mention the analogy briefly.
 `;
