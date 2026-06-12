@@ -228,3 +228,66 @@
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Tab bar animations */
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tabUnderlineGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes analyzerGlow {
+  0%, 100% { text-shadow: 0 0 4px rgba(74, 143, 232, 0.3); }
+  50% { text-shadow: 0 0 10px rgba(74, 143, 232, 0.5); }
+}
+
+.tab-item {
+  position: relative;
+  cursor: pointer;
+  opacity: 1;
+  transition: color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.tab-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--arch-blue);
+  transform: scaleX(0);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-item:hover {
+  transform: translateY(-1px);
+}
+
+.tab-item-active::after {
+  transform: scaleX(1);
+  animation: tabUnderlineGrow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-bar-enter .tab-item {
+  animation: tabFadeIn 0.35s ease-out both;
+}
+
+.tab-analyzer {
+  cursor: pointer;
+  position: relative;
+  background: linear-gradient(135deg, rgba(74, 143, 232, 0.12), rgba(124, 111, 205, 0.12));
+  border-left: 1px solid var(--arch-border);
+  transition: background 0.3s ease, transform 0.25s ease, text-shadow 0.3s ease;
+  text-shadow: 0 0 4px rgba(74, 143, 232, 0.25);
+}
+
+.tab-analyzer:hover {
+  background: linear-gradient(135deg, rgba(74, 143, 232, 0.22), rgba(124, 111, 205, 0.22));
+  transform: translateY(-1px);
+  text-shadow: 0 0 10px rgba(74, 143, 232, 0.5);
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import ArchitectureTab from "@/components/tabs/ArchitectureTab";
 import UiPagesTab from "@/components/tabs/UiPagesTab";
@@ -28,20 +29,28 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex bg-arch-bg2 border-b border-arch-border overflow-x-auto">
-        {tabs.map((tab) => (
+      <div className="flex bg-arch-bg2 border-b border-arch-border overflow-x-auto tab-bar-enter">
+        {tabs.map((tab, i) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-xs font-medium border-b-2 transition-all whitespace-nowrap shrink-0 ${
+            style={{ animationDelay: `${i * 40}ms` }}
+            className={`tab-item px-4 py-2.5 text-xs font-medium whitespace-nowrap shrink-0 border-b-0 ${
               activeTab === tab.id
-                ? "text-arch-blue border-b-arch-blue"
-                : "text-arch-text2 border-b-transparent hover:text-arch-text hover:bg-white/[0.03]"
+                ? "tab-item-active text-arch-blue"
+                : "text-arch-text2 hover:text-arch-text hover:bg-white/[0.03]"
             }`}
           >
             {tab.label}
           </button>
         ))}
+        <Link
+          href="/analyze"
+          style={{ animationDelay: `${tabs.length * 40}ms` }}
+          className="tab-item tab-analyzer px-5 py-2.5 text-xs font-semibold whitespace-nowrap shrink-0 text-arch-blue"
+        >
+          Ticket Analyzer &rarr;
+        </Link>
       </div>
       <div className="flex-1">
         {activeTab === "arch" && <ArchitectureTab />}
