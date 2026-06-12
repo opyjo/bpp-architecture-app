@@ -209,6 +209,222 @@ export const steps: Record<string, Step> = {
       "n-audit",
     ],
   },
+
+  // ─── BACKEND LIFECYCLE ───
+  planchange: {
+    num: "9",
+    title: "Plan Change",
+    body: `Customer selects a new plan → <code>subscriptionQualification(APPLY_TO_ORDER)</code> → <code>submitSubscription</code>.<br/><br/><strong>reseller-service</strong> updates PostgreSQL, re-provisions via <strong>merchant-api-*</strong>, and publishes <code>OrderUpdated</code> to Kafka. <strong>catalog-api</strong> re-qualifies the new plan. <strong>audit-api</strong> logs the change.`,
+    services: [
+      "order-api",
+      "session-api",
+      "reseller-service",
+      "catalog-api",
+      "merchant-api-*",
+      "audit-api",
+    ],
+    notes:
+      "• Same mutation path as Place Order<br/>• Op code: <code>APPLY_TO_ORDER</code><br/>• Re-qualifies via catalog-api<br/>• Merchant re-provisioned with new plan details",
+    edges: [
+      "e-ui-bff",
+      "e-bff-appsync",
+      "e-as-reseller",
+      "e-as-catalog",
+      "e-as-session",
+      "e-res-catalog",
+      "e-res-merchant",
+      "e-res-audit",
+    ],
+    nodes: [
+      "n-ui",
+      "n-bff",
+      "n-appsync",
+      "n-reseller",
+      "n-catalog",
+      "n-session",
+      "n-bango",
+      "n-netflix",
+      "n-disney",
+      "n-bellmedia",
+      "n-radiocan",
+      "n-audit",
+    ],
+  },
+  billing: {
+    num: "10",
+    title: "Billing",
+    body: `<strong>billing-process Lambda</strong> runs on a schedule to sync subscription billing state with <strong>NM1</strong> (Bell's billing platform).<br/><br/>Updates <strong>subscriber-manager</strong> with billing status. Sends billing confirmation via <strong>email-api</strong>. Entirely backend — no UI interaction.`,
+    services: [
+      "billing-process Lambda",
+      "NM1",
+      "subscriber-manager",
+      "email-api",
+    ],
+    notes:
+      "• Scheduled Lambda (no UI trigger)<br/>• Syncs with NM1 billing platform<br/>• Updates subscriber-manager state<br/>• Sends confirmation emails via SES",
+    edges: [],
+    nodes: [],
+  },
+  fulfillment: {
+    num: "11",
+    title: "Fulfillment",
+    body: `<strong>fulfillment-process Lambda</strong> consumes <code>OrderCreated</code> / <code>OrderUpdated</code> events from Kafka.<br/><br/>Calls <strong>reseller-api-v1</strong> to finalize provisioning, then dispatches to the appropriate <strong>merchant-api-*</strong> for activation with the provider.`,
+    services: [
+      "fulfillment-process Lambda",
+      "reseller-api-v1",
+      "merchant-api-*",
+    ],
+    notes:
+      "• Kafka consumer (event-driven)<br/>• Bridges order placement and merchant provisioning<br/>• Retries with exponential backoff<br/>• DLQ for failed fulfillments",
+    edges: ["e-res-merchant"],
+    nodes: [
+      "n-reseller",
+      "n-bango",
+      "n-netflix",
+      "n-disney",
+      "n-bellmedia",
+      "n-radiocan",
+    ],
+  },
+  renewal: {
+    num: "12",
+    title: "Renewal",
+    body: `<strong>subscription-renewal-process Lambda</strong> runs daily. Queries <strong>PostgreSQL</strong> for subscriptions approaching their renewal date.<br/><br/>Re-validates eligibility, extends the subscription period, and publishes <code>SubscriptionRenewed</code> to Kafka for downstream consumers.`,
+    services: ["subscription-renewal-process Lambda", "PostgreSQL"],
+    notes:
+      "• Scheduled daily Lambda<br/>• Queries subscriptions by renewal date<br/>• Re-validates eligibility before renewal<br/>• Publishes renewal events to Kafka",
+    edges: [],
+    nodes: [],
+  },
+  undo: {
+    num: "13",
+    title: "Undo / Reversal",
+    body: `<code>subscriptionQualification(REVERSE_*)</code> → <code>submitSubscription</code>.<br/><br/>Reverses a previous order. <strong>reseller-service</strong> rolls back PostgreSQL state, calls <strong>merchant-api-*</strong> to deprovision, and logs the reversal to <strong>audit-api</strong>. <strong>session-api</strong> tracks the undo context.`,
+    services: [
+      "order-api",
+      "session-api",
+      "reseller-service",
+      "catalog-api",
+      "merchant-api-*",
+    ],
+    notes:
+      "• Op codes: <code>REVERSE_ADD</code>, <code>REVERSE_DELETE</code><br/>• Must reference original order<br/>• Merchant deprovisions on reversal<br/>• Audit trail links reversal to original",
+    edges: [
+      "e-ui-bff",
+      "e-bff-appsync",
+      "e-as-reseller",
+      "e-as-catalog",
+      "e-as-session",
+      "e-res-catalog",
+      "e-res-merchant",
+    ],
+    nodes: [
+      "n-ui",
+      "n-bff",
+      "n-appsync",
+      "n-reseller",
+      "n-catalog",
+      "n-session",
+      "n-bango",
+      "n-netflix",
+      "n-disney",
+      "n-bellmedia",
+      "n-radiocan",
+    ],
+  },
+  graceperiod: {
+    num: "14",
+    title: "Grace Period",
+    body: `When a subscription payment fails or lapses, a <strong>grace period</strong> begins. <strong>reseller-api-v1</strong> sets status to <code>GRACE_PERIOD</code>.<br/><br/><strong>merchant-api-*</strong> suspends provisioning without full cancellation. If resolved within the window, service resumes automatically via Kafka event.`,
+    services: ["reseller-api-v1", "merchant-api-*", "Kafka"],
+    notes:
+      "• Status: <code>GRACE_PERIOD</code><br/>• Merchant suspends (not cancels)<br/>• Auto-resume on payment resolution<br/>• Configurable grace window per merchant",
+    edges: ["e-res-merchant"],
+    nodes: [
+      "n-reseller",
+      "n-bango",
+      "n-netflix",
+      "n-disney",
+      "n-bellmedia",
+      "n-radiocan",
+    ],
+  },
+  recovery: {
+    num: "15",
+    title: "Account Recovery",
+    body: `<strong>account-recovery-api</strong> / <strong>core-processor-api</strong> handles cases where subscription state is inconsistent between PostgreSQL and merchant systems.<br/><br/>Reconciles via <strong>reseller-api-v1</strong> + <strong>merchant-api-*</strong>. Logs all recovery actions to <strong>audit-api</strong>.`,
+    services: [
+      "reseller-api-v1",
+      "merchant-api-*",
+      "core-processor-api",
+    ],
+    notes:
+      "• Reconciles PostgreSQL ↔ merchant state<br/>• Triggered manually or by fallout detection<br/>• Full audit trail of recovery actions<br/>• May re-provision or force-cancel",
+    edges: ["e-res-merchant", "e-res-audit"],
+    nodes: [
+      "n-reseller",
+      "n-bango",
+      "n-netflix",
+      "n-disney",
+      "n-bellmedia",
+      "n-radiocan",
+      "n-audit",
+    ],
+  },
+
+  // ─── SUPPORTING FLOWS ───
+  fallout: {
+    num: "16",
+    title: "Fallout & Self-Healing",
+    body: `<strong>event-hub</strong> routes failed events to the <strong>fallout-process Lambda</strong>. The Lambda inspects the failure, attempts automated remediation via <strong>order-api</strong>, and logs outcomes to <strong>audit-api</strong>.<br/><br/>If auto-heal fails, an alert is raised and the event is sent to the DLQ for manual review.`,
+    services: [
+      "event-hub",
+      "fallout-process Lambda",
+      "order-api",
+      "audit-api",
+      "merchant-api-netflix",
+    ],
+    notes:
+      "• Kafka DLQ → fallout-process Lambda<br/>• Auto-remediation via order-api<br/>• Falls back to manual review queue<br/>• Alerts on repeated failures",
+    edges: ["e-res-audit"],
+    nodes: ["n-audit", "n-netflix"],
+  },
+  membership: {
+    num: "17",
+    title: "Membership / Loyalty",
+    body: `<strong>membership-api</strong> manages loyalty tiers, reward points, and Aeroplan integration.<br/><br/>Queries <strong>CPM</strong> for account standing and communicates with the <strong>Aeroplan API</strong> for point accrual and redemption. Entirely backend — no direct UI flow.`,
+    services: ["membership-api", "CPM", "Aeroplan API"],
+    notes:
+      "• Loyalty tier management<br/>• Aeroplan points integration<br/>• CPM account standing checks<br/>• No direct UI interaction",
+    edges: [],
+    nodes: [],
+  },
+  promos: {
+    num: "18",
+    title: "Promo Codes",
+    body: `<strong>promocodes-api</strong> validates and applies promotional codes. <strong>promocode-redemptions-api</strong> tracks usage limits.<br/><br/><strong>promocode-streamer-api</strong> streams real-time promo events. <strong>promocodes-rtv-api</strong> handles real-time validation against <strong>catalog-api</strong> and <strong>reseller-service</strong>.`,
+    services: [
+      "promocodes-api",
+      "promocode-redemptions-api",
+      "promocode-streamer-api",
+      "promocodes-rtv-api",
+    ],
+    notes:
+      "• Validate → redeem → track flow<br/>• Real-time streaming for promo events<br/>• Usage limits enforced per code<br/>• Integrates with catalog for plan eligibility",
+    edges: ["e-as-catalog", "e-as-reseller"],
+    nodes: ["n-catalog", "n-reseller"],
+  },
+  notifications: {
+    num: "19",
+    title: "Notifications",
+    body: `<strong>notification-consumer</strong> listens to Kafka events (order placed, activated, cancelled, renewed) and dispatches notifications via <strong>email-api</strong> → <strong>SES v2</strong>.<br/><br/>Templates are managed in SES. Queue buffering via <strong>SQS</strong> prevents throttling during burst events.`,
+    services: ["email-api", "notification-consumer", "SES v2", "SQS"],
+    notes:
+      "• Kafka → notification-consumer → email-api<br/>• SES v2 for templated emails<br/>• SQS buffer for burst protection<br/>• Event-driven (no UI trigger)",
+    edges: [],
+    nodes: [],
+  },
+
   overview: {
     num: "",
     title: "System Overview",
@@ -575,7 +791,11 @@ export const allNodes = [
   "n-radiocan",
 ];
 
-export const sidebarSteps = [
+export type SidebarItem =
+  | { key: string; label: string }
+  | { separator: true; header?: string };
+
+export const sidebarSteps: SidebarItem[] = [
   { key: "all", label: "Full architecture" },
   { key: "auth", label: "1 — Login & auth" },
   { key: "subs", label: "2 — Load subscriptions" },
@@ -585,6 +805,20 @@ export const sidebarSteps = [
   { key: "activate", label: "6 — Activate" },
   { key: "cancel", label: "7 — Cancel" },
   { key: "agent", label: "8 — Agent-assisted" },
+  { separator: true, header: "Backend Lifecycle" },
+  { key: "planchange", label: "9 — Plan change" },
+  { key: "billing", label: "10 — Billing" },
+  { key: "fulfillment", label: "11 — Fulfillment" },
+  { key: "renewal", label: "12 — Renewal" },
+  { key: "undo", label: "13 — Undo / reversal" },
+  { key: "graceperiod", label: "14 — Grace period" },
+  { key: "recovery", label: "15 — Account recovery" },
+  { separator: true, header: "Supporting Flows" },
+  { key: "fallout", label: "16 — Fallout & self-healing" },
+  { key: "membership", label: "17 — Membership / loyalty" },
+  { key: "promos", label: "18 — Promo codes" },
+  { key: "notifications", label: "19 — Notifications" },
+  { separator: true },
   { key: "overview", label: "System overview" },
   { key: "dependencies", label: "Service dependencies" },
 ];

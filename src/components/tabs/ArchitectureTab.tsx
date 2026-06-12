@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { steps, nodeDetails, sidebarSteps, legendItems, serviceDependencyDiagram } from "@/data/architecture";
+import { steps, nodeDetails, sidebarSteps, legendItems, serviceDependencyDiagram, type SidebarItem } from "@/data/architecture";
 import ArchitectureSvg from "@/components/ArchitectureSvg";
 import SystemOverview from "@/components/SystemOverview";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
@@ -37,28 +37,39 @@ export default function ArchitectureTab() {
         <div className="text-[9.5px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5">
           Lifecycle flows
         </div>
-        {sidebarSteps.map((s) => (
-          <button
-            key={s.key}
-            onClick={() => handleStepClick(s.key)}
-            className={`flex items-center gap-2 px-3.5 py-2 w-full text-left border-l-2 transition-all select-none ${
-              activeStep === s.key
-                ? "bg-white/5 border-l-arch-blue"
-                : "border-l-transparent hover:bg-white/[0.03]"
-            }`}
-          >
-            <div
-              className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+        {sidebarSteps.map((s, i) =>
+          "separator" in s ? (
+            <div key={`sep-${i}`}>
+              <div className="h-px bg-arch-border mx-3.5 my-1.5" />
+              {s.header && (
+                <div className="text-[9.5px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5 pt-1">
+                  {s.header}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              key={s.key}
+              onClick={() => handleStepClick(s.key)}
+              className={`flex items-center gap-2 px-3.5 py-2 w-full text-left border-l-2 transition-all select-none ${
                 activeStep === s.key
-                  ? "bg-arch-blue shadow-[0_0_5px_rgba(74,143,232,0.5)]"
-                  : "bg-arch-text3"
+                  ? "bg-white/5 border-l-arch-blue"
+                  : "border-l-transparent hover:bg-white/[0.03]"
               }`}
-            />
-            <span className={`text-[11.5px] ${activeStep === s.key ? "text-arch-text" : "text-arch-text2"}`}>
-              {s.label}
-            </span>
-          </button>
-        ))}
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                  activeStep === s.key
+                    ? "bg-arch-blue shadow-[0_0_5px_rgba(74,143,232,0.5)]"
+                    : "bg-arch-text3"
+                }`}
+              />
+              <span className={`text-[11.5px] ${activeStep === s.key ? "text-arch-text" : "text-arch-text2"}`}>
+                {s.label}
+              </span>
+            </button>
+          )
+        )}
         <div className="h-px bg-arch-border mx-3.5 my-1.5" />
         <div className="text-[9.5px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5 pt-1">
           Legend
