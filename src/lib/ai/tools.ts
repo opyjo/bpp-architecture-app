@@ -1,6 +1,6 @@
 const GITHUB_REPOS: Record<string, string> = {
-  "go-repo-new": "opyjo/go-repo-new",
-  "node-mono-real": "opyjo/node-mono-real",
+  "go-repo-new": "opyjo/mygorepo",
+  "node-mono-real": "opyjo/node_mono0906",
 };
 
 function getGitHubToken(): string {
