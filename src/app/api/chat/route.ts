@@ -55,7 +55,8 @@ async function streamAnthropic(
   apiKey: string,
   modelId: string,
   incomingMessages: { role: "user" | "assistant"; content: string }[],
-  controller: ReadableStreamDefaultController
+  controller: ReadableStreamDefaultController,
+  systemPrompt: string = SYSTEM_PROMPT
 ) {
   const client = new Anthropic({ apiKey });
 
@@ -103,7 +104,7 @@ async function streamAnthropic(
     const response = await client.messages.create({
       model: modelId,
       max_tokens: 8192,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages,
       tools,
       stream: true,
@@ -264,7 +265,7 @@ async function streamAnthropic(
         model: modelId,
         max_tokens: 8192,
         system:
-          SYSTEM_PROMPT +
+          systemPrompt +
           "\n\nIMPORTANT: You have already gathered information using tools. Now you MUST synthesize everything you have learned into a clear, comprehensive response. Do NOT request any more tools. Provide your answer directly based on the file contents you have already read.",
         messages,
         tools: [],          // no tools available — forces text response
@@ -296,7 +297,8 @@ async function streamOpenAICompatible(
   modelId: string,
   provider: ModelProvider,
   incomingMessages: { role: "user" | "assistant"; content: string }[],
-  controller: ReadableStreamDefaultController
+  controller: ReadableStreamDefaultController,
+  systemPrompt: string = SYSTEM_PROMPT
 ) {
   const baseURLs: Record<string, string> = {
     google: "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -308,7 +310,7 @@ async function streamOpenAICompatible(
   const client = new OpenAI({ apiKey, baseURL });
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
     ...incomingMessages.map(
       (m) =>
         ({
@@ -472,7 +474,7 @@ async function streamOpenAICompatible(
     synthesisMessages[0] = {
       role: "system",
       content:
-        SYSTEM_PROMPT +
+        systemPrompt +
         "\n\nIMPORTANT: You have already gathered information using tools. Now you MUST synthesize everything you have learned into a clear, comprehensive response. Do NOT request any more tools. Provide your answer directly based on the file contents you have already read.",
     };
 
@@ -517,6 +519,7 @@ export async function POST(request: Request) {
   const incomingMessages: { role: "user" | "assistant"; content: string }[] =
     body.messages ?? [];
   const selectedModelId: string = body.modelId ?? "claude-sonnet-4.6";
+  const context: string | undefined = body.context;
 
   if (!incomingMessages.length) {
     return Response.json({ error: "No messages provided" }, { status: 400 });
@@ -539,6 +542,10 @@ export async function POST(request: Request) {
     );
   }
 
+  const effectiveSystemPrompt = context
+    ? SYSTEM_PROMPT + "\n\n" + context
+    : SYSTEM_PROMPT;
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
@@ -547,7 +554,8 @@ export async function POST(request: Request) {
             apiKey,
             model.modelId,
             incomingMessages,
-            controller
+            controller,
+            effectiveSystemPrompt
           );
         } else {
           await streamOpenAICompatible(
@@ -555,7 +563,8 @@ export async function POST(request: Request) {
             model.modelId,
             model.provider,
             incomingMessages,
-            controller
+            controller,
+            effectiveSystemPrompt
           );
         }
         sendEvent(controller, { type: "done" });

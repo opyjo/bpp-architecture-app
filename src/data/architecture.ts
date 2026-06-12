@@ -307,13 +307,49 @@ export const serviceDependencyDiagram = `flowchart TD
     AGG(["subscriptions-<br/>aggregator-api"])
   end
 
-  subgraph Core["Core Services"]
+  subgraph CoreSub["Core Subscription"]
     RESELLER["reseller-service"]
-    CATALOG["catalog-api"]
+    SUBMGR["subscriber-<br/>manager-api"]
+    SUBCONFIG["subscription-<br/>configurator-api"]
+    SUBCONS["subscription-<br/>consumer"]
+  end
+
+  subgraph Catalog["Catalog & Products"]
+    CATAPI["catalog-api"]
+    CATMGR["catalog-manager"]
+    PRODCAT["product-<br/>catalog-api"]
+  end
+
+  subgraph AuthSess["Auth & Session"]
+    AUTH["auth-api"]
     SESSION["session-api"]
-    HOUSEHOLD["household-api"]
     TOKEN["token-api"]
+    DISNEYAUTH["disney-auth-api"]
+  end
+
+  subgraph Orders["Orders & Billing"]
+    ORDERAPI["order-api"]
+    COREPROC["core-processor-api"]
     AUDIT["audit-api"]
+  end
+
+  subgraph FlowOrch["Flow & Orchestration"]
+    FLOWRUN["flow-runner-api"]
+    HOUSEHOLD["household-api"]
+    ACCTREC["account-<br/>recovery-api"]
+  end
+
+  subgraph Promos["Promotions"]
+    PROMO["promocodes-api"]
+    PROMORED["promoredeem-<br/>consumer"]
+    PROMOSTR["promostream-<br/>consumer"]
+    PROMOMIG["promo-migration-<br/>consumer"]
+  end
+
+  subgraph Events["Events & Messaging"]
+    EVENTHUB["event-hub"]
+    EVENTPUB["event-publisher"]
+    NOTIFCONS["notification-<br/>consumer"]
   end
 
   subgraph Merchants["Merchant APIs"]
@@ -324,8 +360,42 @@ export const serviceDependencyDiagram = `flowchart TD
     RADIOCAN["merchant-api-<br/>radiocanada"]
   end
 
-  subgraph Auth["Auth"]
-    AUTH["auth-api"]
+  subgraph InfraSvc["Infrastructure Services"]
+    HTTPPROXY["http-proxy-api"]
+    EMAIL["email-api"]
+    POLICYRULE["policy-rule-<br/>configurator"]
+  end
+
+  subgraph Serverless["Serverless — Lambda"]
+    SUBEVTL["subscription-event"]
+    NOTIFL["notification"]
+    CATSYNCL["catalog-sync"]
+    ORDERPROCL["order-processor"]
+    AUDITSL["audit-stream"]
+    PROMOVALL["promo-validator"]
+    SESSCLEANUPL["session-cleanup"]
+    MERCHANTCBL["merchant-callback"]
+    EVTTRANSL["event-transformer"]
+    BILLSYNCL["billing-sync"]
+    ACCTLINKL["account-link"]
+    REPORTGENL["report-generator"]
+    DATAEXPL["data-export"]
+    HEALTHL["health-check"]
+    CONFIGSYNCL["config-sync"]
+    RATELIMITL["rate-limiter"]
+    CACHEWARML["cache-warmer"]
+    RETRYL["retry-handler"]
+    DLQPROCL["dlq-processor"]
+    METRICAGGL["metric-aggregator"]
+    FFLAGSYNCL["feature-flag-sync"]
+    SCHEMAVAL["schema-validator"]
+    SECRETROTL["secret-rotator"]
+    LOGARCHL["log-archiver"]
+    DEPLOYNOTIFL["deployment-notifier"]
+    COSTTRACKL["cost-tracker"]
+    BACKUPL["backup"]
+    MIGRATIONL["migration"]
+    CLEANUPL["cleanup"]
   end
 
   subgraph Infra["Infrastructure"]
@@ -334,33 +404,99 @@ export const serviceDependencyDiagram = `flowchart TD
     REDIS[("Redis")]
     KAFKA[("Kafka")]
     CPM[("CPM")]
+    COGNITO[("Cognito")]
+    SES[("SES")]
+    S3[("S3")]
+    SNS[("SNS")]
   end
 
+  %% Frontend → Gateway
   UI -->|"HTTP"| BFF
   BFF -->|"OAuth2"| AUTH
   BFF -->|"REST"| AGG
   BFF -->|"GraphQL"| AppSync
+
+  %% Gateway → Services
   AGG -->|"SQL"| PG
   AGG -->|"REST"| CPM
+  AppSync -->|"GraphQL"| RESELLER
   AppSync -->|"GraphQL"| SESSION
   AppSync -->|"GraphQL"| HOUSEHOLD
-  AppSync -->|"GraphQL"| RESELLER
-  AppSync -->|"GraphQL"| CATALOG
-  SESSION -->|"read/write"| DYNAMO
-  HOUSEHOLD -->|"REST"| CPM
-  RESELLER -->|"GraphQL"| CATALOG
+  AppSync -->|"GraphQL"| CATAPI
+  AppSync -->|"GraphQL"| ORDERAPI
+
+  %% Core Subscription
   RESELLER -->|"SQL"| PG
   RESELLER -->|"async"| KAFKA
   RESELLER -->|"REST"| AUDIT
+  RESELLER -->|"GraphQL"| CATAPI
   RESELLER -->|"REST"| BANGO
   RESELLER -->|"REST"| NETFLIX
   RESELLER -->|"REST"| DISNEY
   RESELLER -->|"REST"| BELLMEDIA
   RESELLER -->|"REST"| RADIOCAN
-  CATALOG -->|"cache"| REDIS
+  SUBMGR -->|"SQL"| PG
+  SUBCONFIG -->|"SQL"| PG
+  SUBCONS -->|"consume"| KAFKA
+
+  %% Catalog
+  CATAPI -->|"cache"| REDIS
+  CATMGR -->|"consume"| KAFKA
+  CATMGR -->|"write"| REDIS
+  PRODCAT -->|"SQL"| PG
+
+  %% Auth & Session
+  AUTH -->|"OAuth2"| COGNITO
+  SESSION -->|"read/write"| DYNAMO
   TOKEN -->|"cache"| REDIS
+  DISNEYAUTH -->|"REST"| DISNEY
+
+  %% Orders & Billing
+  ORDERAPI -->|"SQL"| PG
+  COREPROC -->|"SQL"| PG
   AUDIT -->|"SQL"| PG
+
+  %% Flow & Orchestration
+  FLOWRUN -->|"read/write"| DYNAMO
+  HOUSEHOLD -->|"REST"| CPM
+  ACCTREC -->|"SQL"| PG
+
+  %% Promotions
+  PROMO -->|"SQL"| PG
+  PROMORED -->|"consume"| KAFKA
+  PROMOSTR -->|"consume"| KAFKA
+  PROMOMIG -->|"consume"| KAFKA
+
+  %% Events & Messaging
+  EVENTHUB -->|"route"| KAFKA
+  EVENTPUB -->|"publish"| KAFKA
+  NOTIFCONS -->|"consume"| KAFKA
   KAFKA -->|"event"| AUDIT
+
+  %% Infrastructure Services
+  EMAIL -->|"send"| SES
+  POLICYRULE -->|"SQL"| PG
+
+  %% Key Lambda connections
+  SUBEVTL -->|"consume"| KAFKA
+  NOTIFL -->|"send"| SNS
+  CATSYNCL -->|"sync"| REDIS
+  ORDERPROCL -->|"consume"| KAFKA
+  AUDITSL -->|"stream"| S3
+  PROMOVALL -->|"read"| PG
+  SESSCLEANUPL -->|"cleanup"| DYNAMO
+  MERCHANTCBL -->|"consume"| KAFKA
+  EVTTRANSL -->|"consume"| KAFKA
+  BILLSYNCL -->|"SQL"| PG
+  ACCTLINKL -->|"SQL"| PG
+  REPORTGENL -->|"write"| S3
+  DATAEXPL -->|"write"| S3
+  CACHEWARML -->|"warm"| REDIS
+  RETRYL -->|"consume"| KAFKA
+  DLQPROCL -->|"consume"| KAFKA
+  BACKUPL -->|"backup"| DYNAMO
+  MIGRATIONL -->|"SQL"| PG
+  LOGARCHL -->|"archive"| S3
 
   classDef purple fill:#7c6fcd,stroke:#5a4fb0,color:#fff
   classDef teal fill:#3eb89a,stroke:#2d9478,color:#fff
@@ -369,21 +505,39 @@ export const serviceDependencyDiagram = `flowchart TD
   classDef gray fill:#6b7590,stroke:#535a70,color:#fff
   classDef coral fill:#e8705a,stroke:#c05545,color:#fff
   classDef green fill:#58b87a,stroke:#429860,color:#fff
+  classDef infraGreen fill:#2d8a55,stroke:#1e6b3f,color:#fff
+  classDef lambda fill:#3eb89a,stroke:#2d9478,color:#fff
 
   class UI purple
   class BFF teal
   class AppSync,AGG blue
-  class RESELLER,CATALOG,SESSION,HOUSEHOLD,TOKEN,AUDIT amber
-  class AUTH coral
+  class RESELLER,SUBMGR,SUBCONFIG,SUBCONS amber
+  class CATAPI,CATMGR,PRODCAT amber
+  class ORDERAPI,COREPROC,AUDIT amber
+  class AUTH,SESSION,TOKEN,DISNEYAUTH coral
+  class FLOWRUN,HOUSEHOLD,ACCTREC purple
+  class PROMO,PROMORED,PROMOSTR,PROMOMIG green
+  class EVENTHUB,EVENTPUB,NOTIFCONS blue
   class BANGO,NETFLIX,DISNEY,BELLMEDIA,RADIOCAN gray
-  class PG,DYNAMO,REDIS,KAFKA,CPM green
+  class HTTPPROXY,EMAIL,POLICYRULE gray
+  class SUBEVTL,NOTIFL,CATSYNCL,ORDERPROCL,AUDITSL,PROMOVALL,SESSCLEANUPL,MERCHANTCBL,EVTTRANSL,BILLSYNCL lambda
+  class ACCTLINKL,REPORTGENL,DATAEXPL,HEALTHL,CONFIGSYNCL,RATELIMITL,CACHEWARML,RETRYL,DLQPROCL,METRICAGGL lambda
+  class FFLAGSYNCL,SCHEMAVAL,SECRETROTL,LOGARCHL,DEPLOYNOTIFL,COSTTRACKL,BACKUPL,MIGRATIONL,CLEANUPL lambda
+  class PG,DYNAMO,REDIS,KAFKA,CPM,COGNITO,SES,S3,SNS infraGreen
 
   style Frontend fill:transparent,stroke:#7c6fcd,stroke-width:2px,color:#7c6fcd
   style Gateway fill:transparent,stroke:#4a8fe8,stroke-width:2px,color:#4a8fe8
-  style Core fill:transparent,stroke:#e8a83a,stroke-width:2px,color:#e8a83a
+  style CoreSub fill:transparent,stroke:#e8a83a,stroke-width:2px,color:#e8a83a
+  style Catalog fill:transparent,stroke:#e8a83a,stroke-width:2px,color:#e8a83a
+  style AuthSess fill:transparent,stroke:#e8705a,stroke-width:2px,color:#e8705a
+  style Orders fill:transparent,stroke:#e8a83a,stroke-width:2px,color:#e8a83a
+  style FlowOrch fill:transparent,stroke:#7c6fcd,stroke-width:2px,color:#7c6fcd
+  style Promos fill:transparent,stroke:#58b87a,stroke-width:2px,color:#58b87a
+  style Events fill:transparent,stroke:#4a8fe8,stroke-width:2px,color:#4a8fe8
   style Merchants fill:transparent,stroke:#6b7590,stroke-width:2px,color:#6b7590
-  style Auth fill:transparent,stroke:#e8705a,stroke-width:2px,color:#e8705a
-  style Infra fill:transparent,stroke:#58b87a,stroke-width:2px,color:#58b87a
+  style InfraSvc fill:transparent,stroke:#6b7590,stroke-width:2px,color:#6b7590
+  style Serverless fill:transparent,stroke:#3eb89a,stroke-width:2px,color:#3eb89a
+  style Infra fill:transparent,stroke:#2d8a55,stroke-width:2px,color:#2d8a55
 `;
 
 export const allEdges = [

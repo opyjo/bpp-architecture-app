@@ -5,6 +5,7 @@ import { steps, nodeDetails, sidebarSteps, legendItems, serviceDependencyDiagram
 import ArchitectureSvg from "@/components/ArchitectureSvg";
 import SystemOverview from "@/components/SystemOverview";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
+import DiagramChat from "@/components/ai/DiagramChat";
 
 export default function ArchitectureTab() {
   const [activeStep, setActiveStep] = useState("all");
@@ -158,6 +159,9 @@ export default function ArchitectureTab() {
           </>
         )}
       </aside>
+
+      {/* Diagram Chat */}
+      {isDependencies && <DiagramChat />}
 
       {/* Fullscreen overlay */}
       {expanded && (

@@ -32,6 +32,7 @@ export interface UseChatOptions {
   initialMessages?: ChatMessage[];
   persistToLocalStorage?: boolean;
   onMessagesChange?: (msgs: ChatMessage[]) => void;
+  systemContext?: string;
 }
 
 export function useChat(modelId: string, options?: UseChatOptions) {
@@ -39,6 +40,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
     initialMessages,
     persistToLocalStorage = true,
     onMessagesChange,
+    systemContext,
   } = options ?? {};
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -109,7 +111,11 @@ export function useChat(modelId: string, options?: UseChatOptions) {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: apiMessages, modelId }),
+          body: JSON.stringify({
+            messages: apiMessages,
+            modelId,
+            ...(systemContext && { context: systemContext }),
+          }),
           signal: controller.signal,
         });
 
@@ -218,7 +224,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
         abortRef.current = null;
       }
     },
-    [messages, isStreaming, modelId]
+    [messages, isStreaming, modelId, systemContext]
   );
 
   const stopStreaming = useCallback(() => {
