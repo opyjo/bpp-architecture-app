@@ -28,27 +28,48 @@ function saveMessages(messages: ChatMessage[]) {
   }
 }
 
-export function useChat(modelId: string) {
+export interface UseChatOptions {
+  initialMessages?: ChatMessage[];
+  persistToLocalStorage?: boolean;
+  onMessagesChange?: (msgs: ChatMessage[]) => void;
+}
+
+export function useChat(modelId: string, options?: UseChatOptions) {
+  const {
+    initialMessages,
+    persistToLocalStorage = true,
+    onMessagesChange,
+  } = options ?? {};
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const initializedRef = useRef(false);
+  const onMessagesChangeRef = useRef(onMessagesChange);
+  onMessagesChangeRef.current = onMessagesChange;
 
-  // Load from localStorage on mount
+  // Load on mount
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
-      setMessages(loadMessages());
+      if (initialMessages) {
+        setMessages(initialMessages);
+      } else if (persistToLocalStorage) {
+        setMessages(loadMessages());
+      }
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save on change
+  // Save on change + notify
   useEffect(() => {
     if (initializedRef.current && messages.length > 0) {
-      saveMessages(messages);
+      if (persistToLocalStorage) {
+        saveMessages(messages);
+      }
+      onMessagesChangeRef.current?.(messages);
     }
-  }, [messages]);
+  }, [messages, persistToLocalStorage]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -206,9 +227,11 @@ export function useChat(modelId: string) {
 
   const clearHistory = useCallback(() => {
     setMessages([]);
-    localStorage.removeItem(STORAGE_KEY);
+    if (persistToLocalStorage) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
     setError(null);
-  }, []);
+  }, [persistToLocalStorage]);
 
   return { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory };
 }
