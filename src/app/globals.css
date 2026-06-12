@@ -1,0 +1,220 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-heading: var(--font-inter);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --color-arch-bg: var(--arch-bg);
+  --color-arch-bg2: var(--arch-bg2);
+  --color-arch-bg3: var(--arch-bg3);
+  --color-arch-border: var(--arch-border);
+  --color-arch-border2: var(--arch-border2);
+  --color-arch-text: var(--arch-text);
+  --color-arch-text2: var(--arch-text2);
+  --color-arch-text3: var(--arch-text3);
+  --color-arch-purple: var(--arch-purple);
+  --color-arch-teal: var(--arch-teal);
+  --color-arch-blue: var(--arch-blue);
+  --color-arch-amber: var(--arch-amber);
+  --color-arch-green: var(--arch-green);
+  --color-arch-coral: var(--arch-coral);
+  --color-arch-gray: var(--arch-gray);
+  --color-arch-red: var(--arch-red);
+}
+
+/* Light mode (default) */
+:root {
+  --background: #f8f9fc;
+  --foreground: #1a1d2e;
+  --card: #ffffff;
+  --card-foreground: #1a1d2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1d2e;
+  --primary: #3a7dd8;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f6;
+  --secondary-foreground: #1a1d2e;
+  --muted: #eef1f6;
+  --muted-foreground: #5c6278;
+  --accent: #eef1f6;
+  --accent-foreground: #1a1d2e;
+  --destructive: #dc4444;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: rgba(0, 0, 0, 0.15);
+  --ring: #3a7dd8;
+  --chart-1: #6b5ebd;
+  --chart-2: #2ea88a;
+  --chart-3: #3a7dd8;
+  --chart-4: #d89828;
+  --chart-5: #48a86a;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1d2e;
+  --sidebar-primary: #3a7dd8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1f6;
+  --sidebar-accent-foreground: #1a1d2e;
+  --sidebar-border: rgba(0, 0, 0, 0.1);
+  --sidebar-ring: #3a7dd8;
+
+  --arch-bg: #f8f9fc;
+  --arch-bg2: #ffffff;
+  --arch-bg3: #eef1f6;
+  --arch-border: rgba(0, 0, 0, 0.08);
+  --arch-border2: rgba(0, 0, 0, 0.14);
+  --arch-text: #1a1d2e;
+  --arch-text2: #5c6278;
+  --arch-text3: #8890a4;
+  --arch-purple: #6b5ebd;
+  --arch-teal: #2ea88a;
+  --arch-blue: #3a7dd8;
+  --arch-amber: #c88a20;
+  --arch-green: #3a9858;
+  --arch-coral: #d06048;
+  --arch-gray: #6b7590;
+  --arch-red: #dc4444;
+}
+
+/* Dark mode */
+.dark {
+  --background: #0f1117;
+  --foreground: #e8eaf0;
+  --card: #161b27;
+  --card-foreground: #e8eaf0;
+  --popover: #161b27;
+  --popover-foreground: #e8eaf0;
+  --primary: #4a8fe8;
+  --primary-foreground: #ffffff;
+  --secondary: #1e2535;
+  --secondary-foreground: #e8eaf0;
+  --muted: #1e2535;
+  --muted-foreground: #9aa0b4;
+  --accent: #1e2535;
+  --accent-foreground: #e8eaf0;
+  --destructive: #e85a5a;
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #4a8fe8;
+  --chart-1: #7c6fcd;
+  --chart-2: #3eb89a;
+  --chart-3: #4a8fe8;
+  --chart-4: #e8a83a;
+  --chart-5: #58b87a;
+  --radius: 0.5rem;
+  --sidebar: #161b27;
+  --sidebar-foreground: #e8eaf0;
+  --sidebar-primary: #4a8fe8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e2535;
+  --sidebar-accent-foreground: #e8eaf0;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-ring: #4a8fe8;
+
+  --arch-bg: #0f1117;
+  --arch-bg2: #161b27;
+  --arch-bg3: #1e2535;
+  --arch-border: rgba(255, 255, 255, 0.07);
+  --arch-border2: rgba(255, 255, 255, 0.14);
+  --arch-text: #e8eaf0;
+  --arch-text2: #9aa0b4;
+  --arch-text3: #5c6278;
+  --arch-purple: #7c6fcd;
+  --arch-teal: #3eb89a;
+  --arch-blue: #4a8fe8;
+  --arch-amber: #e8a83a;
+  --arch-green: #58b87a;
+  --arch-coral: #e8705a;
+  --arch-gray: #6b7590;
+  --arch-red: #e85a5a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: 13px;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.fe-anim {
+  stroke-dasharray: 6 4;
+  animation: dash 0.55s linear infinite;
+}
+
+@keyframes flowPulse {
+  0%, 100% { filter: drop-shadow(0 0 3px currentColor); }
+  50% { filter: drop-shadow(0 0 8px currentColor); }
+}
+
+@keyframes arrowDraw {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+
+.flow-node-active rect {
+  animation: flowPulse 2s ease-in-out infinite;
+}
+
+@keyframes thinkingBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+@keyframes messageSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
