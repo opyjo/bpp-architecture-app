@@ -296,55 +296,94 @@ export const nodeDetails: Record<string, { title: string; body: string }> = {
   },
 };
 
-export const serviceDependencyDiagram = `graph LR
-  UI["Subscription Manager<br/>(Next.js MFE)"]
-  BFF["Next.js BFF<br/>/api/protected/*"]
-  AppSync["AWS AppSync<br/>(GraphQL)"]
-  AGG["subscriptions-<br/>aggregator-api"]
-  AUTH["auth-api"]
-  SESSION["session-api"]
-  HOUSEHOLD["household-api"]
-  RESELLER["reseller-service"]
-  CATALOG["catalog-api"]
-  TOKEN["token-api"]
-  AUDIT["audit-api"]
-  BANGO["merchant-api-<br/>bango-v1"]
-  NETFLIX["merchant-api-<br/>netflix"]
-  DISNEY["merchant-api-<br/>disney"]
-  BELLMEDIA["merchant-api-<br/>bellmedia"]
-  RADIOCAN["merchant-api-<br/>radiocanada"]
+export const serviceDependencyDiagram = `flowchart TD
+  subgraph Frontend["Frontend"]
+    UI["Subscription Manager<br/>(Next.js MFE)"]
+    BFF(["Next.js BFF<br/>/api/protected/*"])
+  end
 
-  PG[(PostgreSQL)]
-  DYNAMO[(DynamoDB)]
-  REDIS[(Redis)]
-  KAFKA[(Kafka)]
-  CPM[(CPM)]
+  subgraph Gateway["API Gateway"]
+    AppSync(["AWS AppSync<br/>(GraphQL)"])
+    AGG(["subscriptions-<br/>aggregator-api"])
+  end
 
-  UI --> BFF
-  BFF --> AUTH
-  BFF --> AGG
-  BFF --> AppSync
-  AGG --> PG
-  AGG --> CPM
-  AppSync --> SESSION
-  AppSync --> HOUSEHOLD
-  AppSync --> RESELLER
-  AppSync --> CATALOG
-  SESSION --> DYNAMO
-  HOUSEHOLD --> CPM
-  RESELLER --> CATALOG
-  RESELLER --> PG
-  RESELLER --> KAFKA
-  RESELLER --> AUDIT
-  RESELLER --> BANGO
-  RESELLER --> NETFLIX
-  RESELLER --> DISNEY
-  RESELLER --> BELLMEDIA
-  RESELLER --> RADIOCAN
-  CATALOG --> REDIS
-  TOKEN --> REDIS
-  AUDIT --> PG
-  KAFKA --> AUDIT
+  subgraph Core["Core Services"]
+    RESELLER["reseller-service"]
+    CATALOG["catalog-api"]
+    SESSION["session-api"]
+    HOUSEHOLD["household-api"]
+    TOKEN["token-api"]
+    AUDIT["audit-api"]
+  end
+
+  subgraph Merchants["Merchant APIs"]
+    BANGO["merchant-api-<br/>bango-v1"]
+    NETFLIX["merchant-api-<br/>netflix"]
+    DISNEY["merchant-api-<br/>disney"]
+    BELLMEDIA["merchant-api-<br/>bellmedia"]
+    RADIOCAN["merchant-api-<br/>radiocanada"]
+  end
+
+  subgraph Auth["Auth"]
+    AUTH["auth-api"]
+  end
+
+  subgraph Infra["Infrastructure"]
+    PG[("PostgreSQL")]
+    DYNAMO[("DynamoDB")]
+    REDIS[("Redis")]
+    KAFKA[("Kafka")]
+    CPM[("CPM")]
+  end
+
+  UI -->|"HTTP"| BFF
+  BFF -->|"OAuth2"| AUTH
+  BFF -->|"REST"| AGG
+  BFF -->|"GraphQL"| AppSync
+  AGG -->|"SQL"| PG
+  AGG -->|"REST"| CPM
+  AppSync -->|"GraphQL"| SESSION
+  AppSync -->|"GraphQL"| HOUSEHOLD
+  AppSync -->|"GraphQL"| RESELLER
+  AppSync -->|"GraphQL"| CATALOG
+  SESSION -->|"read/write"| DYNAMO
+  HOUSEHOLD -->|"REST"| CPM
+  RESELLER -->|"GraphQL"| CATALOG
+  RESELLER -->|"SQL"| PG
+  RESELLER -->|"async"| KAFKA
+  RESELLER -->|"REST"| AUDIT
+  RESELLER -->|"REST"| BANGO
+  RESELLER -->|"REST"| NETFLIX
+  RESELLER -->|"REST"| DISNEY
+  RESELLER -->|"REST"| BELLMEDIA
+  RESELLER -->|"REST"| RADIOCAN
+  CATALOG -->|"cache"| REDIS
+  TOKEN -->|"cache"| REDIS
+  AUDIT -->|"SQL"| PG
+  KAFKA -->|"event"| AUDIT
+
+  classDef purple fill:#7c6fcd,stroke:#5a4fb0,color:#fff
+  classDef teal fill:#3eb89a,stroke:#2d9478,color:#fff
+  classDef blue fill:#4a8fe8,stroke:#3570b8,color:#fff
+  classDef amber fill:#e8a83a,stroke:#c08a2a,color:#fff
+  classDef gray fill:#6b7590,stroke:#535a70,color:#fff
+  classDef coral fill:#e8705a,stroke:#c05545,color:#fff
+  classDef green fill:#58b87a,stroke:#429860,color:#fff
+
+  class UI purple
+  class BFF teal
+  class AppSync,AGG blue
+  class RESELLER,CATALOG,SESSION,HOUSEHOLD,TOKEN,AUDIT amber
+  class AUTH coral
+  class BANGO,NETFLIX,DISNEY,BELLMEDIA,RADIOCAN gray
+  class PG,DYNAMO,REDIS,KAFKA,CPM green
+
+  style Frontend fill:transparent,stroke:#7c6fcd,stroke-width:2px,color:#7c6fcd
+  style Gateway fill:transparent,stroke:#4a8fe8,stroke-width:2px,color:#4a8fe8
+  style Core fill:transparent,stroke:#e8a83a,stroke-width:2px,color:#e8a83a
+  style Merchants fill:transparent,stroke:#6b7590,stroke-width:2px,color:#6b7590
+  style Auth fill:transparent,stroke:#e8705a,stroke-width:2px,color:#e8705a
+  style Infra fill:transparent,stroke:#58b87a,stroke-width:2px,color:#58b87a
 `;
 
 export const allEdges = [

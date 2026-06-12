@@ -66,8 +66,13 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
           bottomMarginAdj: 1,
           useMaxWidth: false,
         },
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: "basis",
+        },
         fontFamily: "ui-monospace, SFMono-Regular, monospace",
-        fontSize: 11,
+        fontSize: 14,
       });
 
       try {

@@ -9,6 +9,7 @@ import MermaidDiagram from "@/components/ui/MermaidDiagram";
 export default function ArchitectureTab() {
   const [activeStep, setActiveStep] = useState("all");
   const [nodeInfo, setNodeInfo] = useState<{ title: string; body: string } | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const step = steps[activeStep];
 
@@ -72,7 +73,16 @@ export default function ArchitectureTab() {
       {/* Main Content Area */}
       <main className="overflow-auto p-5 flex items-start justify-center">
         {isDependencies ? (
-          <div className="w-full max-w-[900px]">
+          <div className="w-full max-w-[1200px]">
+            <div className="flex justify-end mb-2">
+              <button
+                onClick={() => setExpanded(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] text-arch-text2 bg-arch-bg3 border border-arch-border hover:bg-white/10 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                Expand
+              </button>
+            </div>
             <MermaidDiagram chart={serviceDependencyDiagram} />
           </div>
         ) : isOverview ? (
@@ -148,6 +158,26 @@ export default function ArchitectureTab() {
           </>
         )}
       </aside>
+
+      {/* Fullscreen overlay */}
+      {expanded && (
+        <div className="fixed inset-0 z-50 bg-arch-bg/95 backdrop-blur-sm flex flex-col">
+          <div className="flex justify-end p-4">
+            <button
+              onClick={() => setExpanded(false)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] text-arch-text2 bg-arch-bg3 border border-arch-border hover:bg-white/10 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+              Close
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto p-6 flex items-start justify-center">
+            <div className="w-full max-w-[1600px]">
+              <MermaidDiagram chart={serviceDependencyDiagram} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
