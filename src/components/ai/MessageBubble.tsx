@@ -132,16 +132,68 @@ function formatMarkdown(text: string) {
         return <hr key={`${i}-${pi}`} className="my-3 border-arch-border" />;
       }
 
-      // ## / ### Headers
-      const headerMatch = trimmed.match(/^(#{2,3})\s+(.+)$/m);
+      // # / ## / ### / #### Headers
+      const headerMatch = trimmed.match(/^(#{1,4})\s+(.+)$/m);
       if (headerMatch) {
         const level = headerMatch[1].length;
+        const sizes: Record<number, string> = {
+          1: "text-[16px]",
+          2: "text-[14px]",
+          3: "text-[13px]",
+          4: "text-[12.5px]",
+        };
         return (
           <div
             key={`${i}-${pi}`}
-            className={`font-semibold text-arch-text mt-3 mb-1.5 ${level === 2 ? "text-[14px]" : "text-[13px]"}`}
+            className={`font-semibold text-arch-text mt-3 mb-1.5 ${sizes[level] || "text-[13px]"}`}
           >
             {renderInlineMarkdown(headerMatch[2])}
+          </div>
+        );
+      }
+
+      // Markdown table
+      const tableLines = trimmed.split("\n").filter((l) => l.trim());
+      if (
+        tableLines.length >= 2 &&
+        tableLines[0].includes("|") &&
+        /^[\s|:-]+$/.test(tableLines[1])
+      ) {
+        const parseRow = (row: string) =>
+          row
+            .split("|")
+            .map((c) => c.trim())
+            .filter((c) => c !== "");
+        const headers = parseRow(tableLines[0]);
+        const rows = tableLines.slice(2).map(parseRow);
+
+        return (
+          <div key={`${i}-${pi}`} className="my-2 overflow-x-auto">
+            <table className="w-full text-[12px] border-collapse">
+              <thead>
+                <tr>
+                  {headers.map((h, hi) => (
+                    <th
+                      key={hi}
+                      className="text-left px-2.5 py-1.5 border-b border-arch-border text-arch-text font-semibold bg-arch-bg3/50"
+                    >
+                      {renderInlineMarkdown(h)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, ri) => (
+                  <tr key={ri} className="border-b border-arch-border/50 last:border-b-0">
+                    {row.map((cell, ci) => (
+                      <td key={ci} className="px-2.5 py-1.5 text-arch-text2">
+                        {renderInlineMarkdown(cell)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         );
       }
@@ -177,9 +229,10 @@ function formatMarkdown(text: string) {
         );
       }
 
-      // 1. Numbered list
-      const numberedLines = trimmed.split("\n").filter((l) => /^\s*\d+\.\s/.test(l));
-      if (numberedLines.length > 0 && numberedLines.length === trimmed.split("\n").length) {
+      // 1. Numbered list (must have 2+ items to be a list)
+      const allLines = trimmed.split("\n");
+      const numberedLines = allLines.filter((l) => /^\s*\d+\.\s/.test(l));
+      if (numberedLines.length >= 2 && numberedLines.length === allLines.length) {
         return (
           <ol key={`${i}-${pi}`} className="my-1.5 flex flex-col gap-1">
             {numberedLines.map((line, li) => {
