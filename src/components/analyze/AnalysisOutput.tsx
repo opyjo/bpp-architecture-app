@@ -12,6 +12,8 @@ interface AnalysisOutputProps {
   onNewAnalysis: () => void;
   onSendFollowUp: (message: string) => void;
   onStopStreaming: () => void;
+  onSaveClick?: () => void;
+  saveFeedback?: boolean;
 }
 
 export default function AnalysisOutput({
@@ -21,6 +23,8 @@ export default function AnalysisOutput({
   onNewAnalysis,
   onSendFollowUp,
   onStopStreaming,
+  onSaveClick,
+  saveFeedback,
 }: AnalysisOutputProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
@@ -73,12 +77,22 @@ export default function AnalysisOutput({
 
         <div className="ml-auto flex items-center gap-2">
           {hasContent && !isStreaming && (
-            <button
-              onClick={handleCopyMarkdown}
-              className="px-3 py-1.5 text-[11px] font-medium rounded-md border border-arch-border bg-arch-bg3 text-arch-text2 hover:text-arch-text hover:border-arch-blue/30 transition-colors"
-            >
-              {copied ? "Copied!" : "Copy Markdown"}
-            </button>
+            <>
+              <button
+                onClick={handleCopyMarkdown}
+                className="px-3 py-1.5 text-[11px] font-medium rounded-md border border-arch-border bg-arch-bg3 text-arch-text2 hover:text-arch-text hover:border-arch-blue/30 transition-colors"
+              >
+                {copied ? "Copied!" : "Copy Markdown"}
+              </button>
+              {onSaveClick && (
+                <button
+                  onClick={onSaveClick}
+                  className="px-3 py-1.5 text-[11px] font-medium rounded-md border border-arch-border bg-arch-bg3 text-arch-text2 hover:text-arch-text hover:border-arch-green/30 transition-colors"
+                >
+                  {saveFeedback ? "Saved!" : "Save"}
+                </button>
+              )}
+            </>
           )}
 
           <button
