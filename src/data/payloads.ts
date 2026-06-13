@@ -153,6 +153,294 @@ export const mutations: PayloadSection[] = [
   }
 }`,
   },
+  {
+    id: "p-proxy",
+    title: "proxyRouter",
+    description: "Routes HTTP requests from API Gateway. Detects the incoming payload type (AppSync message, AppSync authorizer, or API Gateway proxy) and forwards to the appropriate service.",
+    requestComment: "// POST /api/protected/graphql → AppSync → router Lambda",
+    request: `{
+  "mutation": "proxyRouter",
+  "variables": {
+    "input": {
+      "httpMethod":             "string",
+      "headers":                [{ "key": "string", "value": "string" }],
+      "queryStringParameters":  [{ "key": "string", "value": "string" }],
+      "pathParameters":         [{ "key": "string", "value": "string" }],
+      "body":                   "string",
+      "isBase64Encoded":        false
+    }
+  }
+}`,
+    response: `{
+  "data": {
+    "proxyRouter": {
+      "StatusCode":      200,
+      "Headers":         [{ "key": "string", "value": "string" }],
+      "Body":            "string",
+      "IsBase64Encoded": false
+    }
+  }
+}`,
+  },
+  {
+    id: "p-convert",
+    title: "convertToOrder",
+    description: "Converts a subscription session into an order. Calls the Configurator API's /cart/convertToOrder endpoint, then enriches the response with Product Catalog data (promotions, offerings).",
+    requestComment: "// POST /api/protected/graphql → AppSync → subscriptionToOrder Lambda → Configurator API + Product Catalog API",
+    request: `{
+  "mutation": "convertToOrder",
+  "variables": {
+    "input": {
+      "sessionId":     "string",
+      "expiryWindow":  "string  // optional"
+    }
+  }
+}`,
+    response: `{
+  "data": {
+    "convertToOrder": {
+      "id":                   "string",
+      "status":               "string",
+      "originatingDateTime":  "ISO-8601 timestamp",
+      "originatingFrom":      { "type": "string", "systemName": "string" },
+      "sessionItems":         [
+        {
+          "id":     "string",
+          "type":   "string",
+          "action": "string",
+          "status": "string"
+        }
+      ],
+      "subscribers": [],
+      "sessionTotals": []
+    }
+  }
+}`,
+  },
+  {
+    id: "p-update",
+    title: "updateSession",
+    description: "Updates an existing session with customer information, context (product lines on order), sales rep info, and session items. Makes a PATCH request to the Session API.",
+    requestComment: "// POST /api/protected/graphql → AppSync → updateSession Lambda → Session API",
+    request: `{
+  "mutation": "updateSession",
+  "variables": {
+    "input": {
+      "id":           "string",
+      "customerInfo": {
+        "billingAccountNumber": "string",
+        "province":             "string",
+        "subscriberId":         "string",
+        "language":             "string"
+      },
+      "contextInfo": {
+        "productLinesOnOrder": [
+          {
+            "action":      "string",
+            "productLine": "string"
+          }
+        ]
+      },
+      "salesRepInfo": {
+        "capability":    "string",
+        "channelId":     "string",
+        "dealerCode":    "string"
+      }
+    }
+  }
+}`,
+    response: `{
+  "data": {
+    "updateSession": {
+      "id": "string"
+    }
+  }
+}`,
+  },
+  {
+    id: "p-update-v2",
+    title: "updateSessionV2",
+    description: "Enhanced version of updateSession. Adds channel and interaction parameters, and returns both session ID and subscriber ID. Session ID is required.",
+    requestComment: "// POST /api/protected/graphql → AppSync → updateSession Lambda → Session API",
+    request: `{
+  "mutation": "updateSessionV2",
+  "variables": {
+    "input": {
+      "id":          "string!",
+      "channel":     "string",
+      "interaction": "string",
+      "customerInfo": {
+        "billingAccountNumber": "string",
+        "province":             "string",
+        "subscriberId":         "string"
+      },
+      "contextInfo": {
+        "productLinesOnOrder": [
+          {
+            "action":      "string",
+            "productLine": "string",
+            "productLineItems": [
+              { "id": "string", "action": "string" }
+            ]
+          }
+        ]
+      },
+      "salesRepInfo": {
+        "capability": "string",
+        "channelId":  "string"
+      }
+    }
+  }
+}`,
+    response: `{
+  "data": {
+    "updateSessionV2": {
+      "id":           "string",
+      "subscriberId": "string"
+    }
+  }
+}`,
+  },
+  {
+    id: "p-sub-eh",
+    title: "submitSubscriptionEH",
+    description: "Submits a subscription for fulfillment via an AWS Step Function state machine. Polls the Step Function until completion and returns fulfillment results from the reseller service.",
+    requestComment: "// POST /api/protected/graphql → AppSync → subscriptionSubmitEH Lambda → Step Function → reseller-service",
+    request: `{
+  "mutation": "submitSubscriptionEH",
+  "variables": {
+    "input": {
+      "sessionId": "string!"
+    }
+  }
+}`,
+    response: `{
+  "data": {
+    "submitSubscriptionEH": {
+      "subscriberId":  "string",
+      "subscriptions": [
+        {
+          "subscriptionId": "string",
+          "status":         "string",
+          "productKey":     "string"
+        }
+      ]
+    }
+  }
+}`,
+  },
+  {
+    id: "p-recommend",
+    title: "subscriptionRecommendation",
+    description: "Generates personalized subscription recommendations based on customer province, existing product lines, and channel context. Can use data-driven logic (Configurator Pre-Qualification API) or phase-based hardcoded rules.",
+    requestComment: "// POST /api/protected/graphql → AppSync → subscriptionRecommendation Lambda → Configurator API + Product Catalog API",
+    request: `{
+  "mutation": "subscriptionRecommendation",
+  "variables": {
+    "input": {
+      "id":          "string!",
+      "channel":     "string!",
+      "interaction": "string",
+      "brand":       "string",
+      "customerInfo": {
+        "billingAccountNumber": "string",
+        "province":             "string!",
+        "existingProductLines": [
+          { "id": "string", "productLine": "string" }
+        ]
+      },
+      "recommendationInfo": {
+        "items": [
+          { "id": "string", "action": "string", "itemType": "string" }
+        ]
+      }
+    }
+  }
+}`,
+    response: `{
+  "data": {
+    "subscriptionRecommendation": {
+      "id":                   "string",
+      "originatingDateTime":  "ISO-8601 timestamp",
+      "recommendationItems": [
+        {
+          "id":     "string",
+          "state":  "string",
+          "type":   "string",
+          "action": "string",
+          "productOffering": {
+            "id":    "string",
+            "rank":  1,
+            "prices": [{ "id": "string", "priceType": "string", "price": 9.99 }]
+          },
+          "promotionSpecification": {
+            "id":    "string",
+            "names": [{ "locale": "en", "string": "string" }]
+          }
+        }
+      ]
+    }
+  }
+}`,
+  },
+  {
+    id: "p-prequal",
+    title: "subscriptionPreQualification",
+    description: "Determines which products and promotions a customer qualifies for. Calls the Configurator Pre-Qualification API, filters by channel (EShop returns all; OrderMax returns recommended only), and enriches from Product Catalog API.",
+    requestComment: "// POST /api/protected/graphql → AppSync → subscriptionPreQualification Lambda → Configurator API + Product Catalog API",
+    request: `{
+  "mutation": "subscriptionPreQualification",
+  "variables": {
+    "input": {
+      "id":          "string!",
+      "channel":     "string!",
+      "interaction": "string",
+      "brand":       "string",
+      "customerInfo": {
+        "billingAccountNumber": "string",
+        "province":             "string!",
+        "existingProductLines": [
+          { "id": "string", "productLine": "string" }
+        ]
+      },
+      "preQualificationInfo": {
+        "items": [
+          { "id": "string", "action": "string", "itemType": "string" }
+        ]
+      },
+      "salesRepInfo": {
+        "capability": "string!"
+      }
+    }
+  }
+}`,
+    response: `{
+  "data": {
+    "subscriptionPreQualification": {
+      "id":                     "string",
+      "originatingDateTime":    "ISO-8601 timestamp",
+      "preQualificationItems": [
+        {
+          "id":     "string",
+          "state":  "string",
+          "type":   "string",
+          "action": "string",
+          "productOffering": {
+            "id":       "string",
+            "isBundle": false,
+            "rank":     1,
+            "prices":   [{ "id": "string", "priceType": "string", "price": 9.99 }]
+          },
+          "promotionSpecification": {
+            "id":    "string",
+            "names": [{ "locale": "en", "string": "string" }]
+          }
+        }
+      ]
+    }
+  }
+}`,
+  },
 ];
 
 export const restCalls = [
