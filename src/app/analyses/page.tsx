@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useSavedAnalyses } from "@/lib/hooks/useSavedAnalyses";
 import AnalysisList from "@/components/analyses/AnalysisList";
 import type { SavedAnalysis } from "@/lib/types/saved-analysis";
-import { ArrowLeft } from "lucide-react";
+import Breadcrumbs from "@/components/nav/Breadcrumbs";
 
 export default function AnalysesPage() {
   const { fetchAnalyses, updateAnalysis, deleteAnalysis } = useSavedAnalyses();
@@ -40,20 +39,13 @@ export default function AnalysesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-arch-bg">
+    <div className="flex-1 bg-arch-bg">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="p-1.5 rounded-lg text-arch-text3 hover:text-arch-text hover:bg-white/5 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <h1 className="text-[18px] font-bold text-arch-text">
-              Saved Analyses
-            </h1>
-          </div>
+        <Breadcrumbs />
+        <div className="flex items-center justify-between mb-6 mt-2">
+          <h1 className="text-[18px] font-bold text-arch-text">
+            Saved Analyses
+          </h1>
         </div>
 
         {loading ? (

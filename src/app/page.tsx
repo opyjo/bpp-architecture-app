@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Header from "@/components/Header";
 import ArchitectureTab from "@/components/tabs/ArchitectureTab";
 import UiPagesTab from "@/components/tabs/UiPagesTab";
 import PayloadsTab from "@/components/tabs/PayloadsTab";
@@ -27,9 +25,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("arch");
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="flex bg-arch-bg2 border-b border-arch-border overflow-x-auto tab-bar-enter">
+    <div className="flex-1 flex flex-col">
+      <div className="flex bg-arch-bg3 border-b border-arch-border overflow-x-auto tab-bar-enter">
         {tabs.map((tab, i) => (
           <button
             key={tab.id}
@@ -44,13 +41,6 @@ export default function Home() {
             {tab.label}
           </button>
         ))}
-        <Link
-          href="/analyze"
-          style={{ animationDelay: `${tabs.length * 40}ms` }}
-          className="tab-item tab-analyzer px-5 py-2.5 text-xs font-semibold whitespace-nowrap shrink-0 text-arch-blue"
-        >
-          Ticket Analyzer &rarr;
-        </Link>
       </div>
       <div className="flex-1">
         {activeTab === "arch" && <ArchitectureTab />}

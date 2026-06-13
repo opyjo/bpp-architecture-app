@@ -11,7 +11,8 @@ import ChatInput from "@/components/ai/ChatInput";
 import ModelSelector from "@/components/ai/ModelSelector";
 import type { SavedAnalysis } from "@/lib/types/saved-analysis";
 import type { ChatMessage } from "@/lib/types/chat";
-import { ArrowLeft, Pencil, Check, ChevronDown, ChevronRight } from "lucide-react";
+import { Pencil, Check, ChevronDown, ChevronRight } from "lucide-react";
+import Breadcrumbs from "@/components/nav/Breadcrumbs";
 
 export default function AnalysisDetailView({ analysisId }: { analysisId: string }) {
   const { getAnalysis } = useSavedAnalyses();
@@ -27,7 +28,7 @@ export default function AnalysisDetailView({ analysisId }: { analysisId: string 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-arch-bg">
+      <div className="flex items-center justify-center flex-1 bg-arch-bg">
         <div className="w-5 h-5 border-2 border-arch-purple/30 border-t-arch-purple rounded-full animate-spin" />
       </div>
     );
@@ -35,7 +36,7 @@ export default function AnalysisDetailView({ analysisId }: { analysisId: string 
 
   if (!analysis) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-arch-bg text-arch-text3 gap-3">
+      <div className="flex flex-col items-center justify-center flex-1 bg-arch-bg text-arch-text3 gap-3">
         <p className="text-[13px]">Analysis not found</p>
         <Link href="/analyses" className="text-[12px] text-arch-purple hover:underline">
           Back to saved analyses
@@ -97,17 +98,11 @@ function AnalysisDetailInner({ analysis }: { analysis: SavedAnalysis }) {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-screen bg-arch-bg">
-      {/* Header */}
+    <div className="flex flex-col flex-1 min-h-0 bg-arch-bg">
+      {/* Breadcrumbs + Header */}
+      <Breadcrumbs dynamicLabel={title} />
       <div className="flex items-center justify-between px-5 py-3 border-b border-arch-border bg-arch-bg2/80 backdrop-blur-sm">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <Link
-            href="/analyses"
-            className="p-1.5 rounded-lg text-arch-text3 hover:text-arch-text hover:bg-white/5 transition-colors shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-
           {editingTitle ? (
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <input

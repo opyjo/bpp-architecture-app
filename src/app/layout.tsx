@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
+import Header from "@/components/Header";
+import MainNav from "@/components/nav/MainNav";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -10,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Subscription Manager \u2014 Architecture",
-  description: "Bell Canada \u00b7 go-repo-new \u00b7 Next.js 14 BFF \u2192 AppSync \u2192 Go microservices",
+  title: "Subscription Manager — Architecture",
+  description: "Bell Canada · go-repo-new · Next.js 14 BFF → AppSync → Go microservices",
 };
 
 export default function RootLayout({
@@ -21,8 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="min-h-screen bg-arch-bg text-arch-text font-sans antialiased">
+      <body className="min-h-screen flex flex-col bg-arch-bg text-arch-text font-sans antialiased">
         <ThemeProvider>
+          <Header />
+          <MainNav />
           {children}
         </ThemeProvider>
       </body>

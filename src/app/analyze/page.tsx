@@ -7,8 +7,7 @@ import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import { TICKET_ANALYZER_CONTEXT } from "@/lib/ai/ticket-analyzer-prompt";
 import TicketInput from "@/components/analyze/TicketInput";
 import AnalysisOutput from "@/components/analyze/AnalysisOutput";
-import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import Breadcrumbs from "@/components/nav/Breadcrumbs";
 
 const TICKET_TEXT_KEY = "analyzer-ticket-text";
 
@@ -94,28 +93,8 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-arch-bg">
-      {/* Minimal header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-arch-border bg-arch-bg2">
-        <a
-          href="/"
-          className="text-xs text-arch-text2 hover:text-arch-text transition-colors"
-        >
-          &larr; Back
-        </a>
-        <span className="text-xs text-arch-border">|</span>
-        <span className="text-sm font-medium text-arch-text">
-          Ticket Analyzer
-        </span>
-        <div className="ml-auto">
-          <Link
-            href="/analyses"
-            className="text-[10.5px] text-arch-text3 hover:text-arch-purple transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
-          >
-            Saved analyses <ExternalLink className="w-3 h-3" />
-          </Link>
-        </div>
-      </div>
+    <div className="flex-1 flex flex-col bg-arch-bg min-h-0">
+      <Breadcrumbs />
 
       {/* Save popover */}
       {showSavePopover && (

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useSavedChats } from "@/lib/hooks/useSavedChats";
 import ChatList from "@/components/chats/ChatList";
 import type { SavedChat } from "@/lib/types/saved-chat";
-import { ArrowLeft } from "lucide-react";
+import Breadcrumbs from "@/components/nav/Breadcrumbs";
 
 export default function ChatsPage() {
   const { fetchChats, updateChat, deleteChat } = useSavedChats();
@@ -40,20 +39,13 @@ export default function ChatsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-arch-bg">
+    <div className="flex-1 bg-arch-bg">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="p-1.5 rounded-lg text-arch-text3 hover:text-arch-text hover:bg-white/5 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <h1 className="text-[18px] font-bold text-arch-text">
-              Saved Chats
-            </h1>
-          </div>
+        <Breadcrumbs />
+        <div className="flex items-center justify-between mb-6 mt-2">
+          <h1 className="text-[18px] font-bold text-arch-text">
+            Saved Chats
+          </h1>
         </div>
 
         {loading ? (
