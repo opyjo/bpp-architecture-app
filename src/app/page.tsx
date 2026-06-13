@@ -9,6 +9,7 @@ import KafkaEventsTab from "@/components/tabs/KafkaEventsTab";
 import ReferenceTab from "@/components/tabs/ReferenceTab";
 import AiChatTab from "@/components/tabs/AiChatTab";
 import GoGuidesTab from "@/components/tabs/GoGuidesTab";
+import LambdaFunctionsTab from "@/components/tabs/LambdaFunctionsTab";
 
 const tabs = [
   { id: "arch", label: "Architecture" },
@@ -16,6 +17,7 @@ const tabs = [
   { id: "payloads", label: "Payloads" },
   { id: "errors", label: "Errors & timing" },
   { id: "events", label: "Kafka events" },
+  { id: "lambdas", label: "Lambda functions" },
   { id: "ref", label: "Reference" },
   { id: "ai", label: "AI Assistant" },
   { id: "guides", label: "Go Guides" },
@@ -59,6 +61,7 @@ export default function Home() {
         {activeTab === "payloads" && <PayloadsTab />}
         {activeTab === "errors" && <ErrorsTab />}
         {activeTab === "events" && <KafkaEventsTab />}
+        {activeTab === "lambdas" && <LambdaFunctionsTab />}
         {activeTab === "ref" && <ReferenceTab />}
         {activeTab === "ai" && <AiChatTab />}
         {activeTab === "guides" && <GoGuidesTab />}
