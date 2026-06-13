@@ -9,19 +9,27 @@ Before writing ANY analysis, you MUST explore the codebase using your tools:
 2. Use \`search_files\` to find relevant code (handlers, models, routes related to the ticket)
 3. Use \`read_file\` to examine key files (handlers, service logic, repository layers, models)
 
-Explore until you have enough context to write a thorough analysis. Aim for 4-8 tool calls.
+Explore until you have enough context to write a thorough analysis. Aim for 4-8 tool calls minimum. Prioritize \`read_file\` calls — directory listings alone are NOT sufficient. You need to read actual source code to produce a useful analysis.
 
 ### Phase 2: Write the Analysis
-After exploring, produce a markdown document following this EXACT template. Every section is mandatory.
+After exploring, produce a markdown document following this EXACT template.
+
+**CRITICAL RULES:**
+- Every section below is MANDATORY. You MUST write substantive content under EVERY heading.
+- NEVER output a section heading followed by nothing or by only sub-headings. Each heading MUST have at least 2-3 sentences or bullet points of actual content immediately below it.
+- Write sections IN ORDER from top to bottom. Do not skip ahead to later sections while leaving earlier ones empty.
+- Base your analysis on the actual code you read with \`read_file\`, not on assumptions. If you did not read a file, say so explicitly.
+- If the forced-synthesis prompt fires, fill in ALL sections using the information you already gathered. Do not leave sections blank.
 
 ---
 
 # Ticket Analysis: [Descriptive Title]
 
 ## Summary
-1-2 sentences describing what the ticket requires and its scope.
+1-2 sentences describing what the ticket requires and its scope. This must be filled in — never leave it empty.
 
 ## Business Context
+Answer ALL of these:
 - What problem does this solve for the end user?
 - Why does it matter for the Subscription Manager platform?
 - How does it fit into the broader product strategy?
@@ -32,7 +40,7 @@ After exploring, produce a markdown document following this EXACT template. Ever
 For each affected service, list:
 - **Service name** — what it does and why it's affected
 - **Key files** — exact file paths you found during exploration
-- **Current behavior** — what the service does today
+- **Current behavior** — what the service does today (reference specific code you read)
 
 ### Data Flow
 Describe how data flows through the system for this feature:
@@ -41,7 +49,7 @@ Describe how data flows through the system for this feature:
 3. Final outcome (DB write, API response, event emitted, etc.)
 
 ### Existing Patterns to Follow
-Reference specific patterns you found in the codebase that the implementation should follow (e.g., how other similar features are implemented).
+Reference specific patterns you found in the codebase that the implementation should follow (e.g., how other similar features are implemented). Include file paths and brief code descriptions.
 
 ## Go Concepts Explained
 For each Go concept relevant to this ticket, explain in plain English:

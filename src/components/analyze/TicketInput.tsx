@@ -23,85 +23,81 @@ const EXAMPLE_TICKETS = [
 
 interface TicketInputProps {
   onAnalyze: (text: string) => void;
-  isDisabled: boolean;
+  isStreaming: boolean;
   modelId: string;
   onModelChange: (id: string) => void;
+  ticketText: string;
+  onTicketTextChange: (text: string) => void;
 }
 
 export default function TicketInput({
   onAnalyze,
-  isDisabled,
+  isStreaming,
   modelId,
   onModelChange,
+  ticketText,
+  onTicketTextChange,
 }: TicketInputProps) {
   return (
-    <div className="flex-1 flex items-center justify-center p-6">
-      <div className="w-full max-w-3xl space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold text-arch-text">
-            Ticket Analyzer
-          </h1>
-          <p className="text-sm text-arch-text2">
-            Paste a Jira ticket or requirement below. The AI will explore the Go
-            codebase and produce a structured analysis document you can hand to
-            any developer or model for implementation.
-          </p>
-        </div>
+    <div className="w-full md:w-[35%] md:min-w-[340px] md:max-w-[480px] border-b md:border-b-0 md:border-r border-arch-border flex flex-col overflow-y-auto p-5 max-h-[50vh] md:max-h-none">
+      <p className="text-xs text-arch-text2 mb-4">
+        Paste a Jira ticket or requirement below for AI-powered analysis.
+      </p>
 
-        {/* Textarea + controls */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.currentTarget;
-            const textarea = form.querySelector("textarea");
-            if (textarea?.value.trim()) {
-              onAnalyze(textarea.value.trim());
-            }
-          }}
-          className="space-y-4"
-        >
-          <textarea
-            name="ticket"
-            rows={10}
-            placeholder="Paste your Jira ticket, user story, or requirement here..."
-            className="w-full bg-arch-bg3 border border-arch-border rounded-lg px-4 py-3 text-sm text-arch-text placeholder:text-arch-text2/50 focus:outline-none focus:border-arch-blue/50 focus:ring-1 focus:ring-arch-blue/30 resize-y max-h-96"
-            disabled={isDisabled}
+      {/* Textarea + controls */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (ticketText.trim()) {
+            onAnalyze(ticketText);
+          }
+        }}
+        className="space-y-4"
+      >
+        <textarea
+          name="ticket"
+          rows={8}
+          placeholder="Paste your Jira ticket, user story, or requirement here..."
+          className="w-full bg-arch-bg3 border border-arch-border rounded-lg px-4 py-3 text-sm text-arch-text placeholder:text-arch-text2/50 focus:outline-none focus:border-arch-blue/50 focus:ring-1 focus:ring-arch-blue/30 resize-y max-h-60"
+          value={ticketText}
+          onChange={(e) => onTicketTextChange(e.target.value)}
+        />
+
+        <div className="flex items-center justify-between">
+          <ModelSelector
+            value={modelId}
+            onChange={onModelChange}
+            disabled={isStreaming}
           />
+          <button
+            type="submit"
+            disabled={isStreaming || !ticketText.trim()}
+            className="px-5 py-2 bg-arch-blue text-white text-sm font-medium rounded-lg hover:bg-arch-blue/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Analyze Ticket
+          </button>
+        </div>
+      </form>
 
-          <div className="flex items-center justify-between">
-            <ModelSelector
-              value={modelId}
-              onChange={onModelChange}
-              disabled={isDisabled}
-            />
+      {/* Example tickets */}
+      <div className="space-y-2 mt-4">
+        <p className="text-xs text-arch-text2 font-medium">
+          Or try an example:
+        </p>
+        <div className="grid grid-cols-1 gap-2">
+          {EXAMPLE_TICKETS.map((example) => (
             <button
-              type="submit"
-              disabled={isDisabled}
-              className="px-5 py-2 bg-arch-blue text-white text-sm font-medium rounded-lg hover:bg-arch-blue/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              key={example.title}
+              onClick={() => {
+                onTicketTextChange(example.text);
+                onAnalyze(example.text);
+              }}
+              disabled={isStreaming}
+              className="text-left px-3 py-2.5 bg-arch-bg2 border border-arch-border rounded-lg text-xs text-arch-text2 hover:text-arch-text hover:border-arch-blue/30 hover:bg-arch-bg3 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Analyze Ticket
+              {example.title}
             </button>
-          </div>
-        </form>
-
-        {/* Example tickets */}
-        <div className="space-y-2">
-          <p className="text-xs text-arch-text2 font-medium">
-            Or try an example:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {EXAMPLE_TICKETS.map((example) => (
-              <button
-                key={example.title}
-                onClick={() => onAnalyze(example.text)}
-                disabled={isDisabled}
-                className="text-left px-3 py-2.5 bg-arch-bg2 border border-arch-border rounded-lg text-xs text-arch-text2 hover:text-arch-text hover:border-arch-blue/30 hover:bg-arch-bg3 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {example.title}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
     </div>

@@ -7,13 +7,11 @@ import { TICKET_ANALYZER_CONTEXT } from "@/lib/ai/ticket-analyzer-prompt";
 import TicketInput from "@/components/analyze/TicketInput";
 import AnalysisOutput from "@/components/analyze/AnalysisOutput";
 
-type Phase = "input" | "analyzing";
-
 export default function AnalyzePage() {
-  const [phase, setPhase] = useState<Phase>("input");
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
+  const [ticketText, setTicketText] = useState("");
 
-  const { messages, isStreaming, error, sendMessage, clearHistory } = useChat(
+  const { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory } = useChat(
     modelId,
     {
       persistToLocalStorage: false,
@@ -23,19 +21,18 @@ export default function AnalyzePage() {
 
   const handleAnalyze = useCallback(
     (text: string) => {
-      setPhase("analyzing");
-      sendMessage(text);
+      sendMessage(text.trim());
     },
     [sendMessage]
   );
 
   const handleNewAnalysis = useCallback(() => {
     clearHistory();
-    setPhase("input");
+    setTicketText("");
   }, [clearHistory]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-arch-bg">
+    <div className="h-screen flex flex-col bg-arch-bg">
       {/* Minimal header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-arch-border bg-arch-bg2">
         <a
@@ -50,23 +47,24 @@ export default function AnalyzePage() {
         </span>
       </div>
 
-      {phase === "input" ? (
+      <div className="flex-1 flex flex-col md:flex-row min-h-0">
         <TicketInput
           onAnalyze={handleAnalyze}
-          isDisabled={isStreaming}
+          isStreaming={isStreaming}
           modelId={modelId}
           onModelChange={setModelId}
+          ticketText={ticketText}
+          onTicketTextChange={setTicketText}
         />
-      ) : (
         <AnalysisOutput
           messages={messages}
           isStreaming={isStreaming}
           error={error}
-          modelId={modelId}
-          onModelChange={setModelId}
           onNewAnalysis={handleNewAnalysis}
+          onSendFollowUp={sendMessage}
+          onStopStreaming={stopStreaming}
         />
-      )}
+      </div>
     </div>
   );
 }

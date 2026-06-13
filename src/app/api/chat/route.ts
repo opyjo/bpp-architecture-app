@@ -453,22 +453,32 @@ async function streamOpenAICompatible(
 
   // Force a final text-only synthesis if we hit any limit
   if (needsForcedSynthesis || iterations >= MAX_ITERATIONS) {
-    // Strip tool_calls from assistant messages and tool-role messages
-    // so the API doesn't reject the request when no tools are defined
+    // Merge tool results into assistant messages so the model retains
+    // the information it gathered, while stripping the tool_calls structure
+    // (which the API rejects when no tools are defined).
     const synthesisMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
-      messages
-        .filter((m) => m.role !== "tool")
-        .map((m) => {
-          if (m.role === "assistant" && "tool_calls" in m) {
-            return {
-              role: "assistant" as const,
-              content:
-                (m.content as string | null) ||
-                "[Used tools to gather information]",
-            };
-          }
-          return m;
+      [];
+    for (let i = 0; i < messages.length; i++) {
+      const m = messages[i];
+      if (m.role === "tool") continue; // merged into preceding assistant msg
+      if (m.role === "assistant" && "tool_calls" in m && m.tool_calls) {
+        let summary = (m.content as string | null) || "";
+        // Collect the tool-result messages that follow this assistant message
+        for (let j = i + 1; j < messages.length && messages[j].role === "tool"; j++) {
+          const toolMsg = messages[j] as OpenAI.Chat.Completions.ChatCompletionToolMessageParam;
+          const matchingCall = (m.tool_calls as Array<{ id: string; function?: { name: string } }>)
+            .find((tc) => tc.id === toolMsg.tool_call_id);
+          const toolName = matchingCall?.function?.name ?? "unknown_tool";
+          summary += `\n\n[Tool: ${toolName}]\n${toolMsg.content ?? ""}`;
+        }
+        synthesisMessages.push({
+          role: "assistant" as const,
+          content: summary || "[Used tools but received no output]",
         });
+      } else {
+        synthesisMessages.push(m);
+      }
+    }
 
     // Replace system message with one that forces synthesis
     synthesisMessages[0] = {
