@@ -291,3 +291,48 @@
   transform: translateY(-1px);
   text-shadow: 0 0 10px rgba(74, 143, 232, 0.5);
 }
+
+/* Sidebar collapsible animations */
+@keyframes sidebarSlideDown {
+  from { opacity: 0; max-height: 0; transform: translateY(-4px); }
+  to { opacity: 1; max-height: 2000px; transform: translateY(0); }
+}
+
+@keyframes sidebarItemFadeIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.sidebar-section-items {
+  animation: sidebarSlideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+  overflow: hidden;
+}
+
+.sidebar-section-items > button {
+  animation: sidebarItemFadeIn 0.2s ease-out both;
+}
+
+.sidebar-section-header {
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-section-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dark .sidebar-section-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:root .sidebar-section-header:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.sidebar-dot-active {
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 4px var(--dot-glow); }
+  50% { box-shadow: 0 0 8px var(--dot-glow), 0 0 12px var(--dot-glow); }
+}

@@ -1,16 +1,133 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { steps, nodeDetails, sidebarSteps, legendItems, serviceDependencyDiagram, type SidebarItem } from "@/data/architecture";
 import ArchitectureSvg from "@/components/ArchitectureSvg";
 import SystemOverview from "@/components/SystemOverview";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import DiagramChat from "@/components/ai/DiagramChat";
 
+interface SidebarGroup {
+  label: string;
+  items: { key: string; label: string }[];
+}
+
+function parseSidebarGroups(sidebarItems: SidebarItem[]): SidebarGroup[] {
+  const groups: SidebarGroup[] = [];
+  let current: SidebarGroup = { label: "Lifecycle flows", items: [] };
+
+  for (const s of sidebarItems) {
+    if ("separator" in s) {
+      if (current.items.length > 0) groups.push(current);
+      current = { label: s.header ?? "", items: [] };
+    } else {
+      current.items.push(s);
+    }
+  }
+  if (current.items.length > 0) groups.push(current);
+  return groups;
+}
+
+const archAccents = [
+  { border: "rgba(74, 143, 232, 0.35)", bg: "rgba(74, 143, 232, 0.06)", dot: "rgba(74, 143, 232, 0.6)" },       // blue
+  { border: "rgba(124, 111, 205, 0.35)", bg: "rgba(124, 111, 205, 0.06)", dot: "rgba(124, 111, 205, 0.6)" },     // purple
+  { border: "rgba(62, 184, 154, 0.35)", bg: "rgba(62, 184, 154, 0.06)", dot: "rgba(62, 184, 154, 0.6)" },        // teal
+  { border: "rgba(232, 168, 58, 0.35)", bg: "rgba(232, 168, 58, 0.06)", dot: "rgba(232, 168, 58, 0.6)" },        // amber
+];
+
+function CollapsibleArchSection({
+  label,
+  items,
+  activeStep,
+  defaultOpen,
+  onSelect,
+  accentIndex = 0,
+}: {
+  label: string;
+  items: { key: string; label: string }[];
+  activeStep: string;
+  defaultOpen: boolean;
+  onSelect: (key: string) => void;
+  accentIndex?: number;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const hasActiveChild = items.some((item) => item.key === activeStep);
+  const accent = archAccents[accentIndex % archAccents.length];
+
+  return (
+    <>
+      <div className="h-px bg-arch-border mx-3.5 my-1.5" />
+      {label && (
+        <button
+          onClick={() => setOpen((prev) => !prev)}
+          className="sidebar-section-header flex items-center justify-between w-full px-3.5 py-1.5 group select-none rounded-sm"
+          style={hasActiveChild ? { background: accent.bg } : undefined}
+        >
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-1 h-1 rounded-full shrink-0 transition-colors"
+              style={{ background: hasActiveChild ? accent.border : "transparent" }}
+            />
+            <span
+              className="text-[9.5px] font-semibold tracking-[0.1em] uppercase transition-colors"
+              style={{ color: hasActiveChild ? accent.border.replace("0.35", "1") : undefined }}
+            >
+              {label}
+            </span>
+          </div>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`text-arch-text3 group-hover:text-arch-text2 transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      )}
+      {open && (
+        <div className="sidebar-section-items">
+          {items.map((item, i) => (
+            <button
+              key={item.key}
+              onClick={() => onSelect(item.key)}
+              style={{ animationDelay: `${i * 25}ms` }}
+              className={`flex items-center gap-2 px-3.5 py-2 w-full text-left border-l-2 transition-all duration-200 select-none ${
+                activeStep === item.key
+                  ? "bg-white/5 border-l-arch-blue"
+                  : "border-l-transparent hover:bg-white/[0.03]"
+              }`}
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                  activeStep === item.key
+                    ? "sidebar-dot-active bg-arch-blue"
+                    : "bg-arch-text3"
+                }`}
+                style={activeStep === item.key ? { "--dot-glow": accent.dot } as React.CSSProperties : undefined}
+              />
+              <span className={`text-[11.5px] transition-colors duration-200 ${activeStep === item.key ? "text-arch-text" : "text-arch-text2"}`}>
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function ArchitectureTab() {
   const [activeStep, setActiveStep] = useState("all");
   const [nodeInfo, setNodeInfo] = useState<{ title: string; body: string } | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const sidebarGroups = useMemo(() => parseSidebarGroups(sidebarSteps), []);
 
   const step = steps[activeStep];
 
@@ -34,42 +151,17 @@ export default function ArchitectureTab() {
     <div className="grid grid-cols-[206px_1fr_272px] min-h-[calc(100vh-108px)]">
       {/* Sidebar */}
       <aside className="bg-arch-bg2 border-r border-arch-border py-4 overflow-y-auto">
-        <div className="text-[9.5px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5">
-          Lifecycle flows
-        </div>
-        {sidebarSteps.map((s, i) =>
-          "separator" in s ? (
-            <div key={`sep-${i}`}>
-              <div className="h-px bg-arch-border mx-3.5 my-1.5" />
-              {s.header && (
-                <div className="text-[9.5px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5 pt-1">
-                  {s.header}
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              key={s.key}
-              onClick={() => handleStepClick(s.key)}
-              className={`flex items-center gap-2 px-3.5 py-2 w-full text-left border-l-2 transition-all select-none ${
-                activeStep === s.key
-                  ? "bg-white/5 border-l-arch-blue"
-                  : "border-l-transparent hover:bg-white/[0.03]"
-              }`}
-            >
-              <div
-                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
-                  activeStep === s.key
-                    ? "bg-arch-blue shadow-[0_0_5px_rgba(74,143,232,0.5)]"
-                    : "bg-arch-text3"
-                }`}
-              />
-              <span className={`text-[11.5px] ${activeStep === s.key ? "text-arch-text" : "text-arch-text2"}`}>
-                {s.label}
-              </span>
-            </button>
-          )
-        )}
+        {sidebarGroups.map((group, i) => (
+          <CollapsibleArchSection
+            key={group.label || i}
+            label={group.label}
+            items={group.items}
+            activeStep={activeStep}
+            defaultOpen={false}
+            onSelect={handleStepClick}
+            accentIndex={i}
+          />
+        ))}
         <div className="h-px bg-arch-border mx-3.5 my-1.5" />
         <div className="text-[9.5px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5 pt-1">
           Legend
