@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useChat } from "@/lib/hooks/useChat";
 import { useSavedAnalyses } from "@/lib/hooks/useSavedAnalyses";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
@@ -10,14 +10,35 @@ import AnalysisOutput from "@/components/analyze/AnalysisOutput";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
+const TICKET_TEXT_KEY = "analyzer-ticket-text";
+
+function loadTicketText(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(TICKET_TEXT_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
 export default function AnalyzePage() {
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
-  const [ticketText, setTicketText] = useState("");
+  const [ticketText, setTicketText] = useState(loadTicketText);
+
+  // Persist ticket text to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(TICKET_TEXT_KEY, ticketText);
+    } catch {
+      // storage full
+    }
+  }, [ticketText]);
 
   const { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory } = useChat(
     modelId,
     {
-      persistToLocalStorage: false,
+      persistToLocalStorage: true,
+      storageKey: "analyzer-chat-history",
       systemContext: TICKET_ANALYZER_CONTEXT,
     }
   );
@@ -39,6 +60,7 @@ export default function AnalyzePage() {
   const handleNewAnalysis = useCallback(() => {
     clearHistory();
     setTicketText("");
+    try { localStorage.removeItem(TICKET_TEXT_KEY); } catch { /* */ }
   }, [clearHistory]);
 
   const handleSaveClick = () => {

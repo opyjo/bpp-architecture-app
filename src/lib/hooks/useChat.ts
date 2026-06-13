@@ -3,24 +3,24 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { ChatMessage, ToolCallInfo, StreamEvent } from "@/lib/types/chat";
 
-const STORAGE_KEY = "ai-chat-history";
+const DEFAULT_STORAGE_KEY = "ai-chat-history";
 const MAX_STORED = 50;
 const MAX_SENT = 20;
 
-function loadMessages(): ChatMessage[] {
+function loadMessages(key: string): ChatMessage[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function saveMessages(messages: ChatMessage[]) {
+function saveMessages(key: string, messages: ChatMessage[]) {
   try {
     localStorage.setItem(
-      STORAGE_KEY,
+      key,
       JSON.stringify(messages.slice(-MAX_STORED))
     );
   } catch {
@@ -31,6 +31,7 @@ function saveMessages(messages: ChatMessage[]) {
 export interface UseChatOptions {
   initialMessages?: ChatMessage[];
   persistToLocalStorage?: boolean;
+  storageKey?: string;
   onMessagesChange?: (msgs: ChatMessage[]) => void;
   systemContext?: string;
 }
@@ -39,6 +40,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
   const {
     initialMessages,
     persistToLocalStorage = true,
+    storageKey = DEFAULT_STORAGE_KEY,
     onMessagesChange,
     systemContext,
   } = options ?? {};
@@ -58,7 +60,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
       if (initialMessages) {
         setMessages(initialMessages);
       } else if (persistToLocalStorage) {
-        setMessages(loadMessages());
+        setMessages(loadMessages(storageKey));
       }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -67,11 +69,11 @@ export function useChat(modelId: string, options?: UseChatOptions) {
   useEffect(() => {
     if (initializedRef.current && messages.length > 0) {
       if (persistToLocalStorage) {
-        saveMessages(messages);
+        saveMessages(storageKey, messages);
       }
       onMessagesChangeRef.current?.(messages);
     }
-  }, [messages, persistToLocalStorage]);
+  }, [messages, persistToLocalStorage, storageKey]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -234,10 +236,10 @@ export function useChat(modelId: string, options?: UseChatOptions) {
   const clearHistory = useCallback(() => {
     setMessages([]);
     if (persistToLocalStorage) {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     }
     setError(null);
-  }, [persistToLocalStorage]);
+  }, [persistToLocalStorage, storageKey]);
 
   return { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory };
 }
