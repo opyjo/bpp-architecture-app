@@ -5,6 +5,13 @@ import SectionLayout from "@/components/ui/SectionLayout";
 import { routes, quickRefRows } from "@/data/routes";
 import { flows, customerVsAgent, mermaidSequenceDiagram } from "@/data/flows";
 import { flowDiagramMap } from "@/data/flow-diagrams";
+import {
+  componentTreeMap,
+  componentTreeSidebarItems,
+  sharedComponents,
+  sharedComponentsMermaid,
+} from "@/data/component-trees";
+import type { ComponentNode } from "@/data/component-trees";
 import FlowDiagram from "@/components/ui/FlowDiagram";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 
@@ -65,9 +72,97 @@ function FlowDetailAccordion({ flow }: { flow: typeof flows[0] }) {
   );
 }
 
+const categoryColors: Record<ComponentNode["category"], { bg: string; border: string; text: string; label: string }> = {
+  provider: { bg: "bg-[rgba(124,111,205,0.12)]", border: "border-[rgba(124,111,205,0.35)]", text: "text-arch-purple", label: "Provider" },
+  page: { bg: "bg-[rgba(74,143,232,0.12)]", border: "border-[rgba(74,143,232,0.35)]", text: "text-arch-blue", label: "Page" },
+  feature: { bg: "bg-[rgba(62,184,154,0.12)]", border: "border-[rgba(62,184,154,0.35)]", text: "text-arch-teal", label: "Feature" },
+  shared: { bg: "bg-[rgba(232,168,58,0.12)]", border: "border-[rgba(232,168,58,0.35)]", text: "text-arch-amber", label: "Shared" },
+  "mutation-trigger": { bg: "bg-[rgba(232,112,90,0.12)]", border: "border-[rgba(232,112,90,0.35)]", text: "text-arch-coral", label: "Mutation trigger" },
+};
+
+function CategoryLegend() {
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {Object.values(categoryColors).map((c) => (
+        <span key={c.label} className={`text-[10px] px-2 py-0.5 rounded border font-medium ${c.bg} ${c.border} ${c.text}`}>
+          {c.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ComponentDetailCard({ node }: { node: ComponentNode }) {
+  const [open, setOpen] = useState(false);
+  const color = categoryColors[node.category];
+  return (
+    <div className={`bg-arch-bg2 border border-arch-border rounded-lg overflow-hidden border-l-2 ${color.border}`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-3.5 py-2 flex items-center gap-2 hover:bg-white/[0.03] transition-colors text-left"
+      >
+        <svg
+          className={`w-3 h-3 text-arch-text3 transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+        <span className={`text-[11.5px] font-semibold ${color.text}`}>{node.name}</span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${color.bg} ${color.border} ${color.text}`}>{color.label}</span>
+        <span className="text-[9.5px] font-mono text-arch-text3 ml-auto">{node.file}</span>
+      </button>
+      {open && (
+        <div className="border-t border-arch-border px-3.5 py-2.5 space-y-2">
+          <div className="text-[11px] text-arch-text2 leading-[1.6]">{node.description}</div>
+          {node.hooks.length > 0 && (
+            <div>
+              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Hooks</div>
+              <div className="flex flex-wrap gap-1">
+                {node.hooks.map((h) => (
+                  <span key={h} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-blue">{h}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {node.consumesContext.length > 0 && (
+            <div>
+              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Context</div>
+              <div className="flex flex-wrap gap-1">
+                {node.consumesContext.map((c) => (
+                  <span key={c} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-purple">{c}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {node.apiCalls.length > 0 && (
+            <div>
+              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">API calls</div>
+              <div className="flex flex-wrap gap-1">
+                {node.apiCalls.map((a) => (
+                  <span key={a} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-[rgba(232,112,90,0.1)] border border-[rgba(232,112,90,0.2)] text-arch-coral">{a}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {node.props.length > 0 && (
+            <div>
+              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Props received</div>
+              <div className="flex flex-wrap gap-1">
+                {node.props.map((p) => (
+                  <span key={p} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text2">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function UiPagesTab() {
   return (
-    <SectionLayout label="Sections" items={sidebarItems}>
+    <SectionLayout label="Sections" items={sidebarItems} extraItems={{ label: "Component Trees", items: componentTreeSidebarItems }}>
       {(activeId) => {
         if (activeId === "routes") {
           return (
@@ -180,6 +275,72 @@ export default function UiPagesTab() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          );
+        }
+
+        /* ---- Shared components view ---- */
+        if (activeId === "ct-shared") {
+          return (
+            <div>
+              <div className="text-sm font-semibold text-arch-text mb-1">Shared components</div>
+              <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">
+                Components reused across multiple routes. Colour indicates category.
+              </div>
+              <CategoryLegend />
+              <MermaidDiagram chart={sharedComponentsMermaid} />
+              <div className="mt-4">
+                <table className="w-full border-collapse text-[11px]">
+                  <thead>
+                    <tr>
+                      <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Component</th>
+                      <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">File</th>
+                      <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Used in</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sharedComponents.map((sc) => {
+                      const color = categoryColors[sc.category];
+                      return (
+                        <tr key={sc.name}>
+                          <td className={`px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10px] align-top leading-[1.6] ${color.text}`}>{sc.name}</td>
+                          <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 font-mono text-[10px] align-top leading-[1.6]">{sc.file}</td>
+                          <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top">
+                            <div className="flex flex-wrap gap-1">
+                              {sc.usedIn.map((r) => (
+                                <span key={r} className="text-[9px] px-1.5 py-0.5 rounded bg-arch-bg3 border border-arch-border text-arch-text2">{r}</span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        }
+
+        /* ---- Component tree views ---- */
+        const tree = activeId.startsWith("ct-") ? componentTreeMap[activeId] : undefined;
+        if (tree) {
+          return (
+            <div>
+              <div className="text-sm font-semibold text-arch-text mb-1">{tree.title}</div>
+              <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-1">{tree.description}</div>
+              <div className="flex items-center gap-2 mb-3.5">
+                <AudienceBadge audience={tree.audience} />
+                <span className="text-[9.5px] font-mono text-arch-text3">{tree.route}</span>
+              </div>
+              <CategoryLegend />
+              <MermaidDiagram chart={tree.mermaidChart} />
+              <div className="mt-5 space-y-2">
+                <div className="text-[9.5px] font-semibold tracking-[0.1em] uppercase text-arch-text3 mb-2">Component details</div>
+                {tree.components.map((node) => (
+                  <ComponentDetailCard key={node.id} node={node} />
+                ))}
+              </div>
             </div>
           );
         }
