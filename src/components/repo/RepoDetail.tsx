@@ -1,9 +1,116 @@
 "use client";
 
+import { useMemo } from "react";
 import { repoTree, serviceTypePatterns, repoDomains, type RepoNode } from "@/data/repo-structure";
 
 interface RepoDetailProps {
   nodeId: string;
+}
+
+// ── Cross-Reference Helpers ──────────────────────────────
+
+const PREFIXES = ["svc-", "mdl-", "pkg-", "fn-", "cmd-", "poc-", "test-", "doc-"];
+
+function baseName(id: string): string {
+  for (const p of PREFIXES) {
+    if (id.startsWith(p)) return id.slice(p.length);
+  }
+  return id;
+}
+
+interface CrossRef {
+  node: RepoNode;
+  parentNode: RepoNode;
+  label: string;
+}
+
+function computeCrossRefs(node: RepoNode, parentNode: RepoNode | undefined): {
+  dependsOn: CrossRef[];
+  usedBy: CrossRef[];
+  sameDomain: CrossRef[];
+} {
+  if (!parentNode) return { dependsOn: [], usedBy: [], sameDomain: [] };
+
+  const base = baseName(node.id);
+  const dependsOn: CrossRef[] = [];
+  const usedBy: CrossRef[] = [];
+  const sameDomain: CrossRef[] = [];
+
+  // Find domain for this node
+  const domain = repoDomains.find((d) => d.services.includes(node.id));
+
+  for (const dir of repoTree) {
+    for (const child of dir.children ?? []) {
+      if (child.id === node.id) continue;
+      const childBase = baseName(child.id);
+
+      // Direct or partial name match
+      const isMatch = childBase === base || childBase.includes(base) || base.includes(childBase);
+
+      if (isMatch) {
+        const ref: CrossRef = { node: child, parentNode: dir, label: "name match" };
+        // Services depend on models/packages
+        if (parentNode.id === "services" || parentNode.id === "serverless" || parentNode.id === "cmd") {
+          if (dir.id === "model" || dir.id === "pkg") dependsOn.push({ ...ref, label: "data types" });
+        }
+        // Models/packages are used by services
+        if (parentNode.id === "model" || parentNode.id === "pkg") {
+          if (dir.id === "services" || dir.id === "serverless" || dir.id === "cmd") usedBy.push({ ...ref, label: "consumer" });
+        }
+        // Cross-directory for same-level
+        if (parentNode.id === dir.id && dir.id !== parentNode.id) {
+          // skip — same directory siblings handled by domain
+        } else if (
+          !dependsOn.some((d) => d.node.id === child.id) &&
+          !usedBy.some((u) => u.node.id === child.id)
+        ) {
+          // Related in other dirs
+          if (dir.id !== parentNode.id) {
+            const label =
+              dir.id === "serverless" ? "serverless" :
+              dir.id === "cmd" ? "CLI tool" :
+              dir.id === "model" ? "data types" :
+              dir.id === "pkg" ? "package" : "related";
+            dependsOn.push({ ...ref, label });
+          }
+        }
+      }
+    }
+  }
+
+  // Same domain (only for services)
+  if (domain && parentNode.id === "services") {
+    const svcDir = repoTree.find((d) => d.id === "services");
+    for (const svcId of domain.services) {
+      if (svcId === node.id) continue;
+      const svc = svcDir?.children?.find((c) => c.id === svcId);
+      if (svc && !dependsOn.some((d) => d.node.id === svc.id) && !usedBy.some((u) => u.node.id === svc.id)) {
+        sameDomain.push({ node: svc, parentNode: svcDir!, label: domain.name });
+      }
+    }
+  }
+
+  // Shared tech (add a few if we don't have many refs yet)
+  if (dependsOn.length + usedBy.length < 2 && node.tech && node.tech.length > 0) {
+    const nodeTechs = new Set(node.tech);
+    for (const dir of repoTree) {
+      for (const child of dir.children ?? []) {
+        if (child.id === node.id) continue;
+        if (dependsOn.some((d) => d.node.id === child.id) || usedBy.some((u) => u.node.id === child.id)) continue;
+        if (sameDomain.some((s) => s.node.id === child.id)) continue;
+        const shared = child.tech?.filter((t) => nodeTechs.has(t)) ?? [];
+        if (shared.length >= 2) {
+          const ref: CrossRef = { node: child, parentNode: dir, label: shared.slice(0, 2).join(", ") };
+          if (dir.id === "model" || dir.id === "pkg") dependsOn.push(ref);
+          else usedBy.push(ref);
+          if (dependsOn.length + usedBy.length >= 5) break;
+        }
+      }
+      if (dependsOn.length + usedBy.length >= 5) break;
+    }
+  }
+
+  return { dependsOn, usedBy, sameDomain };
 }
 
 export default function RepoDetail({ nodeId }: RepoDetailProps) {
@@ -42,6 +149,12 @@ export default function RepoDetail({ nodeId }: RepoDetailProps) {
   const domain = !isTopLevel && parentNode?.id === "services"
     ? repoDomains.find((d) => d.services.includes(node!.id))
     : null;
+
+  // Cross-references
+  const crossRefs = useMemo(
+    () => (node && !isTopLevel ? computeCrossRefs(node, parentNode) : null),
+    [node, isTopLevel, parentNode],
+  );
 
   return (
     <div className="p-4 space-y-3" style={{ animation: "messageSlideIn 0.25s ease-out" }}>
@@ -158,6 +271,54 @@ export default function RepoDetail({ nodeId }: RepoDetailProps) {
           <div className="text-[10px] text-arch-text3 mt-1.5 leading-[1.5]">{pattern.description}</div>
         </div>
       )}
+
+      {/* Cross-references */}
+      {crossRefs && (crossRefs.dependsOn.length > 0 || crossRefs.usedBy.length > 0 || crossRefs.sameDomain.length > 0) && (
+        <div className="space-y-2.5 pt-1">
+          {crossRefs.dependsOn.length > 0 && (
+            <div>
+              <div className="text-[9.5px] uppercase tracking-wider text-arch-text3 font-semibold mb-1">Depends On</div>
+              <div className="space-y-0.5">
+                {crossRefs.dependsOn.map((ref) => (
+                  <CrossRefRow key={ref.node.id} ref_={ref} />
+                ))}
+              </div>
+            </div>
+          )}
+          {crossRefs.usedBy.length > 0 && (
+            <div>
+              <div className="text-[9.5px] uppercase tracking-wider text-arch-text3 font-semibold mb-1">Used By</div>
+              <div className="space-y-0.5">
+                {crossRefs.usedBy.map((ref) => (
+                  <CrossRefRow key={ref.node.id} ref_={ref} />
+                ))}
+              </div>
+            </div>
+          )}
+          {crossRefs.sameDomain.length > 0 && (
+            <div>
+              <div className="text-[9.5px] uppercase tracking-wider text-arch-text3 font-semibold mb-1">Same Domain</div>
+              <div className="space-y-0.5">
+                {crossRefs.sameDomain.map((ref) => (
+                  <CrossRefRow key={ref.node.id} ref_={ref} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CrossRefRow({ ref_ }: { ref_: CrossRef }) {
+  return (
+    <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-arch-bg border border-arch-border">
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ref_.parentNode.color }} />
+      <span className="font-mono text-[9px] text-arch-text2 truncate">
+        {ref_.parentNode.name}{ref_.node.name}
+      </span>
+      <span className="ml-auto text-[8px] text-arch-text3 shrink-0">{ref_.label}</span>
     </div>
   );
 }
