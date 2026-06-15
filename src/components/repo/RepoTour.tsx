@@ -1,17 +1,29 @@
 "use client";
 
-import { repoTourSteps } from "@/data/repo-structure";
+import { repoTourSteps, repoDomains } from "@/data/repo-structure";
 import { useEffect, useRef, useState } from "react";
+import { findNode, typeIcon } from "./repo-detail-utils";
 
 interface RepoTourProps {
   currentStep: number;
   onStepChange: (step: number) => void;
+  tourNodeId?: string;
 }
 
-export default function RepoTour({ currentStep, onStepChange }: RepoTourProps) {
+export default function RepoTour({ currentStep, onStepChange, tourNodeId }: RepoTourProps) {
   const step = repoTourSteps[currentStep];
   const [autoPlay, setAutoPlay] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevStepRef = useRef(currentStep);
+
+  // Auto-collapse detail when tour step changes
+  useEffect(() => {
+    if (prevStepRef.current !== currentStep) {
+      setDetailOpen(false);
+      prevStepRef.current = currentStep;
+    }
+  }, [currentStep]);
 
   useEffect(() => {
     if (autoPlay) {
@@ -23,6 +35,8 @@ export default function RepoTour({ currentStep, onStepChange }: RepoTourProps) {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [autoPlay, currentStep, onStepChange]);
+
+  const nodeResult = tourNodeId ? findNode(tourNodeId) : null;
 
   return (
     <div className="px-3.5 py-2.5">
@@ -115,6 +129,66 @@ export default function RepoTour({ currentStep, onStepChange }: RepoTourProps) {
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Collapsible node detail toggle */}
+      {nodeResult && (
+        <div className="mt-2 pt-2 border-t border-arch-border/50">
+          <button
+            onClick={() => setDetailOpen(!detailOpen)}
+            className="flex items-center gap-1.5 text-[10.5px] font-medium text-arch-blue hover:text-arch-blue/80 transition-colors"
+          >
+            <svg
+              className={`w-3 h-3 transition-transform ${detailOpen ? "rotate-90" : ""}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+            View Node Details
+          </button>
+          {detailOpen && (
+            <div
+              className="mt-2 bg-arch-bg rounded-md border border-arch-border p-3 space-y-2"
+              style={{ animation: "messageSlideIn 0.2s ease-out" }}
+            >
+              {/* Compact header */}
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                  style={{ background: `${nodeResult.node.color}18`, border: `1px solid ${nodeResult.node.color}30` }}
+                >
+                  <span className="text-[10px] font-bold" style={{ color: nodeResult.node.color }}>
+                    {typeIcon(nodeResult.node.type)}
+                  </span>
+                </div>
+                <span className="font-mono text-[11px] font-bold text-arch-text">{nodeResult.node.name}</span>
+                {nodeResult.parentNode && (
+                  <span className="text-[9px] text-arch-text3">{nodeResult.parentNode.name}/</span>
+                )}
+              </div>
+              {/* Description */}
+              <div className="text-[10.5px] text-arch-text2 leading-[1.6]">{nodeResult.node.description}</div>
+              {/* Tech tags */}
+              {nodeResult.node.tech && nodeResult.node.tech.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {nodeResult.node.tech.map((t) => (
+                    <span
+                      key={t}
+                      className="inline-block font-mono text-[9px] px-1 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text3"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

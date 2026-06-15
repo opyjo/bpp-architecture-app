@@ -53,12 +53,12 @@ const ICONS: Record<string, string> = {
 
 // ── Child Node Grid Layout ────────────────────────────────
 
-const CHILD_W = 120;
+const CHILD_W = 155;
 const CHILD_H = 26;
-const CHILD_GAP_X = 12;
+const CHILD_GAP_X = 10;
 const CHILD_GAP_Y = 6;
-const CHILD_COLS = 6;
-const CHILD_MARGIN_X = 30;
+const CHILD_COLS = 5;
+const CHILD_MARGIN_X = 20;
 const CHILD_MARGIN_Y = 50;
 
 function childPos(index: number) {
@@ -173,7 +173,7 @@ export default function RepoMap({
                       width={BLOCK_W}
                       height={BLOCK_H}
                       rx={8}
-                      fill={isActive ? `${node.color}11` : "var(--arch-bg3)"}
+                      fill={isActive ? `color-mix(in srgb, ${node.color} 8%, var(--arch-bg3))` : "var(--arch-bg3)"}
                       stroke={isActive ? node.color : "var(--arch-border)"}
                       strokeWidth={isActive ? 1.5 : 0.5}
                       filter={isActive && !highlightAll ? "url(#repo-glow)" : undefined}
@@ -208,8 +208,8 @@ export default function RepoMap({
                       width={32}
                       height={18}
                       rx={9}
-                      fill={isActive ? `${node.color}22` : "var(--arch-bg)"}
-                      stroke={isActive ? `${node.color}44` : "var(--arch-border)"}
+                      fill={isActive ? `color-mix(in srgb, ${node.color} 15%, var(--arch-bg))` : "var(--arch-bg)"}
+                      stroke={isActive ? `color-mix(in srgb, ${node.color} 30%, transparent)` : "var(--arch-border)"}
                       strokeWidth={0.5}
                     />
                     <text
@@ -238,8 +238,8 @@ export default function RepoMap({
                 width={SVG_W - 40}
                 height={30}
                 rx={5}
-                fill={`${zoomedNode!.color}11`}
-                stroke={`${zoomedNode!.color}33`}
+                fill={`color-mix(in srgb, ${zoomedNode!.color} 8%, var(--arch-bg3))`}
+                stroke={`color-mix(in srgb, ${zoomedNode!.color} 25%, transparent)`}
                 strokeWidth={1}
               />
               <g transform="translate(32, 14)">
@@ -261,6 +261,7 @@ export default function RepoMap({
               {children.map((child, i) => {
                 const pos = childPos(i);
                 const isSelected = selectedChild === child.id;
+                const clipId = `child-clip-${i}`;
                 return (
                   <g
                     key={child.id}
@@ -271,14 +272,17 @@ export default function RepoMap({
                     className="repo-node-enter"
                     onClick={() => onChildClick?.(child.id)}
                   >
+                    <clipPath id={clipId}>
+                      <rect x={pos.x} y={pos.y} width={CHILD_W} height={CHILD_H} rx={5} />
+                    </clipPath>
                     <rect
                       x={pos.x}
                       y={pos.y}
                       width={CHILD_W}
                       height={CHILD_H}
                       rx={5}
-                      fill={isSelected ? `${child.color}22` : `${child.color}0a`}
-                      stroke={isSelected ? child.color : `${child.color}33`}
+                      fill={isSelected ? `color-mix(in srgb, ${child.color} 15%, var(--arch-bg3))` : "var(--arch-bg3)"}
+                      stroke={isSelected ? child.color : `color-mix(in srgb, ${child.color} 30%, transparent)`}
                       strokeWidth={isSelected ? 1.5 : 0.7}
                       filter={isSelected ? "url(#repo-glow)" : undefined}
                     />
@@ -289,6 +293,7 @@ export default function RepoMap({
                       fontSize={9}
                       fontWeight={600}
                       fontFamily="ui-monospace, SFMono-Regular, monospace"
+                      clipPath={`url(#${clipId})`}
                     >
                       {child.name}
                     </text>
@@ -317,8 +322,8 @@ function TypeLabels({ node, pos, isActive }: { node: RepoNode; pos: { x: number;
             width={46}
             height={14}
             rx={3}
-            fill={isActive ? `${node.color}15` : "var(--arch-bg)"}
-            stroke={isActive ? `${node.color}30` : "var(--arch-border)"}
+            fill={isActive ? `color-mix(in srgb, ${node.color} 10%, var(--arch-bg))` : "var(--arch-bg)"}
+            stroke={isActive ? `color-mix(in srgb, ${node.color} 22%, transparent)` : "var(--arch-border)"}
             strokeWidth={0.5}
           />
           <text

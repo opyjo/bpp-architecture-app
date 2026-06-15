@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { repoTree, repoTourSteps } from "@/data/repo-structure";
 import RepoMap from "@/components/repo/RepoMap";
 import RepoTour from "@/components/repo/RepoTour";
-import RepoDetail from "@/components/repo/RepoDetail";
+import RepoDetailWide from "@/components/repo/RepoDetailWide";
 import RepoTreeView from "@/components/repo/RepoTreeView";
 import RepoTechSummary from "@/components/repo/RepoTechSummary";
 
@@ -110,8 +110,35 @@ export default function RepoExplorerTab() {
     setSelectedChild(null);
   };
 
+  // Close detail view — return to tech summary
+  const handleDetailClose = () => {
+    setSelectedNode(null);
+    setSelectedChild(null);
+  };
+
+  // Navigate to a cross-referenced node
+  const handleCrossRefNavigate = (nodeId: string) => {
+    // Find which top-level dir contains this node
+    for (const dir of repoTree) {
+      const child = dir.children?.find((c) => c.id === nodeId);
+      if (child) {
+        setZoomTarget(dir.id);
+        setSelectedChild(nodeId);
+        setSelectedNode(nodeId);
+        setExpandedDirs((prev) => new Set(prev).add(dir.id));
+        return;
+      }
+      if (dir.id === nodeId) {
+        setZoomTarget(nodeId);
+        setSelectedNode(nodeId);
+        setSelectedChild(null);
+        return;
+      }
+    }
+  };
+
   return (
-    <div className="grid grid-cols-[206px_1fr_272px] overflow-hidden" style={{ height: "calc(100vh - 108px)" }}>
+    <div className="grid grid-cols-[220px_1fr] overflow-hidden" style={{ height: "calc(100vh - 108px)" }}>
       {/* ── Left Sidebar ─────────────────────────────── */}
       <div className="border-r border-arch-border bg-arch-bg2 overflow-y-auto">
         {/* Mode toggle */}
@@ -259,10 +286,22 @@ export default function RepoExplorerTab() {
           />
         </div>
 
-        {/* Tour narration (tour mode) or tech summary (explore mode) */}
+        {/* Bottom section: context-sensitive */}
         {mode === "tour" ? (
           <div className="min-h-0 bg-arch-bg2 border border-arch-border rounded-lg overflow-y-auto" style={{ flex: "45 1 0%" }}>
-            <RepoTour currentStep={tourStep} onStepChange={handleTourStep} />
+            <RepoTour
+              currentStep={tourStep}
+              onStepChange={handleTourStep}
+              tourNodeId={tourZoomTarget ?? tourHighlightNodes[0] ?? "cmd"}
+            />
+          </div>
+        ) : selectedNode ? (
+          <div className="min-h-0" style={{ flex: "45 1 0%" }}>
+            <RepoDetailWide
+              nodeId={selectedChild ?? selectedNode}
+              onClose={handleDetailClose}
+              onNavigate={handleCrossRefNavigate}
+            />
           </div>
         ) : (
           <div className="min-h-0" style={{ flex: "45 1 0%" }}>
@@ -286,24 +325,6 @@ export default function RepoExplorerTab() {
             <span className="text-[10.5px] font-bold text-arch-text">Total: 162 modules</span>
           </div>
         </div>
-      </div>
-
-      {/* ── Right Detail Panel ───────────────────────── */}
-      <div className="border-l border-arch-border bg-arch-bg2 overflow-y-auto">
-        <div className="px-3 pt-3 pb-1.5 border-b border-arch-border">
-          <div className="text-[9.5px] uppercase tracking-wider text-arch-text3 font-semibold">
-            {mode === "tour" ? "Tour Info" : "Details"}
-          </div>
-        </div>
-        {mode === "tour" ? (
-          <RepoDetail nodeId={tourZoomTarget ?? tourHighlightNodes[0] ?? "cmd"} />
-        ) : selectedNode ? (
-          <RepoDetail nodeId={selectedChild ?? selectedNode} />
-        ) : (
-          <div className="p-4 text-[11px] text-arch-text3 leading-[1.6]">
-            Click a directory block in the diagram to explore its contents. Click again to zoom in and see individual modules.
-          </div>
-        )}
       </div>
     </div>
   );
