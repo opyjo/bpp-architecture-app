@@ -59,7 +59,7 @@ const components: Components = {
     <strong className="font-semibold text-arch-text">{children}</strong>
   ),
   code: ({ children }) => (
-    <code className="bg-arch-bg3 text-arch-teal text-[10.5px] px-1 py-0.5 rounded border border-arch-border">
+    <code className="bg-arch-bg3 text-arch-teal text-[11px] px-1 py-0.5 rounded border border-arch-border">
       {children}
     </code>
   ),
@@ -82,7 +82,7 @@ const components: Components = {
     </div>
   ),
   thead: ({ children }) => (
-    <thead className="bg-arch-bg3 text-arch-text3 text-[9.5px] uppercase tracking-wider">
+    <thead className="bg-arch-bg3 text-arch-text3 text-[10px] uppercase tracking-wider">
       {children}
     </thead>
   ),

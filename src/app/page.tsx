@@ -10,6 +10,7 @@ import ReferenceTab from "@/components/tabs/ReferenceTab";
 import AiChatTab from "@/components/tabs/AiChatTab";
 import GoGuidesTab from "@/components/tabs/GoGuidesTab";
 import LambdaFunctionsTab from "@/components/tabs/LambdaFunctionsTab";
+import RepoExplorerTab from "@/components/tabs/RepoExplorerTab";
 
 const tabs = [
   { id: "arch", label: "Architecture" },
@@ -18,6 +19,7 @@ const tabs = [
   { id: "errors", label: "Errors & timing" },
   { id: "events", label: "Kafka events" },
   { id: "lambdas", label: "Lambda functions" },
+  { id: "repo", label: "Repo" },
   { id: "ref", label: "Reference" },
   { id: "ai", label: "AI Assistant" },
   { id: "guides", label: "Go Guides" },
@@ -34,7 +36,7 @@ export default function Home() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{ animationDelay: `${i * 40}ms` }}
-            className={`tab-item px-4 py-2.5 text-xs font-medium whitespace-nowrap shrink-0 border-b-0 ${
+            className={`tab-item px-3 py-2.5 text-xs font-medium whitespace-nowrap border-b-0 ${
               activeTab === tab.id
                 ? "tab-item-active text-arch-blue"
                 : "text-arch-text2 hover:text-arch-text hover:bg-white/[0.03]"
@@ -55,13 +57,14 @@ export default function Home() {
           </a>
         </div>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         {activeTab === "arch" && <ArchitectureTab />}
         {activeTab === "pages" && <UiPagesTab />}
         {activeTab === "payloads" && <PayloadsTab />}
         {activeTab === "errors" && <ErrorsTab />}
         {activeTab === "events" && <KafkaEventsTab />}
         {activeTab === "lambdas" && <LambdaFunctionsTab />}
+        {activeTab === "repo" && <RepoExplorerTab />}
         {activeTab === "ref" && <ReferenceTab />}
         {activeTab === "ai" && <AiChatTab />}
         {activeTab === "guides" && <GoGuidesTab />}

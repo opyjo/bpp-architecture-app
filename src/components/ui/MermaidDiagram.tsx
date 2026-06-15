@@ -148,13 +148,13 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
       {/* Zoom controls */}
       <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-arch-bg2/90 backdrop-blur-sm border border-arch-border rounded-lg px-1 py-0.5">
         <button onClick={handleZoomOut} className="px-2 py-1 text-arch-text2 hover:text-arch-text hover:bg-white/10 rounded text-[13px] font-mono" title="Zoom out">−</button>
-        <span className="text-[10px] text-arch-text3 w-10 text-center select-none">{Math.round(zoom * 100)}%</span>
+        <span className="text-[10.5px] text-arch-text3 w-10 text-center select-none">{Math.round(zoom * 100)}%</span>
         <button onClick={handleZoomIn} className="px-2 py-1 text-arch-text2 hover:text-arch-text hover:bg-white/10 rounded text-[13px] font-mono" title="Zoom in">+</button>
         <div className="w-px h-4 bg-arch-border mx-0.5" />
-        <button onClick={handleFit} className="px-1.5 py-1 text-arch-text2 hover:text-arch-text hover:bg-white/10 rounded text-[10px]" title="Fit to view">Fit</button>
-        <button onClick={handleReset} className="px-1.5 py-1 text-arch-text2 hover:text-arch-text hover:bg-white/10 rounded text-[10px]" title="Reset zoom">1:1</button>
+        <button onClick={handleFit} className="px-1.5 py-1 text-arch-text2 hover:text-arch-text hover:bg-white/10 rounded text-[10.5px]" title="Fit to view">Fit</button>
+        <button onClick={handleReset} className="px-1.5 py-1 text-arch-text2 hover:text-arch-text hover:bg-white/10 rounded text-[10.5px]" title="Reset zoom">1:1</button>
       </div>
-      <div className="text-[9px] text-arch-text3 absolute bottom-2 left-3 z-10 select-none pointer-events-none">
+      <div className="text-[9.5px] text-arch-text3 absolute bottom-2 left-3 z-10 select-none pointer-events-none">
         Drag to pan · Ctrl+scroll to zoom
       </div>
       {/* Pannable/zoomable container */}

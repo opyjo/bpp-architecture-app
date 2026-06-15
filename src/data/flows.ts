@@ -21,13 +21,13 @@ export const flows: Flow[] = [
     audience: "Customer",
     route: "/customer → /add-subscription → /review → /confirm",
     steps: [
-      { screen: "/customer", action: "Page loads", mutation: '<span class="text-arch-teal font-mono text-[9.5px]">GET /subscriptions</span> → aggregator-api PostgreSQL CPM' },
-      { screen: "/customer", action: 'Clicks "Add"', mutation: '<span class="text-arch-amber font-mono text-[9.5px]">generateSession</span> → session-api DynamoDB household-api CPM' },
-      { screen: "/add-subscription", action: "Catalog renders", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">subscriptionQualification</span> (APPLY_TO_ORDER) → reseller-service catalog-api Redis' },
-      { screen: "/add-subscription", action: "Selects plan", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">subscriptionQualification</span> re-called on each selection' },
+      { screen: "/customer", action: "Page loads", mutation: '<span class="text-arch-teal font-mono text-[10px]">GET /subscriptions</span> → aggregator-api PostgreSQL CPM' },
+      { screen: "/customer", action: 'Clicks "Add"', mutation: '<span class="text-arch-amber font-mono text-[10px]">generateSession</span> → session-api DynamoDB household-api CPM' },
+      { screen: "/add-subscription", action: "Catalog renders", mutation: '<span class="text-arch-amber font-mono text-[10px]">subscriptionQualification</span> (APPLY_TO_ORDER) → reseller-service catalog-api Redis' },
+      { screen: "/add-subscription", action: "Selects plan", mutation: '<span class="text-arch-amber font-mono text-[10px]">subscriptionQualification</span> re-called on each selection' },
       { screen: "/review", action: "Page loads", mutation: 'Reads token-api payload — no new mutation' },
-      { screen: "/review", action: 'Clicks "Place Order"', mutation: '<span class="text-arch-amber font-mono text-[9.5px]">submitSubscription</span> → reseller-service PostgreSQL merchant-api-* Kafka audit-api' },
-      { screen: "/confirm", action: "Page loads", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">activateSubscription</span> → reseller-service merchant-api-* audit-api → returns activationUrl' },
+      { screen: "/review", action: 'Clicks "Place Order"', mutation: '<span class="text-arch-amber font-mono text-[10px]">submitSubscription</span> → reseller-service PostgreSQL merchant-api-* Kafka audit-api' },
+      { screen: "/confirm", action: "Page loads", mutation: '<span class="text-arch-amber font-mono text-[10px]">activateSubscription</span> → reseller-service merchant-api-* audit-api → returns activationUrl' },
     ],
   },
   {
@@ -37,9 +37,9 @@ export const flows: Flow[] = [
     audience: "Customer",
     route: "/customer → /cancel-subscription",
     steps: [
-      { screen: "/customer", action: 'Clicks "Cancel" on card', mutation: '<span class="text-arch-amber font-mono text-[9.5px]">subscriptionQualification</span> (DELETE) → reseller-service catalog-api' },
+      { screen: "/customer", action: 'Clicks "Cancel" on card', mutation: '<span class="text-arch-amber font-mono text-[10px]">subscriptionQualification</span> (DELETE) → reseller-service catalog-api' },
       { screen: "/cancel-subscription", action: "Page loads", mutation: 'Reads qualification result from session — no mutation' },
-      { screen: "/cancel-subscription", action: "Confirms cancellation", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">submitSubscription</span> → reseller-service status→CANCELLED PostgreSQL merchant-api-* deprovision Kafka audit-api' },
+      { screen: "/cancel-subscription", action: "Confirms cancellation", mutation: '<span class="text-arch-amber font-mono text-[10px]">submitSubscription</span> → reseller-service status→CANCELLED PostgreSQL merchant-api-* deprovision Kafka audit-api' },
     ],
   },
   {
@@ -49,10 +49,10 @@ export const flows: Flow[] = [
     audience: "Customer",
     route: "/customer → /change-subscription/[id] → /review",
     steps: [
-      { screen: "/customer", action: 'Clicks "Change Plan"', mutation: '<span class="text-arch-amber font-mono text-[9.5px]">generateSession</span> → session-api DynamoDB' },
-      { screen: "/change-subscription/[id]", action: "Tier picker loads", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">subscriptionQualification</span> (APPLY_TO_ORDER + currentSubId) → reseller-service catalog-api Redis' },
-      { screen: "/change-subscription/[id]", action: "Selects tier", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">subscriptionQualification</span> re-called' },
-      { screen: "/change-subscription/[id]/review", action: "Confirms change", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">submitSubscription</span> → reseller-service PostgreSQL update merchant-api-* Kafka audit-api' },
+      { screen: "/customer", action: 'Clicks "Change Plan"', mutation: '<span class="text-arch-amber font-mono text-[10px]">generateSession</span> → session-api DynamoDB' },
+      { screen: "/change-subscription/[id]", action: "Tier picker loads", mutation: '<span class="text-arch-amber font-mono text-[10px]">subscriptionQualification</span> (APPLY_TO_ORDER + currentSubId) → reseller-service catalog-api Redis' },
+      { screen: "/change-subscription/[id]", action: "Selects tier", mutation: '<span class="text-arch-amber font-mono text-[10px]">subscriptionQualification</span> re-called' },
+      { screen: "/change-subscription/[id]/review", action: "Confirms change", mutation: '<span class="text-arch-amber font-mono text-[10px]">submitSubscription</span> → reseller-service PostgreSQL update merchant-api-* Kafka audit-api' },
     ],
   },
   {
@@ -62,10 +62,10 @@ export const flows: Flow[] = [
     audience: "Agent",
     route: "/agent?orderNumber=XYZ → /agent/review",
     steps: [
-      { screen: "/agent?orderNumber=XYZ", action: "Page loads", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">cloneSession</span> (orderNumber) → session-api DynamoDB clones existing session' },
-      { screen: "/agent", action: "Selects plan on customer's behalf", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">subscriptionQualification</span> (APPLY_TO_ORDER) → reseller-service catalog-api' },
+      { screen: "/agent?orderNumber=XYZ", action: "Page loads", mutation: '<span class="text-arch-amber font-mono text-[10px]">cloneSession</span> (orderNumber) → session-api DynamoDB clones existing session' },
+      { screen: "/agent", action: "Selects plan on customer's behalf", mutation: '<span class="text-arch-amber font-mono text-[10px]">subscriptionQualification</span> (APPLY_TO_ORDER) → reseller-service catalog-api' },
       { screen: "/agent/review", action: "Reviews order", mutation: 'Reads cloned session — no mutation' },
-      { screen: "/agent/review", action: "Submits on customer's behalf", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">submitSubscription</span> → reseller-service PostgreSQL merchant-api-* Kafka audit-api (with agent ID)' },
+      { screen: "/agent/review", action: "Submits on customer's behalf", mutation: '<span class="text-arch-amber font-mono text-[10px]">submitSubscription</span> → reseller-service PostgreSQL merchant-api-* Kafka audit-api (with agent ID)' },
     ],
   },
   {
@@ -75,9 +75,9 @@ export const flows: Flow[] = [
     audience: "Customer",
     route: "/reverse-cancellation · /reverse-downgrade · /reverse-bundle-change",
     steps: [
-      { screen: "1 — Page load", action: "Read existing state", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">generateSession</span> or <span class="text-arch-amber font-mono text-[9.5px]">cloneSession</span>' },
-      { screen: "2 — Qualify", action: "System checks reversibility", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">subscriptionQualification</span> op: REVERSE_DELETE / REVERSE_DOWNGRADE' },
-      { screen: "3 — Confirm", action: "Customer confirms undo", mutation: '<span class="text-arch-amber font-mono text-[9.5px]">submitSubscription</span> → reseller-service reverts prior state PostgreSQL merchant-api-*' },
+      { screen: "1 — Page load", action: "Read existing state", mutation: '<span class="text-arch-amber font-mono text-[10px]">generateSession</span> or <span class="text-arch-amber font-mono text-[10px]">cloneSession</span>' },
+      { screen: "2 — Qualify", action: "System checks reversibility", mutation: '<span class="text-arch-amber font-mono text-[10px]">subscriptionQualification</span> op: REVERSE_DELETE / REVERSE_DOWNGRADE' },
+      { screen: "3 — Confirm", action: "Customer confirms undo", mutation: '<span class="text-arch-amber font-mono text-[10px]">submitSubscription</span> → reseller-service reverts prior state PostgreSQL merchant-api-*' },
     ],
   },
 ];

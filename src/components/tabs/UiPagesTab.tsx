@@ -31,7 +31,7 @@ function AudienceBadge({ audience }: { audience: string }) {
   const color = audience === "Agent"
     ? "bg-[rgba(232,112,90,0.12)] text-arch-coral border-[rgba(232,112,90,0.22)]"
     : "bg-[rgba(124,111,205,0.14)] text-arch-purple border-[rgba(124,111,205,0.22)]";
-  return <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${color}`}>{audience}</span>;
+  return <span className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${color}`}>{audience}</span>;
 }
 
 function FlowDetailAccordion({ flow }: { flow: typeof flows[0] }) {
@@ -48,22 +48,22 @@ function FlowDetailAccordion({ flow }: { flow: typeof flows[0] }) {
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
-        <span className="text-[10px] text-arch-text3">Detailed step reference</span>
+        <span className="text-[10.5px] text-arch-text3">Detailed step reference</span>
         <AudienceBadge audience={flow.audience} />
-        <span className="text-[9.5px] font-mono text-arch-text3 ml-auto">{flow.route}</span>
+        <span className="text-[10px] font-mono text-arch-text3 ml-auto">{flow.route}</span>
       </button>
       {open && (
         <div className="border-t border-arch-border">
           <div className="grid grid-cols-[160px_1fr_1fr] border-b border-white/5">
-            <div className="px-2.5 py-1 text-[9px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Screen</div>
-            <div className="px-2.5 py-1 text-[9px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Action</div>
-            <div className="px-2.5 py-1 text-[9px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Mutation → services</div>
+            <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Screen</div>
+            <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Action</div>
+            <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Mutation → services</div>
           </div>
           {flow.steps.map((s, i) => (
             <div key={i} className="grid grid-cols-[160px_1fr_1fr] border-b border-white/[0.04] last:border-b-0">
-              <div className="px-2.5 py-2 text-arch-purple font-mono text-[9.5px] border-r border-white/[0.04] leading-[1.6]">{s.screen}</div>
-              <div className="px-2.5 py-2 text-arch-text2 text-[10.5px] border-r border-white/[0.04] leading-[1.6]">{s.action}</div>
-              <div className="px-2.5 py-2 text-arch-teal font-mono text-[9.5px] leading-[1.6]" dangerouslySetInnerHTML={{ __html: s.mutation }} />
+              <div className="px-2.5 py-2 text-arch-purple font-mono text-[10px] border-r border-white/[0.04] leading-[1.6]">{s.screen}</div>
+              <div className="px-2.5 py-2 text-arch-text2 text-[11px] border-r border-white/[0.04] leading-[1.6]">{s.action}</div>
+              <div className="px-2.5 py-2 text-arch-teal font-mono text-[10px] leading-[1.6]" dangerouslySetInnerHTML={{ __html: s.mutation }} />
             </div>
           ))}
         </div>
@@ -84,7 +84,7 @@ function CategoryLegend() {
   return (
     <div className="flex flex-wrap gap-2 mb-4">
       {Object.values(categoryColors).map((c) => (
-        <span key={c.label} className={`text-[10px] px-2 py-0.5 rounded border font-medium ${c.bg} ${c.border} ${c.text}`}>
+        <span key={c.label} className={`text-[10.5px] px-2 py-0.5 rounded border font-medium ${c.bg} ${c.border} ${c.text}`}>
           {c.label}
         </span>
       ))}
@@ -108,48 +108,48 @@ function ComponentDetailCard({ node }: { node: ComponentNode }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
         <span className={`text-[11.5px] font-semibold ${color.text}`}>{node.name}</span>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${color.bg} ${color.border} ${color.text}`}>{color.label}</span>
-        <span className="text-[9.5px] font-mono text-arch-text3 ml-auto">{node.file}</span>
+        <span className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${color.bg} ${color.border} ${color.text}`}>{color.label}</span>
+        <span className="text-[10px] font-mono text-arch-text3 ml-auto">{node.file}</span>
       </button>
       {open && (
         <div className="border-t border-arch-border px-3.5 py-2.5 space-y-2">
           <div className="text-[11px] text-arch-text2 leading-[1.6]">{node.description}</div>
           {node.hooks.length > 0 && (
             <div>
-              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Hooks</div>
+              <div className="text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Hooks</div>
               <div className="flex flex-wrap gap-1">
                 {node.hooks.map((h) => (
-                  <span key={h} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-blue">{h}</span>
+                  <span key={h} className="text-[10px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-blue">{h}</span>
                 ))}
               </div>
             </div>
           )}
           {node.consumesContext.length > 0 && (
             <div>
-              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Context</div>
+              <div className="text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Context</div>
               <div className="flex flex-wrap gap-1">
                 {node.consumesContext.map((c) => (
-                  <span key={c} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-purple">{c}</span>
+                  <span key={c} className="text-[10px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-purple">{c}</span>
                 ))}
               </div>
             </div>
           )}
           {node.apiCalls.length > 0 && (
             <div>
-              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">API calls</div>
+              <div className="text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">API calls</div>
               <div className="flex flex-wrap gap-1">
                 {node.apiCalls.map((a) => (
-                  <span key={a} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-[rgba(232,112,90,0.1)] border border-[rgba(232,112,90,0.2)] text-arch-coral">{a}</span>
+                  <span key={a} className="text-[10px] font-mono px-1.5 py-px rounded bg-[rgba(232,112,90,0.1)] border border-[rgba(232,112,90,0.2)] text-arch-coral">{a}</span>
                 ))}
               </div>
             </div>
           )}
           {node.props.length > 0 && (
             <div>
-              <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Props received</div>
+              <div className="text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">Props received</div>
               <div className="flex flex-wrap gap-1">
                 {node.props.map((p) => (
-                  <span key={p} className="text-[9.5px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text2">{p}</span>
+                  <span key={p} className="text-[10px] font-mono px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text2">{p}</span>
                 ))}
               </div>
             </div>
@@ -169,21 +169,21 @@ export default function UiPagesTab() {
             <div>
               <div className="text-sm font-semibold text-arch-text mb-1">Route inventory</div>
               <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">
-                Every screen, its file, and its audience. French routes replace <code className="font-mono text-[10px] bg-arch-bg3 border border-arch-border rounded px-1 py-px text-arch-teal">/customer/</code> with <code className="font-mono text-[10px] bg-arch-bg3 border border-arch-border rounded px-1 py-px text-arch-teal">/client/</code> (locale=fr-ca).
+                Every screen, its file, and its audience. French routes replace <code className="font-mono text-[10.5px] bg-arch-bg3 border border-arch-border rounded px-1 py-px text-arch-teal">/customer/</code> with <code className="font-mono text-[10.5px] bg-arch-bg3 border border-arch-border rounded px-1 py-px text-arch-teal">/client/</code> (locale=fr-ca).
               </div>
               <table className="w-full border-collapse text-[11px] mb-3.5">
                 <thead>
                   <tr>
-                    <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Route</th>
-                    <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Page / component</th>
-                    <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">File</th>
-                    <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Audience</th>
+                    <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Route</th>
+                    <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Page / component</th>
+                    <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">File</th>
+                    <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Audience</th>
                   </tr>
                 </thead>
                 <tbody>
                   {routes.map((r) => (
                     <tr key={r.route}>
-                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10px] align-top leading-[1.6]">{r.route}</td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10.5px] align-top leading-[1.6]">{r.route}</td>
                       <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.page}</td>
                       <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.file}</td>
                       <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top"><AudienceBadge audience={r.audience} /></td>
@@ -223,9 +223,9 @@ export default function UiPagesTab() {
                         {data.subtitle}
                       </div>
                       {data.rows.map((r) => (
-                        <div key={r.key} className="flex justify-between gap-2 py-1 border-b border-white/[0.04] last:border-b-0 text-[10.5px]">
+                        <div key={r.key} className="flex justify-between gap-2 py-1 border-b border-white/[0.04] last:border-b-0 text-[11px]">
                           <span className="text-arch-text3">{r.key}</span>
-                          <span className="text-arch-text2 text-right font-mono text-[9.5px]">{r.val}</span>
+                          <span className="text-arch-text2 text-right font-mono text-[10px]">{r.val}</span>
                         </div>
                       ))}
                     </div>
@@ -254,17 +254,17 @@ export default function UiPagesTab() {
               <table className="w-full border-collapse text-[11px]">
                 <thead>
                   <tr>
-                    <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">UI component / screen</th>
-                    <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Mutation / call</th>
-                    <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Go services hit</th>
+                    <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">UI component / screen</th>
+                    <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Mutation / call</th>
+                    <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Go services hit</th>
                   </tr>
                 </thead>
                 <tbody>
                   {quickRefRows.map((r, i) => (
                     <tr key={i}>
-                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10px] align-top leading-[1.6]">{r.screen}</td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10.5px] align-top leading-[1.6]">{r.screen}</td>
                       <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top leading-[1.6]">
-                        <span className={`inline-block rounded px-1.5 py-px font-mono text-[9.5px] border ${
+                        <span className={`inline-block rounded px-1.5 py-px font-mono text-[10px] border ${
                           r.mutationType === "rest"
                             ? "bg-[rgba(62,184,154,0.1)] border-[rgba(62,184,154,0.2)] text-arch-teal"
                             : "bg-[rgba(232,168,58,0.1)] border-[rgba(232,168,58,0.2)] text-arch-amber"
@@ -293,9 +293,9 @@ export default function UiPagesTab() {
                 <table className="w-full border-collapse text-[11px]">
                   <thead>
                     <tr>
-                      <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Component</th>
-                      <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">File</th>
-                      <th className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Used in</th>
+                      <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Component</th>
+                      <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">File</th>
+                      <th className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Used in</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -303,12 +303,12 @@ export default function UiPagesTab() {
                       const color = categoryColors[sc.category];
                       return (
                         <tr key={sc.name}>
-                          <td className={`px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10px] align-top leading-[1.6] ${color.text}`}>{sc.name}</td>
-                          <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 font-mono text-[10px] align-top leading-[1.6]">{sc.file}</td>
+                          <td className={`px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10.5px] align-top leading-[1.6] ${color.text}`}>{sc.name}</td>
+                          <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 font-mono text-[10.5px] align-top leading-[1.6]">{sc.file}</td>
                           <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top">
                             <div className="flex flex-wrap gap-1">
                               {sc.usedIn.map((r) => (
-                                <span key={r} className="text-[9px] px-1.5 py-0.5 rounded bg-arch-bg3 border border-arch-border text-arch-text2">{r}</span>
+                                <span key={r} className="text-[9.5px] px-1.5 py-0.5 rounded bg-arch-bg3 border border-arch-border text-arch-text2">{r}</span>
                               ))}
                             </div>
                           </td>
@@ -331,12 +331,12 @@ export default function UiPagesTab() {
               <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-1">{tree.description}</div>
               <div className="flex items-center gap-2 mb-3.5">
                 <AudienceBadge audience={tree.audience} />
-                <span className="text-[9.5px] font-mono text-arch-text3">{tree.route}</span>
+                <span className="text-[10px] font-mono text-arch-text3">{tree.route}</span>
               </div>
               <CategoryLegend />
               <MermaidDiagram chart={tree.mermaidChart} />
               <div className="mt-5 space-y-2">
-                <div className="text-[9.5px] font-semibold tracking-[0.1em] uppercase text-arch-text3 mb-2">Component details</div>
+                <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-arch-text3 mb-2">Component details</div>
                 {tree.components.map((node) => (
                   <ComponentDetailCard key={node.id} node={node} />
                 ))}

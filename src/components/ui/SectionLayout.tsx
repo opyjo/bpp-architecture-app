@@ -58,7 +58,7 @@ function CollapsibleSection({
             style={{ background: hasActiveChild ? accent.border : "transparent" }}
           />
           <span
-            className="text-[9.5px] font-semibold tracking-[0.1em] uppercase transition-colors"
+            className="text-[10px] font-semibold tracking-[0.1em] uppercase transition-colors"
             style={{ color: hasActiveChild ? accent.border.replace("0.35", "1") : undefined }}
           >
             {label}

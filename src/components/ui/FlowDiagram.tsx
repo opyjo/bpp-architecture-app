@@ -79,7 +79,7 @@ export default function FlowDiagram({ steps }: FlowDiagramProps) {
                   y={node.y + 18}
                   textAnchor="middle"
                   fill={isActive ? "var(--arch-text)" : "var(--arch-text3)"}
-                  fontSize={10}
+                  fontSize={10.5}
                   fontWeight={600}
                   fontFamily="ui-monospace, SFMono-Regular, monospace"
                 >
@@ -90,7 +90,7 @@ export default function FlowDiagram({ steps }: FlowDiagramProps) {
                   y={node.y + 33}
                   textAnchor="middle"
                   fill={isActive ? "var(--arch-text2)" : "var(--arch-text3)"}
-                  fontSize={8}
+                  fontSize={9}
                   fontFamily="ui-monospace, SFMono-Regular, monospace"
                 >
                   {node.subtitle}
@@ -127,7 +127,7 @@ export default function FlowDiagram({ steps }: FlowDiagramProps) {
             {step.description}
           </div>
           {step.mutation && (
-            <div className="inline-block font-mono text-[9.5px] px-1.5 py-0.5 rounded bg-[rgba(232,168,58,0.1)] border border-[rgba(232,168,58,0.2)] text-arch-amber mb-1">
+            <div className="inline-block font-mono text-[10px] px-1.5 py-0.5 rounded bg-[rgba(232,168,58,0.1)] border border-[rgba(232,168,58,0.2)] text-arch-amber mb-1">
               {step.mutation}
             </div>
           )}
@@ -135,7 +135,7 @@ export default function FlowDiagram({ steps }: FlowDiagramProps) {
             {step.services.map((s) => (
               <span
                 key={s}
-                className="inline-block font-mono text-[8.5px] px-1 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text3"
+                className="inline-block font-mono text-[9px] px-1 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text3"
               >
                 {s}
               </span>
@@ -145,14 +145,14 @@ export default function FlowDiagram({ steps }: FlowDiagramProps) {
 
         {/* Navigation */}
         <div className="flex flex-col items-center justify-center gap-1.5 shrink-0">
-          <div className="text-[9px] text-arch-text3 font-medium">
+          <div className="text-[9.5px] text-arch-text3 font-medium">
             Step {currentStep + 1} of {steps.length}
           </div>
           <div className="flex gap-1">
             <button
               onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
               disabled={currentStep === 0}
-              className="px-2 py-1 text-[10px] font-medium rounded bg-arch-bg3 border border-arch-border text-arch-text2 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="px-2 py-1 text-[10.5px] font-medium rounded bg-arch-bg3 border border-arch-border text-arch-text2 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               Prev
             </button>
@@ -161,7 +161,7 @@ export default function FlowDiagram({ steps }: FlowDiagramProps) {
                 setCurrentStep((s) => Math.min(steps.length - 1, s + 1))
               }
               disabled={currentStep === steps.length - 1}
-              className="px-2 py-1 text-[10px] font-medium rounded bg-arch-bg3 border border-arch-border text-arch-text2 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="px-2 py-1 text-[10.5px] font-medium rounded bg-arch-bg3 border border-arch-border text-arch-text2 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>

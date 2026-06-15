@@ -69,7 +69,7 @@ function CollapsibleArchSection({
               style={{ background: hasActiveChild ? accent.border : "transparent" }}
             />
             <span
-              className="text-[9.5px] font-semibold tracking-[0.1em] uppercase transition-colors"
+              className="text-[10px] font-semibold tracking-[0.1em] uppercase transition-colors"
               style={{ color: hasActiveChild ? accent.border.replace("0.35", "1") : undefined }}
             >
               {label}
@@ -163,13 +163,13 @@ export default function ArchitectureTab() {
           />
         ))}
         <div className="h-px bg-arch-border mx-3.5 my-1.5" />
-        <div className="text-[9.5px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5 pt-1">
+        <div className="text-[10px] font-semibold tracking-[0.1em] text-arch-text3 uppercase px-3.5 pb-1.5 pt-1">
           Legend
         </div>
         {legendItems.map((l) => (
           <div key={l.label} className="flex items-center gap-1.5 px-3.5 py-0.5">
             <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: l.color }} />
-            <span className="text-[10.5px] text-arch-text3">{l.label}</span>
+            <span className="text-[11px] text-arch-text3">{l.label}</span>
           </div>
         ))}
       </aside>
@@ -202,29 +202,29 @@ export default function ArchitectureTab() {
       <aside className="bg-arch-bg2 border-l border-arch-border p-4 overflow-y-auto">
         <div className="flex items-center gap-1.5 mb-2">
           {nodeInfo ? (
-            <div className="w-[19px] h-[19px] rounded-full bg-[rgba(88,184,122,0.15)] border border-arch-green text-arch-green text-[8px] font-semibold flex items-center justify-center shrink-0">
+            <div className="w-[19px] h-[19px] rounded-full bg-[rgba(88,184,122,0.15)] border border-arch-green text-arch-green text-[9px] font-semibold flex items-center justify-center shrink-0">
               NODE
             </div>
           ) : step.num ? (
-            <div className="w-[19px] h-[19px] rounded-full bg-[rgba(74,143,232,0.12)] border border-arch-blue text-arch-blue text-[10px] font-semibold flex items-center justify-center shrink-0">
+            <div className="w-[19px] h-[19px] rounded-full bg-[rgba(74,143,232,0.12)] border border-arch-blue text-arch-blue text-[10.5px] font-semibold flex items-center justify-center shrink-0">
               {step.num}
             </div>
           ) : (
-            <div className="w-[19px] h-[19px] rounded-full bg-[rgba(74,143,232,0.15)] border border-arch-blue text-arch-blue text-[10px] flex items-center justify-center shrink-0">
+            <div className="w-[19px] h-[19px] rounded-full bg-[rgba(74,143,232,0.15)] border border-arch-blue text-arch-blue text-[10.5px] flex items-center justify-center shrink-0">
               ●
             </div>
           )}
           <div className="text-[12.5px] font-semibold text-arch-text">{infoTitle}</div>
         </div>
         <div
-          className="text-[11.5px] text-arch-text2 leading-[1.7] [&_code]:font-mono [&_code]:text-[10px] [&_code]:bg-arch-bg3 [&_code]:border [&_code]:border-arch-border [&_code]:rounded [&_code]:px-1 [&_code]:py-px [&_code]:text-arch-teal [&_strong]:text-arch-text [&_strong]:font-medium"
+          className="text-[11.5px] text-arch-text2 leading-[1.7] [&_code]:font-mono [&_code]:text-[10.5px] [&_code]:bg-arch-bg3 [&_code]:border [&_code]:border-arch-border [&_code]:rounded [&_code]:px-1 [&_code]:py-px [&_code]:text-arch-teal [&_strong]:text-arch-text [&_strong]:font-medium"
           dangerouslySetInnerHTML={{ __html: infoBody }}
         />
 
         {nodeInfo && (
           <>
             <div className="h-px bg-arch-border my-2" />
-            <div className="text-[10px] text-arch-text3">
+            <div className="text-[10.5px] text-arch-text3">
               Click a flow step on the left to return to the lifecycle view.
             </div>
           </>
@@ -233,14 +233,14 @@ export default function ArchitectureTab() {
         {!nodeInfo && step.services && step.services.length > 0 && (
           <>
             <div className="h-px bg-arch-border my-2" />
-            <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">
+            <div className="text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">
               Services involved
             </div>
             <div className="flex flex-wrap gap-0.5">
               {step.services.map((s) => (
                 <span
                   key={s}
-                  className="inline-block font-mono text-[9px] px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text2"
+                  className="inline-block font-mono text-[9.5px] px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text2"
                 >
                   {s}
                 </span>
@@ -252,11 +252,11 @@ export default function ArchitectureTab() {
         {!nodeInfo && step.notes && (
           <>
             <div className="h-px bg-arch-border my-2" />
-            <div className="text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">
+            <div className="text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 mb-1">
               Notes
             </div>
             <div
-              className="text-[11.5px] text-arch-text2 leading-[1.7] [&_code]:font-mono [&_code]:text-[10px] [&_code]:bg-arch-bg3 [&_code]:border [&_code]:border-arch-border [&_code]:rounded [&_code]:px-1 [&_code]:py-px [&_code]:text-arch-teal"
+              className="text-[11.5px] text-arch-text2 leading-[1.7] [&_code]:font-mono [&_code]:text-[10.5px] [&_code]:bg-arch-bg3 [&_code]:border [&_code]:border-arch-border [&_code]:rounded [&_code]:px-1 [&_code]:py-px [&_code]:text-arch-teal"
               dangerouslySetInnerHTML={{ __html: step.notes }}
             />
           </>

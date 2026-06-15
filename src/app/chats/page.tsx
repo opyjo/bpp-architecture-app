@@ -43,7 +43,7 @@ export default function ChatsPage() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <Breadcrumbs />
         <div className="flex items-center justify-between mb-6 mt-2">
-          <h1 className="text-[18px] font-bold text-arch-text">
+          <h1 className="text-[14.5px] font-bold text-arch-text">
             Saved Chats
           </h1>
         </div>

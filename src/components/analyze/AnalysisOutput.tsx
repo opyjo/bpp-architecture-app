@@ -68,7 +68,7 @@ export default function AnalysisOutput({
     <div className="flex-1 flex flex-col min-h-0 min-w-0">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-arch-border bg-arch-bg2">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-arch-purple to-arch-blue flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-arch-purple to-arch-blue flex items-center justify-center text-white text-[10.5px] font-bold shrink-0">
           AI
         </div>
         <span className="text-sm font-medium text-arch-text">

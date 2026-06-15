@@ -18,7 +18,7 @@ export default function Header() {
     <header className="bg-arch-bg2 border-b border-arch-border px-6 py-3.5 flex items-center justify-between gap-2.5 flex-wrap">
       <div>
         <div className="text-sm font-semibold tracking-tight">Subscription Manager — Architecture</div>
-        <div className="text-[10.5px] text-arch-text3 mt-0.5 font-mono">
+        <div className="text-[11px] text-arch-text3 mt-0.5 font-mono">
           Bell Canada · go-repo-new · Next.js 14 BFF → AppSync → Go microservices
         </div>
       </div>
@@ -27,7 +27,7 @@ export default function Header() {
           {badges.map((b) => (
             <span
               key={b.label}
-              className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${b.color}`}
+              className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${b.color}`}
             >
               {b.label}
             </span>

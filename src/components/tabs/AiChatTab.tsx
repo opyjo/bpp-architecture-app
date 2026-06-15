@@ -66,7 +66,7 @@ export default function AiChatTab() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-arch-border bg-arch-bg2/80 backdrop-blur-sm">
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-arch-purple to-arch-blue text-white flex items-center justify-center text-[9px] font-bold">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-arch-purple to-arch-blue text-white flex items-center justify-center text-[9.5px] font-bold">
             AI
           </div>
           <span className="text-[13px] font-semibold text-arch-text">
@@ -81,7 +81,7 @@ export default function AiChatTab() {
         <div className="flex items-center gap-1">
           <Link
             href="/chats"
-            className="text-[10.5px] text-arch-text3 hover:text-arch-purple transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+            className="text-[11px] text-arch-text3 hover:text-arch-purple transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
           >
             Saved chats <ExternalLink className="w-3 h-3" />
           </Link>
@@ -90,14 +90,14 @@ export default function AiChatTab() {
               <button
                 onClick={handleSaveClick}
                 disabled={isStreaming}
-                className="text-[10.5px] text-arch-text3 hover:text-arch-green transition-colors px-2 py-1 rounded hover:bg-white/5 cursor-pointer flex items-center gap-1 disabled:opacity-40"
+                className="text-[11px] text-arch-text3 hover:text-arch-green transition-colors px-2 py-1 rounded hover:bg-white/5 cursor-pointer flex items-center gap-1 disabled:opacity-40"
               >
                 <Save className="w-3 h-3" />
                 {saveFeedback ? "Saved!" : "Save chat"}
               </button>
               <button
                 onClick={clearHistory}
-                className="text-[10.5px] text-arch-text3 hover:text-arch-red transition-colors px-2 py-1 rounded hover:bg-white/5 cursor-pointer"
+                className="text-[11px] text-arch-text3 hover:text-arch-red transition-colors px-2 py-1 rounded hover:bg-white/5 cursor-pointer"
               >
                 Clear chat
               </button>
@@ -124,13 +124,13 @@ export default function AiChatTab() {
           <button
             onClick={handleSaveConfirm}
             disabled={isSaving}
-            className="text-[10.5px] text-arch-green hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-40"
+            className="text-[11px] text-arch-green hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-40"
           >
             {isSaving ? "Saving…" : "Save"}
           </button>
           <button
             onClick={() => setShowSavePopover(false)}
-            className="text-[10.5px] text-arch-text3 hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer"
+            className="text-[11px] text-arch-text3 hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer"
           >
             Cancel
           </button>

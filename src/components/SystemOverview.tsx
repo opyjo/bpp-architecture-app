@@ -62,7 +62,7 @@ export default function SystemOverview() {
                 <span className="text-[11.5px] font-semibold text-arch-text flex-1">
                   {group.name}
                 </span>
-                <span className="text-[9px] font-mono text-arch-text3 bg-arch-bg3 px-1.5 py-0.5 rounded">
+                <span className="text-[9.5px] font-mono text-arch-text3 bg-arch-bg3 px-1.5 py-0.5 rounded">
                   {group.services.length}
                 </span>
                 <svg
@@ -85,18 +85,18 @@ export default function SystemOverview() {
                       className="px-3 py-1.5 border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.02]"
                     >
                       <div className="flex items-baseline gap-1.5">
-                        <span className="font-mono text-[9.5px] text-arch-text" style={{ color: group.color }}>
+                        <span className="font-mono text-[10px] text-arch-text" style={{ color: group.color }}>
                           {svc.name}
                         </span>
                       </div>
-                      <div className="text-[10px] text-arch-text3 leading-[1.5] mt-0.5">
+                      <div className="text-[10.5px] text-arch-text3 leading-[1.5] mt-0.5">
                         {svc.description}
                       </div>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {svc.tech.split(", ").map((t) => (
                           <span
                             key={t}
-                            className="inline-block text-[8px] font-mono px-1 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text3"
+                            className="inline-block text-[9px] font-mono px-1 py-px rounded bg-arch-bg3 border border-arch-border text-arch-text3"
                           >
                             {t}
                           </span>

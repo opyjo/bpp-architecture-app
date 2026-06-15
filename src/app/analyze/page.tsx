@@ -114,13 +114,13 @@ export default function AnalyzePage() {
           <button
             onClick={handleSaveConfirm}
             disabled={isSaving}
-            className="text-[10.5px] text-arch-green hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-40"
+            className="text-[11px] text-arch-green hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-40"
           >
             {isSaving ? "Saving…" : "Save"}
           </button>
           <button
             onClick={() => setShowSavePopover(false)}
-            className="text-[10.5px] text-arch-text3 hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer"
+            className="text-[11px] text-arch-text3 hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer"
           >
             Cancel
           </button>

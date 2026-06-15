@@ -112,7 +112,7 @@ function formatMarkdown(text: string) {
           key={i}
           className="bg-[#0d1017] text-[#e8eaf0] border border-arch-border rounded-md p-3 my-2 overflow-x-auto text-[11.5px] leading-relaxed font-mono"
         >
-          <div className="text-[10px] text-[#5c6278] mb-1.5 uppercase tracking-wide">
+          <div className="text-[10.5px] text-[#5c6278] mb-1.5 uppercase tracking-wide">
             {part.lang}
           </div>
           <code className="text-[#e8eaf0]">{part.code}</code>
@@ -137,8 +137,8 @@ function formatMarkdown(text: string) {
       if (headerMatch) {
         const level = headerMatch[1].length;
         const sizes: Record<number, string> = {
-          1: "text-[16px]",
-          2: "text-[14px]",
+          1: "text-[13px]",
+          2: "text-[11px]",
           3: "text-[13px]",
           4: "text-[12.5px]",
         };
@@ -277,7 +277,7 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
       style={{ animation: "messageSlideIn 0.3s ease-out" }}
     >
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-arch-purple to-arch-blue text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-arch-purple to-arch-blue text-white flex items-center justify-center text-[10.5px] font-bold shrink-0 mt-0.5">
           AI
         </div>
       )}
@@ -344,7 +344,7 @@ function ToolCallBadge({
         </span>
       </button>
       {expanded && toolCall.output && (
-        <pre className="mt-1 p-2 bg-[#0d1017] border border-arch-border rounded text-[10.5px] text-arch-text3 overflow-x-auto max-h-48 overflow-y-auto font-mono whitespace-pre-wrap">
+        <pre className="mt-1 p-2 bg-[#0d1017] border border-arch-border rounded text-[11px] text-arch-text3 overflow-x-auto max-h-48 overflow-y-auto font-mono whitespace-pre-wrap">
           {toolCall.output}
         </pre>
       )}

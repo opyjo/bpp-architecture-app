@@ -120,14 +120,14 @@ export default function AnalysisList({ analyses, onRename, onDelete }: AnalysisL
             </div>
 
             <div className="flex items-center gap-3 mt-2.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-arch-purple/10 text-arch-purple font-medium">
+              <span className="text-[10.5px] px-1.5 py-0.5 rounded bg-arch-purple/10 text-arch-purple font-medium">
                 {analysis.model_id}
               </span>
-              <span className="text-[10.5px] text-arch-text3 flex items-center gap-1">
+              <span className="text-[11px] text-arch-text3 flex items-center gap-1">
                 <MessageSquare className="w-3 h-3" />
                 {analysis.messages.length}
               </span>
-              <span className="text-[10.5px] text-arch-text3">
+              <span className="text-[11px] text-arch-text3">
                 {timeAgo(analysis.updated_at)}
               </span>
             </div>

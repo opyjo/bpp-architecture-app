@@ -35,7 +35,7 @@ function DataTable({ headers, children }: { headers: string[]; children: React.R
       <thead>
         <tr>
           {headers.map((h) => (
-            <th key={h} className="text-left px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">{h}</th>
+            <th key={h} className="text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">{h}</th>
           ))}
         </tr>
       </thead>
@@ -66,11 +66,11 @@ export default function ReferenceTab() {
                     <div className="flex-1 min-w-0">
                       <div className="text-[12.5px] font-semibold text-arch-text mb-0.5">{step.title}</div>
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
-                        <span className="inline-block font-mono text-[9px] px-1.5 py-px rounded bg-[rgba(124,111,205,0.12)] border border-[rgba(124,111,205,0.22)] text-arch-purple">{step.service}</span>
-                        <span className="inline-block font-mono text-[9px] px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-teal">{step.apiCall}</span>
+                        <span className="inline-block font-mono text-[9.5px] px-1.5 py-px rounded bg-[rgba(124,111,205,0.12)] border border-[rgba(124,111,205,0.22)] text-arch-purple">{step.service}</span>
+                        <span className="inline-block font-mono text-[9.5px] px-1.5 py-px rounded bg-arch-bg3 border border-arch-border text-arch-teal">{step.apiCall}</span>
                       </div>
                       <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-1.5">{step.description}</div>
-                      <div className="text-[10px] text-arch-text3 font-mono leading-[1.5] bg-arch-bg3 border border-arch-border rounded px-2 py-1.5">{step.dataFlow}</div>
+                      <div className="text-[10.5px] text-arch-text3 font-mono leading-[1.5] bg-arch-bg3 border border-arch-border rounded px-2 py-1.5">{step.dataFlow}</div>
                     </div>
                   </div>
                 ))}
@@ -83,35 +83,35 @@ export default function ReferenceTab() {
           return (
             <div>
               <div className="text-sm font-semibold text-arch-text mb-1">{"Environments & deployment"}</div>
-              <div className="text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">UI environments</div>
+              <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">UI environments</div>
               <DataTable headers={["Environment", "URL"]}>
                 {uiEnvironments.map((r, i) => (
                   <tr key={i}>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top leading-[1.6]"><span className="inline-block bg-arch-bg3 border border-arch-border rounded px-1.5 py-px text-[9.5px] text-arch-text3">{r.env}</span></td>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10px] text-arch-teal align-top leading-[1.6]">{r.url}</td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top leading-[1.6]"><span className="inline-block bg-arch-bg3 border border-arch-border rounded px-1.5 py-px text-[10px] text-arch-text3">{r.env}</span></td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10.5px] text-arch-teal align-top leading-[1.6]">{r.url}</td>
                   </tr>
                 ))}
               </DataTable>
-              <div className="text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Go services URL pattern</div>
+              <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Go services URL pattern</div>
               <DataTable headers={["Environment", "Pattern"]}>
                 {goServicePatterns.map((r, i) => (
                   <tr key={i}>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top leading-[1.6]"><span className="inline-block bg-arch-bg3 border border-arch-border rounded px-1.5 py-px text-[9.5px] text-arch-text3">{r.env}</span></td>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10px] text-arch-teal align-top leading-[1.6]">{r.pattern}</td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top leading-[1.6]"><span className="inline-block bg-arch-bg3 border border-arch-border rounded px-1.5 py-px text-[10px] text-arch-text3">{r.env}</span></td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10.5px] text-arch-teal align-top leading-[1.6]">{r.pattern}</td>
                   </tr>
                 ))}
               </DataTable>
-              <div className="text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Bilingual routing</div>
+              <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Bilingual routing</div>
               <DataTable headers={["Language", "URL path", "Notes"]}>
                 {bilingualRouting.map((r, i) => (
                   <tr key={i}>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.lang}</td>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10px] text-arch-teal align-top leading-[1.6]">{r.path}</td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10.5px] text-arch-teal align-top leading-[1.6]">{r.path}</td>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.notes}</td>
                   </tr>
                 ))}
               </DataTable>
-              <div className="text-[11px] text-arch-text3 mt-1">Translations from <code className="font-mono text-[9.5px] text-arch-teal">UXP.Services/Common/localization</code> CMS with local JSON fallback.</div>
+              <div className="text-[11px] text-arch-text3 mt-1">Translations from <code className="font-mono text-[10px] text-arch-teal">UXP.Services/Common/localization</code> CMS with local JSON fallback.</div>
             </div>
           );
         }
@@ -120,19 +120,19 @@ export default function ReferenceTab() {
           return (
             <div>
               <div className="text-sm font-semibold text-arch-text mb-1">{"Authentication & security"}</div>
-              <div className="text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Auth contexts</div>
+              <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Auth contexts</div>
               <DataTable headers={["Context", "Method", "Who uses it"]}>
                 {authContexts.map((r, i) => (
                   <tr key={i}>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10px] align-top leading-[1.6]">{r.context}</td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10.5px] align-top leading-[1.6]">{r.context}</td>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.method}</td>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.who}</td>
                   </tr>
                 ))}
               </DataTable>
-              <div className="text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Token flow</div>
+              <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Token flow</div>
               <CodeBlock>{tokenFlow}</CodeBlock>
-              <div className="text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Account isolation</div>
+              <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mt-4 mb-1.5">Account isolation</div>
               <div className="bg-arch-bg2 border border-arch-border rounded-lg px-3 py-2.5 text-[11.5px] text-arch-text2 leading-[1.7]">{accountIsolation}</div>
             </div>
           );
@@ -145,8 +145,8 @@ export default function ReferenceTab() {
               <DataTable headers={["System", "Endpoint", "Evaluated by", "Used for"]}>
                 {featureFlags.map((r, i) => (
                   <tr key={i}>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10px] align-top leading-[1.6]">{r.system}</td>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[9.5px] text-arch-teal align-top leading-[1.6]">{r.endpoint}</td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10.5px] align-top leading-[1.6]">{r.system}</td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] font-mono text-[10px] text-arch-teal align-top leading-[1.6]">{r.endpoint}</td>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.evaluatedBy}</td>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.usedFor}</td>
                   </tr>
@@ -167,7 +167,7 @@ export default function ReferenceTab() {
               <div className="text-sm font-semibold text-arch-text mb-1">Key design decisions</div>
               {designDecisions.map((d, i) => (
                 <div key={i} className="bg-arch-bg2 border border-arch-border rounded-lg p-3.5 mb-2">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${badgeColors[d.color]}`}>{d.badge}</span>
+                  <span className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${badgeColors[d.color]}`}>{d.badge}</span>
                   <div className="text-[11.5px] text-arch-text2 leading-[1.65] mt-1.5">{d.body}</div>
                 </div>
               ))}
@@ -181,14 +181,14 @@ export default function ReferenceTab() {
               <div className="text-sm font-semibold text-arch-text mb-1">Glossary</div>
               <div className="bg-arch-bg2 border border-arch-border rounded-lg overflow-hidden">
                 <div className="grid grid-cols-[80px_160px_1fr]">
-                  <div className="px-2 py-1 text-[9px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Term</div>
-                  <div className="px-2 py-1 text-[9px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Full name</div>
-                  <div className="px-2 py-1 text-[9px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">What it means here</div>
+                  <div className="px-2 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Term</div>
+                  <div className="px-2 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">Full name</div>
+                  <div className="px-2 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border">What it means here</div>
                 </div>
                 {glossary.map((g, i) => (
-                  <div key={i} className="grid grid-cols-[80px_160px_1fr] border-b border-white/[0.04] last:border-b-0 text-[10.5px] leading-[1.6]">
-                    <div className="px-2 py-1.5 text-arch-amber font-mono text-[10px] font-semibold border-r border-white/[0.04]">{g.term}</div>
-                    <div className="px-2 py-1.5 text-arch-text3 text-[10px] border-r border-white/[0.04]">{g.full}</div>
+                  <div key={i} className="grid grid-cols-[80px_160px_1fr] border-b border-white/[0.04] last:border-b-0 text-[11px] leading-[1.6]">
+                    <div className="px-2 py-1.5 text-arch-amber font-mono text-[10.5px] font-semibold border-r border-white/[0.04]">{g.term}</div>
+                    <div className="px-2 py-1.5 text-arch-text3 text-[10.5px] border-r border-white/[0.04]">{g.full}</div>
                     <div className="px-2 py-1.5 text-arch-text2">{g.meaning}</div>
                   </div>
                 ))}
@@ -202,12 +202,12 @@ export default function ReferenceTab() {
             <div>
               <div className="text-sm font-semibold text-arch-text mb-1">Changelog</div>
               <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">
-                Fill in dates from <code className="font-mono text-[9.5px] text-arch-teal">git log --oneline --all</code> across go-repo-new and the subscription-manager repo.
+                Fill in dates from <code className="font-mono text-[10px] text-arch-teal">git log --oneline --all</code> across go-repo-new and the subscription-manager repo.
               </div>
               <DataTable headers={["Date", "Change", "Reason"]}>
                 {changelog.map((c, i) => (
                   <tr key={i}>
-                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10px] align-top leading-[1.6]">{c.date}</td>
+                    <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10.5px] align-top leading-[1.6]">{c.date}</td>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{c.change}</td>
                     <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{c.reason}</td>
                   </tr>
