@@ -29,10 +29,15 @@ export interface RepoTourStep {
   whatsInside?: string[];         // listing of what's inside
 }
 
+export interface FileEntry {
+  name: string;
+  description: string;
+}
+
 export interface ServiceTypePattern {
   type: string;
   description: string;
-  files: string[];
+  files: FileEntry[];
 }
 
 export interface RepoEdge {
@@ -402,22 +407,63 @@ export const serviceTypePatterns: ServiceTypePattern[] = [
   {
     type: "Typical Service",
     description: "Most common pattern — a REST API service with config, internal logic, models, and containerized deployment.",
-    files: ["go.mod", "server.go", "Dockerfile", ".gitlab-ci.yml", "Taskfile.yml", "sonar-project.properties", "config/features/", "internal/service/", "models/", "mocks/"],
+    files: [
+      { name: "go.mod", description: "Go module definition — declares the module path and all third-party dependencies (e.g., AWS SDK, Kafka client). This is the first file to check when understanding what libraries a service relies on." },
+      { name: "server.go", description: "Application entry point — bootstraps the HTTP/gRPC server, wires up dependency injection, registers route handlers, and starts listening for traffic. This is where the service 'comes alive'." },
+      { name: "Dockerfile", description: "Container build recipe — multi-stage build that compiles the Go binary and packages it into a minimal Alpine image. Defines how this service gets deployed to Kubernetes." },
+      { name: ".gitlab-ci.yml", description: "CI/CD pipeline config — defines build, test, lint, security scan, and deployment stages. Controls how code changes flow from merge request to production." },
+      { name: "Taskfile.yml", description: "Local developer task runner — shortcut commands for building, testing, linting, and running the service locally. The team's alternative to Makefiles for day-to-day development." },
+      { name: "sonar-project.properties", description: "SonarQube code quality config — sets project key, coverage thresholds, and analysis parameters. Ensures the service meets code quality gates before merging." },
+      { name: "config/features/", description: "Feature flag definitions — YAML/JSON files that control which features are enabled per environment (dev, staging, prod). Business stakeholders use these to toggle functionality without code deploys." },
+      { name: "internal/service/", description: "Core business logic — contains the service layer, request handlers, domain rules, and orchestration code. This is where the actual business functionality lives (e.g., validating orders, processing subscriptions)." },
+      { name: "models/", description: "Data structures and DTOs — Go structs for API request/response bodies, database records, and event payloads. Defines the 'shape' of data flowing through the service." },
+      { name: "mocks/", description: "Test doubles — auto-generated mock implementations of interfaces used in unit tests. Allows testing business logic in isolation without hitting real databases or external APIs." },
+    ],
   },
   {
     type: "Protocol Buffer Service",
     description: "Service that uses Protocol Buffers for API contracts and code generation.",
-    files: ["go.mod", "server.go", "Dockerfile", ".gitlab-ci.yml", "Taskfile.yml", "buf.gen.yaml", "buf.work.yaml", "models/proto/", "models/gen/", "internal/service/"],
+    files: [
+      { name: "go.mod", description: "Go module definition — declares the module path and all third-party dependencies including gRPC and protobuf libraries." },
+      { name: "server.go", description: "Application entry point — bootstraps the gRPC server, registers protobuf service implementations, and sets up interceptors for auth, logging, and tracing." },
+      { name: "Dockerfile", description: "Container build recipe — multi-stage build that compiles the Go binary with gRPC support and packages it for Kubernetes deployment." },
+      { name: ".gitlab-ci.yml", description: "CI/CD pipeline config — includes protobuf generation, linting, build, test, and deployment stages. Also validates .proto files for backward compatibility." },
+      { name: "Taskfile.yml", description: "Local developer task runner — includes commands for protobuf code generation, building, testing, and running the gRPC service locally." },
+      { name: "buf.gen.yaml", description: "Buf code generation config — defines which protobuf plugins to run (Go, gRPC, validation) and where to output generated code. Controls the protobuf-to-Go compilation pipeline." },
+      { name: "buf.work.yaml", description: "Buf workspace config — defines the protobuf workspace root and module paths. Allows buf to resolve imports across multiple proto directories." },
+      { name: "models/proto/", description: "Protobuf source definitions — .proto files defining service contracts, message types, and RPC methods. These are the 'API blueprint' that both client and server agree on." },
+      { name: "models/gen/", description: "Auto-generated Go code — compiled protobuf stubs, gRPC client/server interfaces, and validation code. Never edit manually — regenerated from .proto files via buf." },
+      { name: "internal/service/", description: "Core business logic — implements the gRPC service interfaces defined in proto files. Contains domain rules, data access, and orchestration for this service's business capabilities." },
+    ],
   },
   {
     type: "Partner API Service",
     description: "Service integrating with external partners — includes API client definitions and versioned docs.",
-    files: ["go.mod", "server.go", "Dockerfile", ".gitlab-ci.yml", "Taskfile.yml", "clients/", "oapi/", "doc/", ".version", "internal/service/"],
+    files: [
+      { name: "go.mod", description: "Go module definition — declares dependencies including partner-specific SDKs, HTTP clients, and authentication libraries needed for external integrations." },
+      { name: "server.go", description: "Application entry point — bootstraps the HTTP server, configures partner API credentials, sets up retry policies, and registers route handlers for partner callbacks." },
+      { name: "Dockerfile", description: "Container build recipe — packages the service with CA certificates and partner-specific TLS configs required for secure communication with external APIs." },
+      { name: ".gitlab-ci.yml", description: "CI/CD pipeline config — includes partner integration test stages, contract testing, and environment-specific deployment for partner sandbox and production endpoints." },
+      { name: "Taskfile.yml", description: "Local developer task runner — includes commands for running against partner sandbox environments, regenerating API clients, and executing integration tests." },
+      { name: "clients/", description: "Partner API client code — auto-generated or hand-written HTTP clients for communicating with external partner systems (e.g., Netflix, Disney, Bango). Handles auth, serialization, and error mapping." },
+      { name: "oapi/", description: "OpenAPI specifications — partner API contract definitions (.yaml/.json) describing endpoints, schemas, and auth requirements. Used to generate client code and validate API compatibility." },
+      { name: "doc/", description: "Integration documentation — partner onboarding guides, API mapping tables, error code references, and data flow diagrams specific to this partner relationship." },
+      { name: ".version", description: "Service version file — tracks the current release version for partner API compatibility. Used by CI/CD to tag builds and manage API versioning with external partners." },
+      { name: "internal/service/", description: "Core business logic — translates between internal domain models and partner API formats, handles webhook processing, manages partner-specific business rules and error recovery." },
+    ],
   },
   {
     type: "Lambda Function",
     description: "Single-purpose handler triggered by AWS events (SQS, EventBridge, S3, CloudWatch).",
-    files: ["go.mod", "main.go", "handler.go", "handler_test.go", "Dockerfile", ".gitlab-ci.yml", "Taskfile.yml"],
+    files: [
+      { name: "go.mod", description: "Go module definition — declares dependencies including the AWS Lambda Go SDK, event source libraries (SQS, EventBridge, S3), and any service-specific packages." },
+      { name: "main.go", description: "Lambda bootstrap — initializes the Lambda runtime, sets up the handler function, and configures AWS clients. This is the cold-start entry point that AWS invokes on each container spin-up." },
+      { name: "handler.go", description: "Event processing logic — the core business function that receives an AWS event (SQS message, S3 notification, scheduled trigger), processes it, and returns a result. This is where the actual work happens." },
+      { name: "handler_test.go", description: "Unit tests for the handler — tests the business logic with sample event payloads. Verifies correct processing of happy paths, edge cases, and error scenarios without deploying to AWS." },
+      { name: "Dockerfile", description: "Container build recipe — builds an AWS Lambda container image using the lambda/go base image. Required for deploying Lambda functions via container images instead of ZIP archives." },
+      { name: ".gitlab-ci.yml", description: "CI/CD pipeline config — defines test, build, package, and deploy stages specific to Lambda deployment. Handles pushing container images to ECR and updating the Lambda function." },
+      { name: "Taskfile.yml", description: "Local developer task runner — commands for running the handler locally with sample events, executing tests, and simulating Lambda invocations during development." },
+    ],
   },
 ];
 

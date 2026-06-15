@@ -141,36 +141,46 @@ export default function RepoDetailWide({ nodeId, onClose, onNavigate }: RepoDeta
               <div className="text-[9.5px] uppercase tracking-wider text-arch-text3 font-semibold mb-1.5">
                 File Structure — {pattern.type}
               </div>
-              <div className="bg-arch-bg rounded-md border border-arch-border p-2.5">
-                {pattern.files.map((file, i) => (
-                  <div
-                    key={file}
-                    className="flex items-center gap-1.5 py-0.5"
-                    style={{ paddingLeft: file.includes(".") ? 12 : 0 }}
-                  >
-                    <svg
-                      className="w-3 h-3 shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke={file.endsWith("/") ? "var(--arch-amber)" : "var(--arch-text3)"}
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+              <div className="bg-arch-bg rounded-md border border-arch-border p-2 space-y-0.5">
+                {pattern.files.map((file, i) => {
+                  const fileName = typeof file === "string" ? file : file.name;
+                  const fileDesc = typeof file === "string" ? null : file.description;
+                  return (
+                    <div
+                      key={fileName}
+                      className="group rounded px-1.5 py-1 hover:bg-arch-bg2 transition-colors"
                     >
-                      {file.endsWith("/") ? (
-                        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                      ) : (
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                      <div className="flex items-center gap-1.5">
+                        <svg
+                          className="w-3 h-3 shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke={fileName.endsWith("/") ? "var(--arch-amber)" : "var(--arch-text3)"}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          {fileName.endsWith("/") ? (
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                          ) : (
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                          )}
+                        </svg>
+                        <span
+                          className="font-mono text-[9.5px] font-medium"
+                          style={{ color: getFileColor(fileName, i) }}
+                        >
+                          {fileName}
+                        </span>
+                      </div>
+                      {fileDesc && (
+                        <div className="text-[9px] text-arch-text3 leading-[1.5] mt-0.5 ml-[18px]">
+                          {fileDesc}
+                        </div>
                       )}
-                    </svg>
-                    <span
-                      className="font-mono text-[9.5px]"
-                      style={{ color: getFileColor(file, i) }}
-                    >
-                      {file}
-                    </span>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
               <div className="text-[10px] text-arch-text3 mt-1.5 leading-[1.5]">{pattern.description}</div>
             </div>

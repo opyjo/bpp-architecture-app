@@ -1,4 +1,4 @@
-import { repoTree, serviceTypePatterns, repoDomains, type RepoNode } from "@/data/repo-structure";
+import { repoTree, serviceTypePatterns, repoDomains, type RepoNode, type FileEntry } from "@/data/repo-structure";
 
 // ── Cross-Reference Helpers ──────────────────────────────
 
