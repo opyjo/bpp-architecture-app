@@ -12,6 +12,7 @@ import LambdaFunctionsTab from "@/components/tabs/LambdaFunctionsTab";
 import RepoExplorerTab from "@/components/tabs/RepoExplorerTab";
 import FeatureFlagsTab from "@/components/tabs/FeatureFlagsTab";
 import LearningsTab from "@/components/tabs/LearningsTab";
+import ServicesTab from "@/components/tabs/ServicesTab";
 
 const tabs = [
   { id: "arch", label: "Architecture" },
@@ -24,6 +25,7 @@ const tabs = [
   { id: "ref", label: "Reference" },
   { id: "flags", label: "Feature Flags" },
   { id: "learnings", label: "Learnings" },
+  { id: "services", label: "Services" },
   { id: "ai", label: "AI Assistant" },
 ];
 
@@ -70,6 +72,7 @@ export default function Home() {
         {activeTab === "ref" && <ReferenceTab />}
         {activeTab === "flags" && <FeatureFlagsTab />}
         {activeTab === "learnings" && <LearningsTab />}
+        {activeTab === "services" && <ServicesTab />}
         {activeTab === "ai" && <AiChatTab />}
       </div>
     </div>
