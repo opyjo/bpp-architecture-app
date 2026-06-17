@@ -8,11 +8,10 @@ import ErrorsTab from "@/components/tabs/ErrorsTab";
 import KafkaEventsTab from "@/components/tabs/KafkaEventsTab";
 import ReferenceTab from "@/components/tabs/ReferenceTab";
 import AiChatTab from "@/components/tabs/AiChatTab";
-import GoGuidesTab from "@/components/tabs/GoGuidesTab";
 import LambdaFunctionsTab from "@/components/tabs/LambdaFunctionsTab";
 import RepoExplorerTab from "@/components/tabs/RepoExplorerTab";
 import FeatureFlagsTab from "@/components/tabs/FeatureFlagsTab";
-import GoTestingTab from "@/components/tabs/GoTestingTab";
+import LearningsTab from "@/components/tabs/LearningsTab";
 
 const tabs = [
   { id: "arch", label: "Architecture" },
@@ -24,9 +23,8 @@ const tabs = [
   { id: "repo", label: "Repo" },
   { id: "ref", label: "Reference" },
   { id: "flags", label: "Feature Flags" },
-  { id: "testing", label: "Go Testing" },
+  { id: "learnings", label: "Learnings" },
   { id: "ai", label: "AI Assistant" },
-  { id: "guides", label: "Go Guides" },
 ];
 
 export default function Home() {
@@ -71,9 +69,8 @@ export default function Home() {
         {activeTab === "repo" && <RepoExplorerTab />}
         {activeTab === "ref" && <ReferenceTab />}
         {activeTab === "flags" && <FeatureFlagsTab />}
-        {activeTab === "testing" && <GoTestingTab />}
+        {activeTab === "learnings" && <LearningsTab />}
         {activeTab === "ai" && <AiChatTab />}
-        {activeTab === "guides" && <GoGuidesTab />}
       </div>
     </div>
   );
