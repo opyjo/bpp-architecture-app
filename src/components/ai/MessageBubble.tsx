@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { ChatMessage } from "@/lib/types/chat";
+import SyntaxHighlighter from "@/components/ui/SyntaxHighlighter";
 
 /* ── Thinking indicator ── */
 function ThinkingIndicator() {
@@ -106,17 +107,17 @@ function formatMarkdown(text: string) {
 
   return parts.map((part, i) => {
     if (typeof part !== "string") {
-      // Fenced code block
+      // Fenced code block with syntax highlighting
       return (
-        <pre
+        <div
           key={i}
-          className="bg-[#0d1017] text-[#e8eaf0] border border-arch-border rounded-md p-3 my-2 overflow-x-auto text-[11.5px] leading-relaxed font-mono"
+          className="rounded-md border border-arch-border overflow-hidden my-2 bg-[#282c34]"
         >
-          <div className="text-[10.5px] text-[#5c6278] mb-1.5 uppercase tracking-wide">
+          <div className="px-3 pt-2 text-[10.5px] text-[#5c6278] uppercase tracking-wide select-none">
             {part.lang}
           </div>
-          <code className="text-[#e8eaf0]">{part.code}</code>
-        </pre>
+          <SyntaxHighlighter code={part.code} language={part.lang} />
+        </div>
       );
     }
 

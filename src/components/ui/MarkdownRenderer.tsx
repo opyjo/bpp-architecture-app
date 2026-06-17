@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+import SyntaxHighlighter, { detectLanguage } from "./SyntaxHighlighter";
 
 interface MarkdownRendererProps {
   content: string;
@@ -58,22 +59,30 @@ const components: Components = {
   strong: ({ children }) => (
     <strong className="font-semibold text-arch-text">{children}</strong>
   ),
-  code: ({ children }) => (
-    <code className="bg-arch-bg3 text-arch-teal text-[11px] px-1 py-0.5 rounded border border-arch-border">
-      {children}
-    </code>
-  ),
-  pre: ({ children }) => (
-    <pre
-      className="markdown-pre bg-arch-bg3 border border-arch-border rounded-lg px-3.5 py-3 text-[11.5px] text-arch-text2 leading-[1.4] overflow-x-auto my-2 whitespace-pre font-mono"
-      style={{
-        fontVariantLigatures: "none",
-        fontFeatureSettings: "'calt' 0, 'liga' 0",
-      }}
-    >
-      {children}
-    </pre>
-  ),
+  code: ({ className, children }) => {
+    // Fenced code blocks get className="language-xxx" from react-markdown
+    const langMatch = className?.match(/language-(\w+)/);
+    if (langMatch) {
+      const code = String(children).replace(/\n$/, "");
+      return (
+        <SyntaxHighlighter code={code} language={langMatch[1]} />
+      );
+    }
+    // Inline code
+    return (
+      <code className="bg-arch-bg3 text-arch-teal text-[11px] px-1 py-0.5 rounded border border-arch-border">
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children }) => {
+    // If the child is already a SyntaxHighlighter (fenced code block), wrap it
+    return (
+      <div className="rounded-lg border border-arch-border overflow-hidden my-2 bg-[#282c34]">
+        {children}
+      </div>
+    );
+  },
   table: ({ children }) => (
     <div className="overflow-x-auto my-2">
       <table className="w-full text-[11px] border border-arch-border rounded-lg overflow-hidden">

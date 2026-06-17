@@ -1,15 +1,24 @@
 "use client";
 
+import SyntaxHighlighter, { detectLanguage } from "./SyntaxHighlighter";
+
 interface CodeBlockProps {
   children: string;
   comment?: string;
+  language?: string;
 }
 
-export default function CodeBlock({ children, comment }: CodeBlockProps) {
+export default function CodeBlock({ children, comment, language }: CodeBlockProps) {
+  const lang = language || detectLanguage(children, comment);
+
   return (
-    <pre className="bg-arch-bg3 border border-arch-border rounded-lg px-3.5 py-3 font-mono text-[11px] text-arch-text2 leading-[1.7] overflow-x-auto my-1.5 whitespace-pre">
-      {comment && <span className="text-arch-text3">{comment}{"\n"}</span>}
-      {children}
-    </pre>
+    <div className="rounded-lg border border-arch-border overflow-hidden my-1.5 bg-[#282c34]">
+      {comment && (
+        <div className="px-3.5 pt-2.5 pb-0 font-mono text-[11px] text-[#5c6370] select-none">
+          {comment}
+        </div>
+      )}
+      <SyntaxHighlighter code={children} language={lang} />
+    </div>
   );
 }
