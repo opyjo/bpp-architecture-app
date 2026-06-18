@@ -6,15 +6,25 @@ import { useSavedChats } from "@/lib/hooks/useSavedChats";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import MessageBubble from "@/components/ai/MessageBubble";
 import ChatInput from "@/components/ai/ChatInput";
-import SuggestedPrompts from "@/components/ai/SuggestedPrompts";
 import ModelSelector from "@/components/ai/ModelSelector";
 import { Save, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { bsaCoachSystemContext } from "@/data/bsa-cheatsheet";
 
-export default function AiChatTab() {
+const COACH_PROMPTS = [
+  "Mock interview — 5 BSA questions",
+  "How do I gather integration requirements?",
+  "Explain the saga pattern simply",
+  "Bell project examples for behavioral Qs",
+];
+
+export default function InterviewCoachTab() {
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory } =
-    useChat(modelId);
+    useChat(modelId, {
+      storageKey: "bsa-coach-chat",
+      systemContext: bsaCoachSystemContext,
+    });
   const { saveChat } = useSavedChats();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -25,9 +35,7 @@ export default function AiChatTab() {
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   const isEmpty = messages.length === 0;
@@ -36,8 +44,8 @@ export default function AiChatTab() {
     const firstUserMsg = messages.find((m) => m.role === "user");
     setSaveTitle(
       firstUserMsg
-        ? firstUserMsg.content.slice(0, 60) + (firstUserMsg.content.length > 60 ? "…" : "")
-        : "Untitled Chat"
+        ? firstUserMsg.content.slice(0, 50) + (firstUserMsg.content.length > 50 ? "\u2026" : "")
+        : "Untitled"
     );
     setShowSavePopover(true);
   };
@@ -45,9 +53,11 @@ export default function AiChatTab() {
   const handleSaveConfirm = async () => {
     if (isSaving) return;
     setIsSaving(true);
+    const rawTitle = saveTitle.trim() || "Untitled";
+    const finalTitle = rawTitle.startsWith("[BSA Coach]") ? rawTitle : `[BSA Coach] ${rawTitle}`;
     try {
       await saveChat({
-        title: saveTitle.trim() || "Untitled Chat",
+        title: finalTitle,
         messages,
         model_id: modelId,
       });
@@ -66,11 +76,11 @@ export default function AiChatTab() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-arch-border bg-arch-bg2/80 backdrop-blur-sm">
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-arch-purple to-arch-blue text-white flex items-center justify-center text-[9.5px] font-bold">
-            AI
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-arch-teal to-arch-blue text-white flex items-center justify-center text-[8px] font-bold">
+            BSA
           </div>
           <span className="text-[13px] font-semibold text-arch-text">
-            Architecture Assistant
+            Interview Coach
           </span>
           <ModelSelector
             value={modelId}
@@ -81,7 +91,7 @@ export default function AiChatTab() {
         <div className="flex items-center gap-1">
           <Link
             href="/chats"
-            className="text-[11px] text-arch-text3 hover:text-arch-purple transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+            className="text-[11px] text-arch-text3 hover:text-arch-teal transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
           >
             Saved chats <ExternalLink className="w-3 h-3" />
           </Link>
@@ -117,7 +127,7 @@ export default function AiChatTab() {
               if (e.key === "Enter") handleSaveConfirm();
               if (e.key === "Escape") setShowSavePopover(false);
             }}
-            placeholder="Chat title…"
+            placeholder="Chat title\u2026"
             autoFocus
             className="flex-1 bg-transparent text-[12px] text-arch-text outline-none placeholder:text-arch-text3"
           />
@@ -126,7 +136,7 @@ export default function AiChatTab() {
             disabled={isSaving}
             className="text-[11px] text-arch-green hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-40"
           >
-            {isSaving ? "Saving…" : "Save"}
+            {isSaving ? "Saving\u2026" : "Save"}
           </button>
           <button
             onClick={() => setShowSavePopover(false)}
@@ -151,7 +161,17 @@ export default function AiChatTab() {
       >
         {isEmpty ? (
           <div className="w-full max-w-xl mx-auto flex flex-col gap-3">
-            <SuggestedPrompts onSelect={sendMessage} />
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              {COACH_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => sendMessage(prompt)}
+                  className="px-2.5 py-1 rounded-full text-[10.5px] text-arch-text3 border border-arch-border hover:border-arch-teal/40 hover:text-arch-teal transition-colors cursor-pointer"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
             <ChatInput onSend={sendMessage} onStop={stopStreaming} isStreaming={isStreaming} />
           </div>
         ) : (
@@ -166,11 +186,7 @@ export default function AiChatTab() {
       {/* Input — only when conversation is active */}
       {!isEmpty && (
         <div className="max-w-3xl mx-auto w-full px-4 pb-4 pt-2">
-          <ChatInput
-            onSend={sendMessage}
-            onStop={stopStreaming}
-            isStreaming={isStreaming}
-          />
+          <ChatInput onSend={sendMessage} onStop={stopStreaming} isStreaming={isStreaming} />
         </div>
       )}
     </div>

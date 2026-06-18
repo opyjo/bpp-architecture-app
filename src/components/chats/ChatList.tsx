@@ -3,7 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { SavedChat } from "@/lib/types/saved-chat";
-import { MessageSquare, Trash2, Pencil, Check, X } from "lucide-react";
+import { MessageSquare, Trash2, Pencil, Check, X, Bot, GraduationCap } from "lucide-react";
+
+const BSA_PREFIX = "[BSA Coach]";
+
+function isBsaCoachChat(title: string): boolean {
+  return title.startsWith(BSA_PREFIX);
+}
+
+function displayTitle(title: string): string {
+  if (title.startsWith(BSA_PREFIX)) {
+    return title.slice(BSA_PREFIX.length).trim() || "Untitled";
+  }
+  return title;
+}
 
 function timeAgo(dateStr: string) {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -87,12 +100,25 @@ export default function ChatList({ chats, onRename, onDelete }: ChatListProps) {
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    href={`/chats/${chat.id}`}
-                    className="text-[13px] font-semibold text-arch-text hover:text-arch-purple transition-colors block truncate"
-                  >
-                    {chat.title}
-                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    {isBsaCoachChat(chat.title) ? (
+                      <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[rgba(62,184,154,0.12)] text-arch-teal border border-[rgba(62,184,154,0.22)]">
+                        <GraduationCap className="w-3 h-3" />
+                        Coach
+                      </span>
+                    ) : (
+                      <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[rgba(124,111,205,0.12)] text-arch-purple border border-[rgba(124,111,205,0.22)]">
+                        <Bot className="w-3 h-3" />
+                        AI
+                      </span>
+                    )}
+                    <Link
+                      href={`/chats/${chat.id}`}
+                      className="text-[13px] font-semibold text-arch-text hover:text-arch-purple transition-colors block truncate"
+                    >
+                      {displayTitle(chat.title)}
+                    </Link>
+                  </div>
                 )}
                 <p className="text-[11.5px] text-arch-text3 mt-1 line-clamp-2">
                   {preview}

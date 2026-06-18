@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import SectionLayout from "@/components/ui/SectionLayout";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
@@ -18,11 +19,15 @@ import {
   systemsOfRecord,
   integrationPatterns,
   assessmentQA,
+  generalBsaQuestions,
+  technicalFollowups,
+  behavioralQuestions,
   latencyBudget,
   systemContextDiagram,
   e2eSequenceDiagram,
   stateMachineDiagram,
   erDiagram,
+  type AssessmentQA,
 } from "@/data/bsa-cheatsheet";
 
 // ─── Sidebar Definition ──────────────────────────────────────────────────────
@@ -93,7 +98,7 @@ const sidebarGroups = [
     ],
   },
   {
-    label: "Assessment Q&A",
+    label: "Architecture Q&A",
     items: [
       { id: "bsa-exam-1", label: "Q1: E2E walkthrough" },
       { id: "bsa-exam-2", label: "Q2: Onboard partner" },
@@ -103,6 +108,43 @@ const sidebarGroups = [
       { id: "bsa-exam-6", label: "Q6: API versioning" },
       { id: "bsa-exam-7", label: "Q7: CQRS pattern" },
       { id: "bsa-exam-8", label: "Q8: Non-functional reqs" },
+    ],
+  },
+  {
+    label: "General BSA Questions",
+    items: [
+      { id: "bsa-gen-1", label: "BSA experience walkthrough" },
+      { id: "bsa-gen-2", label: "Gathering requirements" },
+      { id: "bsa-gen-3", label: "Data mapping documents" },
+      { id: "bsa-gen-4", label: "API product specs" },
+      { id: "bsa-gen-5", label: "Writing acceptance criteria" },
+      { id: "bsa-gen-6", label: "Leading grooming sessions" },
+      { id: "bsa-gen-7", label: "Requirement mismatch" },
+      { id: "bsa-gen-8", label: "Validating completed work" },
+      { id: "bsa-gen-9", label: "Handling ambiguity" },
+      { id: "bsa-gen-10", label: "Integration patterns" },
+      { id: "bsa-gen-11", label: "Domain modelling" },
+    ],
+  },
+  {
+    label: "Technical Follow-ups",
+    items: [
+      { id: "bsa-tech-1", label: "Purpose of OpenAPI" },
+      { id: "bsa-tech-2", label: "Business rules → fields" },
+      { id: "bsa-tech-3", label: "Error & edge case docs" },
+      { id: "bsa-tech-4", label: "Sync vs orchestrated flows" },
+      { id: "bsa-tech-5", label: "Requirement placement" },
+      { id: "bsa-tech-6", label: "Req → story → test tracing" },
+    ],
+  },
+  {
+    label: "Behavioral Questions",
+    items: [
+      { id: "bsa-behav-1", label: "Influencing stakeholders" },
+      { id: "bsa-behav-2", label: "Late requirement changes" },
+      { id: "bsa-behav-3", label: "Business vs engineering" },
+      { id: "bsa-behav-4", label: "Simplifying for non-tech" },
+      { id: "bsa-behav-5", label: "Mentoring analysts" },
     ],
   },
 ];
@@ -163,7 +205,27 @@ function SubHeading({ children }: { children: React.ReactNode }) {
   return <div className="text-[12px] font-semibold text-arch-text mt-5 mb-2">{children}</div>;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Reusable Q&A Card ──────────────────────────────────────────────────────
+
+function QACard({ qa, accentColor }: { qa: AssessmentQA; accentColor: string }) {
+  return (
+    <div>
+      <SectionTitle>Q{qa.num}: {qa.question}</SectionTitle>
+      <div className="bg-arch-bg2 border border-arch-border rounded-lg p-4 mt-3">
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`shrink-0 w-6 h-6 rounded-full bg-arch-${accentColor}/15 text-arch-${accentColor} text-[11px] font-bold flex items-center justify-center`}>
+            A
+          </span>
+          <span className="text-[10px] font-semibold text-arch-text3 uppercase tracking-wider">Model Answer</span>
+        </div>
+        <div className="text-[11.5px] text-arch-text2 leading-[1.7] whitespace-pre-line">{qa.answer}</div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── Main Component ─────────────────────────────────────────────────────────
 
 export default function BsaCheatsheetTab() {
   return (
@@ -198,7 +260,8 @@ export default function BsaCheatsheetTab() {
                   { label: "Acceptance Criteria", desc: "3 user stories with testable ACs", color: "coral" },
                   { label: "Domain & Patterns", desc: "Systems of record + 11 integration patterns", color: "purple" },
                   { label: "Diagrams", desc: "4 Mermaid diagrams (context, sequence, state, ER)", color: "blue" },
-                  { label: "Assessment Q&A", desc: "8 exam-ready answers with code evidence", color: "teal" },
+                  { label: "Assessment Q&A", desc: "30+ exam-ready answers across 4 categories", color: "teal" },
+                  { label: "Interview Coach", desc: "AI chatbot for practicing BSA interview answers", color: "green" },
                 ].map((s) => (
                   <div key={s.label} className="bg-arch-bg2 border border-arch-border rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
@@ -292,7 +355,6 @@ export default function BsaCheatsheetTab() {
                 <div className="text-[10px] font-semibold text-arch-amber uppercase tracking-wider mb-1">Business Problem</div>
                 <div className="text-[11px] text-arch-text2 leading-relaxed">{comp.businessProblem}</div>
               </div>
-
               <SubHeading>Pre-Design Requirements</SubHeading>
               <div className="space-y-2">
                 {comp.requirements.map((req) => (
@@ -460,7 +522,7 @@ export default function BsaCheatsheetTab() {
                       <code className="text-arch-teal text-[10px]">{row.execute}</code>
                     </Td>
                     <Td className="text-[10.5px]">
-                      {row.compensate === "— (read-only, no compensation)" || row.compensate === "— (read-only)" ? (
+                      {row.compensate.startsWith("—") ? (
                         <span className="text-arch-text3 italic">{row.compensate}</span>
                       ) : (
                         <code className="text-arch-coral text-[10px]">{row.compensate}</code>
@@ -515,7 +577,6 @@ export default function BsaCheatsheetTab() {
                   <span className="text-arch-text font-semibold">so that</span> {story.soThat}.
                 </div>
               </div>
-
               <SubHeading>Acceptance Criteria</SubHeading>
               <div className="space-y-2">
                 {story.criteria.map((ac) => (
@@ -614,26 +675,40 @@ export default function BsaCheatsheetTab() {
           );
         }
 
-        // ── Assessment Q&A ────────────────────────────────────────
+        // ── Architecture Q&A (original 8) ─────────────────────────
         const examMatch = activeId.match(/^bsa-exam-(\d+)$/);
         if (examMatch) {
           const qNum = parseInt(examMatch[1], 10);
           const qa = assessmentQA.find((q) => q.num === qNum);
           if (!qa) return null;
-          return (
-            <div>
-              <SectionTitle>Q{qa.num}: {qa.question}</SectionTitle>
-              <div className="bg-arch-bg2 border border-arch-border rounded-lg p-4 mt-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-arch-blue/15 text-arch-blue text-[11px] font-bold flex items-center justify-center">
-                    A
-                  </span>
-                  <span className="text-[10px] font-semibold text-arch-text3 uppercase tracking-wider">Model Answer</span>
-                </div>
-                <div className="text-[11.5px] text-arch-text2 leading-[1.7] whitespace-pre-line">{qa.answer}</div>
-              </div>
-            </div>
-          );
+          return <QACard qa={qa} accentColor="blue" />;
+        }
+
+        // ── General BSA Questions ─────────────────────────────────
+        const genMatch = activeId.match(/^bsa-gen-(\d+)$/);
+        if (genMatch) {
+          const qNum = parseInt(genMatch[1], 10);
+          const qa = generalBsaQuestions.find((q) => q.num === qNum);
+          if (!qa) return null;
+          return <QACard qa={qa} accentColor="purple" />;
+        }
+
+        // ── Technical Follow-ups ──────────────────────────────────
+        const techMatch = activeId.match(/^bsa-tech-(\d+)$/);
+        if (techMatch) {
+          const qNum = parseInt(techMatch[1], 10);
+          const qa = technicalFollowups.find((q) => q.num === qNum);
+          if (!qa) return null;
+          return <QACard qa={qa} accentColor="teal" />;
+        }
+
+        // ── Behavioral Questions ──────────────────────────────────
+        const behavMatch = activeId.match(/^bsa-behav-(\d+)$/);
+        if (behavMatch) {
+          const qNum = parseInt(behavMatch[1], 10);
+          const qa = behavioralQuestions.find((q) => q.num === qNum);
+          if (!qa) return null;
+          return <QACard qa={qa} accentColor="amber" />;
         }
 
         return null;

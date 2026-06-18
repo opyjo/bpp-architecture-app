@@ -12,6 +12,7 @@ import FeatureFlagsTab from "@/components/tabs/FeatureFlagsTab";
 import LearningsTab from "@/components/tabs/LearningsTab";
 import ServicesTab from "@/components/tabs/ServicesTab";
 import BsaCheatsheetTab from "@/components/tabs/BsaCheatsheetTab";
+import InterviewCoachTab from "@/components/tabs/InterviewCoachTab";
 
 const tabs = [
   { id: "arch", label: "Architecture" },
@@ -25,6 +26,7 @@ const tabs = [
   { id: "services", label: "Services" },
   { id: "bsa", label: "BSA Cheatsheet" },
   { id: "ai", label: "AI Assistant" },
+  { id: "coach", label: "Interview Coach" },
 ];
 
 export default function Home() {
@@ -71,6 +73,7 @@ export default function Home() {
         {activeTab === "services" && <ServicesTab />}
         {activeTab === "bsa" && <BsaCheatsheetTab />}
         {activeTab === "ai" && <AiChatTab />}
+        {activeTab === "coach" && <InterviewCoachTab />}
       </div>
     </div>
   );
