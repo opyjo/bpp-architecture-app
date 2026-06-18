@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, useRef, useEffect } from "react";
 
 interface SidebarItem {
   id: string;
@@ -16,13 +16,13 @@ interface SectionLayoutProps {
 }
 
 const sectionAccents = [
-  { border: "rgba(74, 143, 232, 0.35)", bg: "rgba(74, 143, 232, 0.06)", dot: "rgba(74, 143, 232, 0.6)" },       // blue
-  { border: "rgba(124, 111, 205, 0.35)", bg: "rgba(124, 111, 205, 0.06)", dot: "rgba(124, 111, 205, 0.6)" },     // purple
-  { border: "rgba(62, 184, 154, 0.35)", bg: "rgba(62, 184, 154, 0.06)", dot: "rgba(62, 184, 154, 0.6)" },        // teal
-  { border: "rgba(232, 168, 58, 0.35)", bg: "rgba(232, 168, 58, 0.06)", dot: "rgba(232, 168, 58, 0.6)" },        // amber
-  { border: "rgba(88, 184, 122, 0.35)", bg: "rgba(88, 184, 122, 0.06)", dot: "rgba(88, 184, 122, 0.6)" },        // green
-  { border: "rgba(232, 112, 90, 0.35)", bg: "rgba(232, 112, 90, 0.06)", dot: "rgba(232, 112, 90, 0.6)" },        // coral
-  { border: "rgba(107, 117, 144, 0.35)", bg: "rgba(107, 117, 144, 0.06)", dot: "rgba(107, 117, 144, 0.6)" },     // gray
+  { color: "var(--arch-blue)",   bg: "var(--arch-blue)",   name: "blue" },
+  { color: "var(--arch-purple)", bg: "var(--arch-purple)", name: "purple" },
+  { color: "var(--arch-teal)",   bg: "var(--arch-teal)",   name: "teal" },
+  { color: "var(--arch-amber)",  bg: "var(--arch-amber)",  name: "amber" },
+  { color: "var(--arch-green)",  bg: "var(--arch-green)",  name: "green" },
+  { color: "var(--arch-coral)",  bg: "var(--arch-coral)",  name: "coral" },
+  { color: "var(--arch-gray)",   bg: "var(--arch-gray)",   name: "gray" },
 ];
 
 function CollapsibleSection({
@@ -43,114 +43,193 @@ function CollapsibleSection({
   const [open, setOpen] = useState(defaultOpen);
   const hasActiveChild = items.some((item) => item.id === active);
   const accent = sectionAccents[accentIndex % sectionAccents.length];
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setContentHeight(contentRef.current.scrollHeight);
+    }
+  }, [items, open]);
 
   return (
-    <>
-      <div className="h-px bg-arch-border mx-3.5 my-1.5" />
+    <div className="sidebar-group">
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="sidebar-section-header flex items-center justify-between w-full px-3.5 py-1.5 group select-none rounded-sm mx-0"
-        style={hasActiveChild ? { background: accent.bg } : undefined}
+        className="sidebar-section-header group flex items-center w-full px-4 py-2 select-none"
       >
-        <div className="flex items-center gap-1.5">
-          <div
-            className="w-1 h-1 rounded-full shrink-0 transition-colors"
-            style={{ background: hasActiveChild ? accent.border : "transparent" }}
-          />
-          <span
-            className="text-[10px] font-semibold tracking-[0.1em] uppercase transition-colors"
-            style={{ color: hasActiveChild ? accent.border.replace("0.35", "1") : undefined }}
-          >
-            {label}
-          </span>
-        </div>
+        {/* Accent bar */}
+        <div
+          className="w-[3px] h-3.5 rounded-full mr-2.5 shrink-0 transition-all duration-300"
+          style={{
+            background: hasActiveChild ? accent.color : "var(--arch-border2)",
+            boxShadow: hasActiveChild ? `0 0 8px color-mix(in srgb, ${accent.color} 40%, transparent)` : "none",
+          }}
+        />
+        <span
+          className="text-[10.5px] font-semibold tracking-[0.08em] uppercase transition-colors duration-200 flex-1 text-left"
+          style={{ color: hasActiveChild ? accent.color : undefined }}
+        >
+          {label}
+        </span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="10"
-          height="10"
+          width="12"
+          height="12"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`text-arch-text3 group-hover:text-arch-text2 transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
+          className={`text-arch-text3 group-hover:text-arch-text2 transition-transform duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] ${open ? "" : "-rotate-90"}`}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-      {open && (
-        <div className="sidebar-section-items">
-          {items.map((item, i) => (
-            <button
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              style={{ animationDelay: `${i * 25}ms` }}
-              className={`flex items-center gap-2 px-3.5 py-2 w-full text-left border-l-2 transition-all duration-200 select-none ${
-                active === item.id
-                  ? "bg-white/5 border-l-arch-blue"
-                  : "border-l-transparent hover:bg-white/[0.03]"
-              }`}
-            >
-              <div
-                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
-                  active === item.id
-                    ? "sidebar-dot-active bg-arch-blue"
-                    : "bg-arch-text3"
+
+      {/* Animated collapsible content */}
+      <div
+        className="overflow-hidden transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        style={{
+          maxHeight: open ? (contentHeight ?? 2000) + "px" : "0px",
+          opacity: open ? 1 : 0,
+        }}
+      >
+        <div ref={contentRef} className="pb-1">
+          {items.map((item, i) => {
+            const isActive = active === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelect(item.id)}
+                style={{
+                  animationDelay: open ? `${i * 20}ms` : "0ms",
+                }}
+                className={`sidebar-nav-item flex items-center gap-2.5 w-full text-left mx-2 rounded-lg transition-all duration-200 select-none ${
+                  open ? "sidebar-item-enter" : ""
+                } ${
+                  isActive
+                    ? "sidebar-nav-active"
+                    : "hover:bg-[var(--sidebar-hover)]"
                 }`}
-                style={active === item.id ? { "--dot-glow": accent.dot } as React.CSSProperties : undefined}
-              />
-              <span
-                className={`text-[11.5px] transition-colors duration-200 ${
-                  active === item.id ? "text-arch-text" : "text-arch-text2"
-                }`}
+                {...(isActive ? { "data-accent": accent.name } : {})}
               >
-                {item.label}
-              </span>
-            </button>
-          ))}
+                {/* Active indicator dot */}
+                <div
+                  className="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300"
+                  style={
+                    isActive
+                      ? {
+                          background: accent.color,
+                          boxShadow: `0 0 6px color-mix(in srgb, ${accent.color} 50%, transparent)`,
+                        }
+                      : { background: "var(--arch-border2)" }
+                  }
+                />
+                <span
+                  className={`text-[11.5px] leading-tight transition-colors duration-200 ${
+                    isActive
+                      ? "font-medium text-arch-text"
+                      : "text-arch-text2"
+                  }`}
+                >
+                  {item.label}
+                </span>
+                {/* Active accent right edge */}
+                {isActive && (
+                  <div
+                    className="ml-auto w-1 h-4 rounded-full shrink-0 sidebar-active-bar"
+                    style={{ background: accent.color, opacity: 0.5 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }
 
 export default function SectionLayout({ label, items, children, extraItems, groups }: SectionLayoutProps) {
   const [active, setActive] = useState(items[0]?.id ?? "");
+  const sidebarRef = useRef<HTMLElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  useEffect(() => {
+    const el = sidebarRef.current;
+    if (!el) return;
+    const check = () => {
+      setCanScrollUp(el.scrollTop > 8);
+      setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 8);
+    };
+    check();
+    el.addEventListener("scroll", check, { passive: true });
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", check);
+      ro.disconnect();
+    };
+  }, []);
 
   return (
-    <div className="grid grid-cols-[196px_1fr] min-h-[calc(100vh-108px)]">
-      <aside className="bg-arch-bg2 border-r border-arch-border py-4 overflow-y-auto">
-        <CollapsibleSection
-          label={label}
-          items={items}
-          active={active}
-          defaultOpen={false}
-          onSelect={setActive}
-          accentIndex={0}
+    <div className="grid grid-cols-[220px_1fr] min-h-[calc(100vh-108px)]">
+      {/* Sidebar */}
+      <aside className="relative flex flex-col bg-arch-bg2 border-r border-arch-border">
+        {/* Scroll fade indicators */}
+        <div
+          className="pointer-events-none absolute top-0 left-0 right-0 h-6 z-10 transition-opacity duration-300"
+          style={{
+            background: "linear-gradient(to bottom, var(--arch-bg2), transparent)",
+            opacity: canScrollUp ? 1 : 0,
+          }}
         />
-        {extraItems && (
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 z-10 transition-opacity duration-300"
+          style={{
+            background: "linear-gradient(to top, var(--arch-bg2), transparent)",
+            opacity: canScrollDown ? 1 : 0,
+          }}
+        />
+
+        {/* Scrollable content */}
+        <nav ref={sidebarRef} className="flex-1 overflow-y-auto py-3 sidebar-scroll">
           <CollapsibleSection
-            label={extraItems.label}
-            items={extraItems.items}
+            label={label}
+            items={items}
             active={active}
             defaultOpen={false}
             onSelect={setActive}
-            accentIndex={1}
+            accentIndex={0}
           />
-        )}
-        {groups?.map((group, i) => (
-          <CollapsibleSection
-            key={group.label}
-            label={group.label}
-            items={group.items}
-            active={active}
-            defaultOpen={false}
-            onSelect={setActive}
-            accentIndex={(i + 2) % sectionAccents.length}
-          />
-        ))}
+          {extraItems && (
+            <CollapsibleSection
+              label={extraItems.label}
+              items={extraItems.items}
+              active={active}
+              defaultOpen={false}
+              onSelect={setActive}
+              accentIndex={1}
+            />
+          )}
+          {groups?.map((group, i) => (
+            <CollapsibleSection
+              key={group.label}
+              label={group.label}
+              items={group.items}
+              active={active}
+              defaultOpen={false}
+              onSelect={setActive}
+              accentIndex={(i + 2) % sectionAccents.length}
+            />
+          ))}
+        </nav>
       </aside>
+
+      {/* Content */}
       <div className="overflow-y-auto py-5 px-6">{children(active)}</div>
     </div>
   );

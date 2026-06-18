@@ -182,6 +182,23 @@
   html {
     @apply font-sans;
   }
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="link"],
+  [role="menuitem"],
+  [role="option"],
+  label[for],
+  select,
+  summary,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="button"] {
+    cursor: pointer;
+  }
 }
 
 .markdown-pre > code {
@@ -292,49 +309,90 @@
   text-shadow: 0 0 10px rgba(74, 143, 232, 0.5);
 }
 
-/* Sidebar collapsible animations */
-@keyframes sidebarSlideDown {
-  from { opacity: 0; max-height: 0; transform: translateY(-4px); }
-  to { opacity: 1; max-height: 2000px; transform: translateY(0); }
+/* ── Redesigned sidebar ────────────────────────────────── */
+
+/* Section group spacing */
+.sidebar-group {
+  padding: 2px 0;
 }
 
-@keyframes sidebarItemFadeIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+.sidebar-group + .sidebar-group {
+  border-top: 1px solid var(--arch-border);
+  margin-top: 2px;
+  padding-top: 4px;
 }
 
-.sidebar-section-items {
-  animation: sidebarSlideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
-  overflow: hidden;
-}
-
-.sidebar-section-items > button {
-  animation: sidebarItemFadeIn 0.2s ease-out both;
-}
-
+/* Section header */
 .sidebar-section-header {
   transition: background 0.2s ease, color 0.2s ease;
-}
-
-.sidebar-section-header:hover {
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  margin: 0 6px;
 }
 
 .dark .sidebar-section-header:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 :root .sidebar-section-header:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(0, 0, 0, 0.03);
 }
 
-.sidebar-dot-active {
-  animation: dotPulse 2s ease-in-out infinite;
+/* Nav items */
+.sidebar-nav-item {
+  padding: 6px 10px;
+  width: calc(100% - 16px);
 }
 
-@keyframes dotPulse {
-  0%, 100% { box-shadow: 0 0 4px var(--dot-glow); }
-  50% { box-shadow: 0 0 8px var(--dot-glow), 0 0 12px var(--dot-glow); }
+.sidebar-nav-active {
+  background: var(--sidebar-active-bg);
+}
+
+:root {
+  --sidebar-hover: rgba(0, 0, 0, 0.03);
+  --sidebar-active-bg: rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  --sidebar-hover: rgba(255, 255, 255, 0.04);
+  --sidebar-active-bg: rgba(255, 255, 255, 0.06);
+}
+
+/* Item entrance animation */
+@keyframes sidebarItemSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.sidebar-item-enter {
+  animation: sidebarItemSlideIn 0.2s ease-out both;
+}
+
+/* Active bar subtle pulse */
+@keyframes activeBarPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.sidebar-active-bar {
+  animation: activeBarPulse 2.5s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: var(--arch-border2);
+  border-radius: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--arch-text3);
 }
 
 /* ── Repo Structure tab animations ──────────────────────── */

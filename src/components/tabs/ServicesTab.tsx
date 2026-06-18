@@ -7,9 +7,8 @@ import {
   allServiceDeepDives,
   getServiceById,
   merchantGroupData,
-  lambdaOverviewData,
 } from "@/data/service-deep-dives";
-import type { ServiceDeepDive, MerchantGroupData, LambdaOverviewData } from "@/data/service-deep-dives";
+import type { ServiceDeepDive, MerchantGroupData } from "@/data/service-deep-dives";
 
 // ─── Sidebar Definition ──────────────────────────────────────────────────────
 
@@ -228,14 +227,6 @@ const sidebarGroups = [
   {
     label: "policy-rule-configurator",
     items: [{ id: "svc-policy-rule-config-compact", label: "Service overview" }],
-  },
-  // Lambda
-  {
-    label: "Lambda Functions",
-    items: [
-      { id: "svc-lambda-overview", label: "Categorized overview" },
-      { id: "svc-lambda-patterns", label: "Architecture patterns" },
-    ],
   },
 ];
 
@@ -898,81 +889,6 @@ function MerchantDepsView({ data }: { data: MerchantGroupData }) {
   );
 }
 
-// ─── Lambda Overview View ────────────────────────────────────────────────────
-
-function LambdaCategorizedView({ data }: { data: LambdaOverviewData }) {
-  return (
-    <div>
-      <div className="text-sm font-semibold text-arch-text mb-1">Lambda Functions — Categorized Overview</div>
-      <div className="text-[11.5px] text-arch-text2 leading-[1.7] mb-2">{data.summary}</div>
-      <div className="flex items-center gap-2 mb-4">
-        <span className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${badgeColors.teal}`}>{data.totalCount} functions</span>
-        <span className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${badgeColors.amber}`}>{data.categories.length} categories</span>
-      </div>
-
-      {data.categories.map((cat) => (
-        <div key={cat.id} className="mb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${badgeColors[cat.color] || badgeColors.gray}`}>{cat.name}</span>
-            <span className="text-[10px] text-arch-text3">{cat.lambdas.length} functions</span>
-          </div>
-          <div className="text-[11px] text-arch-text2 leading-[1.65] mb-2">{cat.description}</div>
-          <div className="space-y-2">
-            {cat.lambdas.map((l, i) => (
-              <div key={i} className="bg-arch-bg2 border border-arch-border rounded-lg px-3 py-2">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[11px] font-semibold text-arch-text">{l.name}</span>
-                  <span className={`text-[9px] px-1 py-px rounded border font-medium ${badgeColors.purple}`}>{l.trigger}</span>
-                </div>
-                <div className="text-[10.5px] text-arch-text2 leading-[1.6] mb-1">{l.purpose}</div>
-                <div className="flex flex-wrap gap-1">
-                  {l.targets.map((t, j) => (
-                    <span key={j} className={`text-[8.5px] px-1 py-px rounded border font-medium ${badgeColors.teal}`}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function LambdaPatternsView({ data }: { data: LambdaOverviewData }) {
-  return (
-    <div>
-      <div className="text-sm font-semibold text-arch-text mb-1">Lambda Architecture Patterns</div>
-      <div className="text-[11.5px] text-arch-text3 mb-4">Common patterns and infrastructure shared across all Lambda functions.</div>
-
-      <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mb-1.5">Common patterns</div>
-      <div className="space-y-3 mb-4">
-        {data.commonPatterns.map((p, i) => (
-          <div key={i} className="bg-arch-bg2 border border-arch-border rounded-lg p-3.5">
-            <div className="text-[12px] font-semibold text-arch-text mb-0.5">{p.pattern}</div>
-            <div className="text-[11px] text-arch-text2 leading-[1.65] mb-1.5">{p.description}</div>
-            <div className="flex flex-wrap gap-1">
-              {p.usedBy.map((u, j) => (
-                <span key={j} className={`text-[8.5px] px-1 py-px rounded border font-medium ${badgeColors.blue}`}>{u}</span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="text-[10px] font-semibold tracking-[0.09em] uppercase text-arch-text3 mb-1.5">Infrastructure</div>
-      <div className="bg-arch-bg2 border border-arch-border rounded-lg p-3.5">
-        {data.infrastructure.map((inf, i) => (
-          <div key={i} className="flex gap-3 text-[11px] leading-[1.8]">
-            <span className="text-arch-text3 shrink-0 w-28 font-medium">{inf.aspect}</span>
-            <span className="text-arch-text2">{inf.description}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Data-Driven Routing ─────────────────────────────────────────────────────
 
 type SectionType = "biz" | "tech" | "data" | "deps" | "ops" | "code" | "compact" | "migration";
@@ -1032,7 +948,7 @@ export default function ServicesTab() {
             <div>
               <div className="text-sm font-semibold text-arch-text mb-1">Service Deep Dives</div>
               <div className="text-[11.5px] text-arch-text2 leading-[1.7] mb-4">
-                Comprehensive documentation for all {allServiceDeepDives.length} Go microservices, 5 merchant API adapters, and {lambdaOverviewData.totalCount} Lambda functions in the subscription management platform. Each deep dive covers business context, technical architecture, data models, dependencies, and operational patterns.
+                Comprehensive documentation for all {allServiceDeepDives.length} Go microservices and 5 merchant API adapters in the subscription management platform. Each deep dive covers business context, technical architecture, data models, dependencies, and operational patterns.
               </div>
 
               {/* Domain group cards */}
@@ -1066,23 +982,6 @@ export default function ServicesTab() {
                   <div className="flex flex-wrap gap-1.5">
                     {merchantGroupData.merchants.map((m) => (
                       <span key={m.id} className={`text-[9px] px-1 py-px rounded border font-medium ${badgeColors.gray}`}>{m.name}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Lambda callout */}
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${badgeColors.teal}`}>Lambda Functions</span>
-                  <span className="text-[10px] text-arch-text3">{lambdaOverviewData.totalCount} functions</span>
-                </div>
-                <div className="bg-arch-bg2 border border-arch-border rounded-lg p-3.5" style={{ borderLeftWidth: 3, borderLeftColor: accentBorderColors.teal }}>
-                  <div className="text-[12px] font-semibold text-arch-text mb-1">Serverless Functions</div>
-                  <div className="text-[11px] text-arch-text2 leading-[1.65] mb-2">{lambdaOverviewData.summary.split(". ").slice(0, 2).join(". ")}.</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {lambdaOverviewData.categories.map((c) => (
-                      <span key={c.id} className={`text-[9px] px-1 py-px rounded border font-medium ${badgeColors[c.color] || badgeColors.teal}`}>{c.name} ({c.lambdas.length})</span>
                     ))}
                   </div>
                 </div>
@@ -1148,10 +1047,6 @@ export default function ServicesTab() {
         if (activeId === "svc-merchants-shared") return <MerchantSharedView data={merchantGroupData} />;
         if (activeId === "svc-merchants-comparison") return <MerchantComparisonView data={merchantGroupData} />;
         if (activeId === "svc-merchants-deps") return <MerchantDepsView data={merchantGroupData} />;
-
-        // ── Lambda views ──────────────────────────────────────────
-        if (activeId === "svc-lambda-overview") return <LambdaCategorizedView data={lambdaOverviewData} />;
-        if (activeId === "svc-lambda-patterns") return <LambdaPatternsView data={lambdaOverviewData} />;
 
         // ── Data-driven routing for all service sections ──────────
         const route = routeMap[activeId];

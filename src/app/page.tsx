@@ -3,8 +3,6 @@
 import { useState } from "react";
 import ArchitectureTab from "@/components/tabs/ArchitectureTab";
 import UiPagesTab from "@/components/tabs/UiPagesTab";
-import PayloadsTab from "@/components/tabs/PayloadsTab";
-import ErrorsTab from "@/components/tabs/ErrorsTab";
 import KafkaEventsTab from "@/components/tabs/KafkaEventsTab";
 import ReferenceTab from "@/components/tabs/ReferenceTab";
 import AiChatTab from "@/components/tabs/AiChatTab";
@@ -13,12 +11,11 @@ import RepoExplorerTab from "@/components/tabs/RepoExplorerTab";
 import FeatureFlagsTab from "@/components/tabs/FeatureFlagsTab";
 import LearningsTab from "@/components/tabs/LearningsTab";
 import ServicesTab from "@/components/tabs/ServicesTab";
+import BsaCheatsheetTab from "@/components/tabs/BsaCheatsheetTab";
 
 const tabs = [
   { id: "arch", label: "Architecture" },
   { id: "pages", label: "UI pages & flows" },
-  { id: "payloads", label: "Payloads" },
-  { id: "errors", label: "Errors & timing" },
   { id: "events", label: "Kafka events" },
   { id: "lambdas", label: "Lambda functions" },
   { id: "repo", label: "Repo" },
@@ -26,6 +23,7 @@ const tabs = [
   { id: "flags", label: "Feature Flags" },
   { id: "learnings", label: "Learnings" },
   { id: "services", label: "Services" },
+  { id: "bsa", label: "BSA Cheatsheet" },
   { id: "ai", label: "AI Assistant" },
 ];
 
@@ -64,8 +62,6 @@ export default function Home() {
       <div className="flex-1 overflow-hidden">
         {activeTab === "arch" && <ArchitectureTab />}
         {activeTab === "pages" && <UiPagesTab />}
-        {activeTab === "payloads" && <PayloadsTab />}
-        {activeTab === "errors" && <ErrorsTab />}
         {activeTab === "events" && <KafkaEventsTab />}
         {activeTab === "lambdas" && <LambdaFunctionsTab />}
         {activeTab === "repo" && <RepoExplorerTab />}
@@ -73,6 +69,7 @@ export default function Home() {
         {activeTab === "flags" && <FeatureFlagsTab />}
         {activeTab === "learnings" && <LearningsTab />}
         {activeTab === "services" && <ServicesTab />}
+        {activeTab === "bsa" && <BsaCheatsheetTab />}
         {activeTab === "ai" && <AiChatTab />}
       </div>
     </div>
