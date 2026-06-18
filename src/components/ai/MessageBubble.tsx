@@ -283,13 +283,13 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
         </div>
       )}
       <div
-        className={`max-w-[80%] px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm ${
+        className={`max-w-[80%] min-w-0 px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm ${
           isUser
             ? "bg-arch-blue/10 text-arch-text border border-arch-blue/20 rounded-2xl rounded-br-md"
             : "bg-arch-bg2 text-arch-text border border-arch-border rounded-2xl rounded-bl-md"
         }`}
       >
-        <div className="whitespace-pre-wrap break-words">
+        <div className="whitespace-pre-wrap break-words overflow-hidden">
           {isUser ? message.content : isThinking ? <ThinkingIndicator /> : formatMarkdown(message.content)}
         </div>
 

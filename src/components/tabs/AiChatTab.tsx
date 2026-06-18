@@ -62,14 +62,14 @@ export default function AiChatTab() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-90px)]">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-arch-border bg-arch-bg2/80 backdrop-blur-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-arch-purple to-arch-blue text-white flex items-center justify-center text-[9.5px] font-bold">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-arch-purple to-arch-blue text-white flex items-center justify-center text-[9.5px] font-bold shrink-0">
             AI
           </div>
-          <span className="text-[13px] font-semibold text-arch-text">
+          <span className="text-[13px] font-semibold text-arch-text truncate">
             Architecture Assistant
           </span>
           <ModelSelector
@@ -147,7 +147,7 @@ export default function AiChatTab() {
       {/* Messages area */}
       <div
         ref={scrollRef}
-        className={`flex-1 overflow-y-auto px-4 py-4 ${isEmpty ? "flex flex-col items-center justify-center" : ""}`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 ${isEmpty ? "flex flex-col items-center justify-center" : ""}`}
       >
         {isEmpty ? (
           <div className="w-full max-w-xl mx-auto flex flex-col gap-3">
