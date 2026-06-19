@@ -625,6 +625,437 @@ I'd define the integration boundaries: Where does data cross system boundaries? 
 
 The JDL-style domain model I created for Bell — with entities, enums for lifecycle states, and explicit relationship cardinalities — would translate directly. The key insight is: identify the bounded contexts (enrollment, claims, contributions, payouts), define the shared language within each context, and document the anti-corruption layers where contexts integrate.`,
   },
+  {
+    num: 12,
+    question: "Can you describe a situation where you had to analyze a complex business process?",
+    answer: `On the Bell Canada Subscription Management Platform, the most complex business process I analyzed was the end-to-end subscription lifecycle — from add through activation, grace period, cancellation, and reversal — across 5 different streaming providers (Netflix, Disney+, Bell Media, Bango, Radio-Canada).
+
+Situation: Each merchant had different provisioning protocols, different grace period windows (Netflix: 3 days, Bango: 7 days), and different callback mechanisms. The existing documentation described a simple "customer adds subscription" flow, but the actual process involved 8 microservices, 3 databases, Kafka event chains, and saga compensation logic.
+
+Task: I needed to map the full process so the development team, QA, and product owners had a shared understanding of every step, decision point, and failure path.
+
+Action: I started by tracing the code through reseller-service (the write orchestrator), mapping each function call to a step in the flow. I created an orchestration spec with 6 steps: session validation → qualification → order creation (PostgreSQL write) → merchant provisioning (adapter pattern) → Kafka event publish → audit logging. For each step, I documented the service responsible, the input/output payload, the failure mode, and the compensation action (saga rollback).
+
+I also built a state machine diagram showing all subscription status transitions: PENDING → ACTIVE → GRACE_PERIOD → CANCELLED → REVERSED, with the business rules that triggered each transition. This revealed edge cases the product team hadn't considered — for example, "what happens if a customer reverses a cancellation during the grace period?"
+
+Result: The orchestration spec became the single source of truth for the entire team. QA used it to derive 17 test scenarios. When we onboarded Radio-Canada as a new provider, the spec let us identify exactly which steps needed customization (just the adapter layer) versus which were reusable (everything else). The onboarding took 2 weeks instead of the projected 5.`,
+  },
+  {
+    num: 13,
+    question: "How do you prioritize and manage requirements in a project?",
+    answer: `I use a structured approach combining business value, technical dependency, and risk to prioritize requirements. On the Bell project, I managed requirements across multiple concurrent workstreams — new merchant integrations, platform enhancements, and defect fixes.
+
+My prioritization framework has three dimensions:
+
+1. Business value and urgency: I work with the product owner to stack-rank features by revenue impact and contractual deadlines. On Bell, merchant launch dates were contractually fixed (e.g., Disney+ had a firm go-live date), so those integration requirements automatically took priority over internal improvements.
+
+2. Technical dependencies: I map dependencies between requirements using orchestration specs. For example, the "Add Subscription" flow depended on session-api, catalog-api, and reseller-service — so requirements for those services had to be completed in dependency order. I visualized this in Jira using story links and blockers.
+
+3. Risk and complexity: High-risk requirements (like the saga compensation logic) get prioritized earlier so we have time to iterate. I learned this on Bell when we discovered late that the Disney+ async provisioning model broke our synchronous flow — if we'd tackled that integration earlier, the architectural change would have been less disruptive.
+
+For day-to-day management, I maintain a living requirements backlog in Jira with clear acceptance criteria for every story. During sprint planning, I present a prioritized list to the team with the rationale for ordering. I also run a weekly requirements triage with the product owner to re-prioritize based on new information — stakeholder feedback, technical discoveries, or external partner changes.
+
+The key principle: requirements aren't static. I treat the backlog as a living document and re-prioritize every sprint based on what we've learned.`,
+  },
+  {
+    num: 14,
+    question: "What experience do you have with business intelligence tools like Tableau or Power BI?",
+    answer: `While my primary focus on the Bell project was systems analysis and integration architecture, I leveraged data analysis and visualization skills in several important ways.
+
+On the Bell Subscription Management Platform, I worked with operational data to support decision-making. I used data queries against PostgreSQL (subscriptions, orders, audit logs) to analyze subscription lifecycle patterns — for example, identifying which merchants had the highest provisioning failure rates, which informed our circuit breaker threshold configuration (5 failures in 30 seconds for Netflix, different thresholds for other providers).
+
+I created data-driven artifacts that served a similar purpose to BI dashboards: latency budget tables showing P99 response times across all service hops (UI → BFF: <50ms, reseller-service → merchant-api: 300ms–1.5s), error distribution analysis across the 4 error tiers I defined (client errors, upstream failures, infrastructure failures, async failures), and Kafka event throughput analysis to validate our at-least-once delivery guarantees.
+
+For stakeholder reporting, I built comparison documents with side-by-side analysis — for example, when recommending the adapter pattern over custom integrations, I created a cost/complexity matrix showing projected effort for each new merchant onboarding under both approaches. This is essentially the same analytical thinking that drives BI dashboard creation: identify the key metrics, collect the data, present it visually, and drive a decision.
+
+I'm comfortable learning any BI tool quickly because the underlying skills are the same — SQL querying, data modeling, metric definition, and visual storytelling. The domain changes (subscriptions vs. benefits), but the analytical approach transfers directly.`,
+  },
+  {
+    num: 15,
+    question: "How do you handle conflicting priorities when working on multiple projects?",
+    answer: `On the Bell platform, I regularly juggled competing priorities across multiple workstreams: active merchant integrations (Disney+, Radio-Canada), platform improvements (saga pattern refactoring), and production defect triage — all with different stakeholders and deadlines.
+
+My approach has four elements:
+
+1. Make conflicts visible: When I can't do everything simultaneously, I create a simple priority matrix showing each workstream, its deadline, its current status, and its stakeholder. I share this with all stakeholders so everyone sees the same picture. On Bell, I maintained a weekly status view showing: Disney+ integration (launch in 3 weeks, on track), Radio-Canada (launch in 6 weeks, blocked on API spec), saga refactoring (no hard deadline, paused).
+
+2. Negotiate with data, not opinions: When the Disney+ team and the platform team both needed my analysis work in the same sprint, I didn't pick sides. I showed both stakeholders the dependency chain: "Disney+ requires the async provisioning spec by Tuesday for dev to start. The saga refactoring design doc is needed by Thursday for the architecture review. I can deliver both if I focus on Disney+ Monday–Tuesday and saga Wednesday–Thursday." When both sides see the concrete schedule, conflicts usually resolve.
+
+3. Protect focused work time: I block mornings for deep analysis work (data mappings, orchestration specs) and use afternoons for meetings, reviews, and ad-hoc questions. This is how I delivered the Radio-Canada integration spec while simultaneously supporting Disney+ UAT — mornings on new requirements, afternoons on defect triage.
+
+4. Escalate early: If I genuinely can't meet all deadlines, I escalate to my manager with the trade-off clearly articulated: "I can deliver A and B by Friday, or A and C. B and C conflict. Which do you want?" I never silently miss a deadline.`,
+  },
+  {
+    num: 16,
+    question: "Can you explain your approach to data analysis in your role as a Business Systems Analyst?",
+    answer: `Data analysis is central to my BSA work — I use it to validate requirements, trace system behavior, and identify gaps between business expectations and technical reality.
+
+On the Bell project, my data analysis approach had three layers:
+
+1. Field-level data tracing: For every integration, I created end-to-end data mappings that trace each field from the UI through every service layer to the database. For the "Add Subscription" flow, I mapped 11 fields: UI Field (e.g., "Selected Plan") → GraphQL Variable (selectedProductId) → Go Struct Field (req.ProductID) → PostgreSQL Column (subscriptions.product_id). This tracing reveals data transformations, type mismatches, and missing fields before development begins.
+
+2. Event and payload analysis: I analyzed Kafka event payloads to verify that downstream consumers receive all required data. The OrderCreated event needed to carry 10 specific fields for 3 different consumers (notification-consumer, billing-sync, analytics). I documented each field, its source (which service populates it), and its consumers. When we discovered that the billingCycle field was missing from the event payload, I caught it during analysis — not in production.
+
+3. Operational data analysis: I analyzed production logs, error rates, and latency distributions to inform requirements. For example, analyzing the P99 latency for merchant provisioning calls revealed that Bango was consistently slower (1.2s vs. Netflix's 400ms), which led to a requirement for provider-specific timeout configurations in the circuit breaker. I also analyzed the DLQ (Dead Letter Queue) to identify recurring failure patterns — a spike in DLQ messages from the Disney+ consumer led us to discover a schema mismatch in their callback payload.
+
+The common thread: I don't just document what the system should do — I verify what it actually does by analyzing real data flows, and I use that analysis to improve the system's design.`,
+  },
+  {
+    num: 17,
+    question: "How do you ensure successful User Acceptance Testing (UAT)?",
+    answer: `I ensure UAT success by making it a natural extension of the requirements process, not a separate phase. On the Bell project, every UAT scenario traced directly back to an acceptance criterion I wrote during requirements.
+
+My UAT approach has four stages:
+
+1. AC-driven test plan: Each acceptance criterion in Given-When-Then format becomes a UAT test case. For "Add Subscription," I had 6 ACs covering happy path, error scenarios, edge cases, and async behavior. Each AC mapped to 1–3 UAT scenarios. QA didn't have to guess what to test — the acceptance criteria were the test plan.
+
+2. Test data preparation: I work with the dev team to create test fixtures that cover all scenarios. On Bell, this meant: valid accounts in CPM (for happy path), expired sessions in DynamoDB (for session timeout scenarios), merchant API stubs configured to return failures (for circuit breaker testing), and specific subscription states in PostgreSQL (for grace period and reversal scenarios).
+
+3. Environment validation: Before UAT begins, I verify the test environment matches the expected state. On Bell, I'd check that all 5 merchant-api adapters were deployed, that Kafka topics were configured, that DynamoDB session TTLs were set correctly, and that the circuit breaker thresholds matched production configuration. I learned this the hard way when a UAT cycle failed because the test environment had different circuit breaker settings than production.
+
+4. Defect triage with traceability: When a UAT defect is found, I trace it back to the specific AC, orchestration step, and data mapping field. This means the developer can open the orchestration spec, find the exact step that failed, and identify the root cause without a lengthy investigation. On Bell, this reduced our average defect resolution time from 2 days to half a day.
+
+The key principle: UAT should validate the requirements, not discover them. If UAT reveals a missing requirement, that's a process failure I address by improving the upstream analysis.`,
+  },
+  {
+    num: 18,
+    question: "What strategies do you use to communicate complex technical information to non-technical stakeholders?",
+    answer: `I use three strategies: analogies, visual artifacts, and progressive detail.
+
+1. Analogies from the stakeholder's world: On Bell, when explaining the circuit breaker pattern to the VP of Product, I compared it to a household fuse: "When Netflix's system has a problem, our fuse trips to protect the rest of the house. For 30 seconds, Netflix orders fail fast, but Disney+, Bell Media, and all other providers keep working. After 30 seconds, we test Netflix again." The VP immediately understood and even suggested a UX improvement: showing a provider-specific "temporarily unavailable" message instead of a generic error.
+
+2. Visual artifacts at the right level of abstraction: For executives, I use system context diagrams showing actors and high-level service blocks — no internal implementation details. For product managers, I use state machine diagrams showing subscription lifecycle transitions (PENDING → ACTIVE → GRACE_PERIOD → CANCELLED) with business triggers for each transition. For developers, I use sequence diagrams showing exact API calls and payloads. Same system, three levels of detail for three audiences.
+
+3. Progressive disclosure: I start with the simplest explanation and add detail only when asked. When presenting the CQRS architecture to the billing team, I started with: "Writes go through one path, reads go through another. This means there's a small delay (under 5 seconds) between when something changes and when you see the change." Only when they asked "why?" did I explain the PostgreSQL → Kafka → aggregator-api pipeline.
+
+The meta-principle: I translate from technical language to business impact. Non-technical stakeholders don't need to know we use a saga pattern — they need to know "if the merchant fails, we automatically undo the order and the customer doesn't get charged." The technical detail is the how; the business impact is the what. I always lead with the what.`,
+  },
+  {
+    num: 19,
+    question: "How do you stay updated with industry trends and advancements in technology?",
+    answer: `I stay current through a combination of hands-on practice, community engagement, and structured learning.
+
+1. Hands-on learning through my projects: The Bell platform itself was a continuous learning environment. Working with a 60+ microservice Go backend exposed me to event-driven architecture (Kafka), saga patterns, CQRS, circuit breakers, and cloud-native patterns (AWS AppSync, DynamoDB, Lambda). Each new merchant integration brought new challenges — Disney+ introduced async provisioning, which pushed me to learn webhook callback patterns and polling fallback strategies.
+
+2. Architecture and design pattern study: I regularly study integration patterns through resources like Martin Fowler's enterprise patterns, the Microservices.io pattern catalog, and the AWS Well-Architected Framework. On Bell, when we needed to decide between orchestration and choreography for the subscription flow, I researched both patterns, created a comparison document, and recommended orchestration (saga via flow-runner-api) because we needed explicit compensation logic for merchant provisioning failures.
+
+3. Tool and platform awareness: I follow developments in API design (OpenAPI 3.1, AsyncAPI for event-driven APIs), observability (distributed tracing, structured logging), and integration platforms. When Canada Life or any enterprise is evaluating tools, I can bring informed perspectives on trade-offs.
+
+4. Cross-domain learning: I actively study how patterns from one domain apply to another. The subscription lifecycle (PENDING → ACTIVE → CANCELLED) directly maps to benefits enrollment (APPLIED → ENROLLED → TERMINATED). The merchant adapter pattern maps to carrier/provider integrations in insurance. By studying multiple domains, I recognize patterns faster and can propose solutions based on proven approaches.
+
+The key is that I don't just read about technology — I apply it. Every pattern I discuss in interviews, I've implemented or analyzed in a real production system.`,
+  },
+  {
+    num: 20,
+    question: "Can you describe your experience with Agile development methodologies?",
+    answer: `I've worked in Agile (Scrum) throughout the Bell project, serving as the primary BSA embedded in a cross-functional team of developers, QA, and a product owner.
+
+Sprint ceremonies and my role:
+- Sprint Planning: I present prioritized stories with complete acceptance criteria, data mappings, and orchestration specs. I walk the team through the "what" and "why" while developers discuss the "how." I lead story pointing using relative complexity against known stories (e.g., "Radio-Canada integration is similar to Netflix but with HMAC auth, so add 3 points for adapter complexity").
+- Grooming/Refinement: I use "progressive decomposition" — present what we know, explicitly list unknowns as spike stories, and time-box investigations. When the solution is unclear, I shift from "estimate this" to "what do we need to learn before we can estimate?"
+- Daily Standups: I report on analysis progress, flag blockers (e.g., "waiting on Disney+ API spec"), and coordinate with QA on upcoming UAT readiness.
+- Sprint Review/Demo: I demonstrate features against acceptance criteria, showing stakeholders exactly which requirements were met.
+- Retrospectives: I contribute process improvements — for example, I introduced the peer review process for requirements documents after discovering that inconsistencies between data mappings and ACs were causing rework.
+
+Agile artifacts I maintain:
+- User stories with Given-When-Then acceptance criteria linked to orchestration specs
+- A living requirements backlog re-prioritized every sprint
+- Definition of Done that includes: AC verified, data mapping validated, error scenarios tested, Kafka events confirmed
+
+Key Agile principle I follow: working software over comprehensive documentation — but for a BSA, "working" means the requirements are complete enough that developers don't have to guess, and concise enough that they actually read them.`,
+  },
+  {
+    num: 21,
+    question: "How do you approach gathering and documenting business requirements?",
+    answer: `My approach is iterative and evidence-based — I don't write requirements in isolation, I derive them from stakeholder input, system behavior, and codebase analysis.
+
+Step 1 — Stakeholder discovery: I identify all stakeholders and their concerns. On Bell, for a new merchant integration, that included: the product owner (business goals, launch date), the merchant's technical team (API capabilities, auth scheme), the backend lead (architectural constraints), QA (testability), and ops (monitoring, SLA). Each stakeholder contributes a different dimension of the requirement.
+
+Step 2 — Current-state analysis: Before writing new requirements, I understand the existing system. On Bell, I traced the actual code paths in reseller-service and the merchant adapters to understand how the current flow works. This revealed implicit requirements that stakeholders forgot to mention — like the circuit breaker configuration per merchant, or the DLQ retry policy.
+
+Step 3 — Requirements documentation: I produce four linked artifacts:
+- Business Requirements Document (BRD): Business-level needs ("Bell customers need to manage streaming subscriptions through a single interface")
+- Data Mappings: Field-level tracing from UI → GraphQL → Go → DB for every data flow
+- Orchestration Specs: Step-by-step flow with service, action, payload, error handling, and compensation for each step
+- Acceptance Criteria: Given-When-Then format covering happy path, errors, edge cases, and async behavior
+
+Step 4 — Validation: I review requirements with developers in grooming (is this implementable?), with QA (is this testable?), and with the product owner (does this match the business intent?). On Bell, every requirements document went through a BSA peer review before the grooming session.
+
+Step 5 — Living documentation: Requirements evolve. When a developer discovers an edge case during implementation, I update the AC and data mapping. The documents are never "done" — they're current.`,
+  },
+  {
+    num: 22,
+    question: "What techniques do you use to identify areas for process improvement?",
+    answer: `I identify process improvements through three techniques: data-driven analysis, pattern recognition across integrations, and retrospective feedback loops.
+
+1. Data-driven analysis — measuring friction: On Bell, I tracked metrics that revealed process bottlenecks. When I noticed that our average defect resolution time was 2 days, I investigated and found that developers couldn't easily trace defects back to specific requirements. I introduced AC-referenced defect tickets (e.g., "Defect violates AC-1.3: subscription status should be PENDING, actual is NULL") — this cut resolution time to half a day because developers could open the orchestration spec, find the step, and identify the root cause.
+
+2. Pattern recognition across integrations: After onboarding 3 merchants (Netflix, Disney+, Bango), I noticed each integration followed the same pattern but was documented differently by different team members. I created standardized templates — data mapping template (UI → GraphQL → Go → DB → Notes), orchestration spec template (Step, Service, Action, Trigger, Payload, Error Handling), and AC checklist (happy path, errors, edge cases, async). When we onboarded Bell Media and Radio-Canada, these templates cut documentation time by 40%.
+
+3. Retrospective feedback loops: After each sprint, I collected feedback on the requirements process. The key insight from our retrospectives was that developers wanted error scenarios documented upfront — they were discovering them during implementation and having to come back for clarification. I added a mandatory "Error Scenarios" section to every story, covering all 4 error tiers (client errors, upstream failures, infrastructure failures, async failures). This reduced mid-sprint clarification requests by roughly 60%.
+
+The improvement I'm most proud of: introducing the BSA peer review process. Before any requirements document went to the dev team, another BSA reviewed it against a checklist (data mapping complete? Error scenarios covered? Orchestration spec consistent? Saga compensation path documented?). This caught 30% of issues before they reached development.`,
+  },
+  {
+    num: 23,
+    question: "How do you ensure a project stays on schedule and within budget?",
+    answer: `I contribute to schedule and budget adherence through upfront analysis quality, dependency management, and early risk identification.
+
+1. Front-loading analysis to prevent rework: The biggest schedule risk I've seen is incomplete requirements that cause mid-sprint rework. On Bell, I invested in thorough upfront analysis — complete data mappings, orchestration specs, and error scenario documentation — so developers could implement without guessing. When we had complete specs, stories were completed in the estimated time. When we didn't (early in the project), stories overran by 30-50% due to clarification cycles.
+
+2. Dependency mapping and critical path awareness: For each feature, I map technical dependencies across services. For the "Add Subscription" flow, I identified that session-api, catalog-api, and reseller-service all needed changes, and I ordered the stories so upstream dependencies were completed first. When Disney+ changed their provisioning to async mid-project, I immediately mapped the impact: 3 stories needed revision, 2 new stories were required. I presented two options with timelines to the product owner — this let us make an informed schedule decision rather than discovering the delay at the end of the sprint.
+
+3. Risk-based scheduling: I prioritize high-risk work (external integrations, new patterns) early in the timeline. On Bell, merchant API integrations were the highest-risk items because we depended on external teams. I pushed to start the Disney+ integration spike 2 sprints before the target sprint, which gave us time to discover and adapt to the async provisioning change.
+
+4. Transparent status communication: I maintain a weekly status view showing each workstream's progress against plan. When something slips, I communicate immediately with the impact and options — never "we're behind" without "here's what we can do about it."
+
+The key principle: a BSA can't control the budget, but I can control the quality of requirements that drive accurate estimation and prevent costly rework.`,
+  },
+  {
+    num: 24,
+    question: "Can you give an example of how you've used data analysis to improve a business system?",
+    answer: `On the Bell platform, I used data analysis to identify and fix a critical gap in our merchant failure handling that was causing silent order failures.
+
+Situation: After the first month of production with Netflix and Disney+ live, the ops team noticed that about 2% of orders were stuck in PENDING status indefinitely — they never transitioned to ACTIVE or FAILED.
+
+Analysis: I traced the data flow for stuck orders by querying the subscriptions table (status = PENDING, created_at > 7 days), joining with the orders table to find the corresponding order records, and checking the audit_log for the last recorded action. I discovered that these orders had successfully written to PostgreSQL (step 2 of the saga) but the merchant provisioning call (step 3) had timed out — and crucially, the timeout wasn't being treated as a failure. The code was silently swallowing the timeout exception instead of triggering the saga compensation.
+
+I then analyzed the Kafka DLQ to see if these failures were being captured downstream — they weren't, because the Kafka publish (step 4) never fired since the flow stopped at step 3. I also correlated the stuck orders with specific time windows and found they clustered around Netflix's maintenance windows (Sunday 2-4am EST).
+
+Action: Based on this analysis, I wrote three new requirements: (1) Merchant provisioning timeouts must trigger saga compensation (roll back the PostgreSQL write), (2) A fallout-process Lambda must scan for orders stuck in PENDING beyond a configurable threshold and attempt auto-remediation, (3) The circuit breaker configuration must include provider-specific timeout thresholds (Netflix: 800ms, Disney+: 1.2s, Bango: 1.5s).
+
+Result: After implementation, stuck orders dropped from 2% to 0.01% (only genuine edge cases). The data analysis directly drove three system improvements that wouldn't have been discovered through requirements alone.`,
+  },
+  {
+    num: 25,
+    question: "How do you handle changes in project scope or client requirements?",
+    answer: `I handle scope changes through structured impact assessment, transparent communication, and documented trade-offs.
+
+The best example from Bell was the Disney+ async provisioning change — two weeks before their integration launch, Disney's team notified us that their provisioning API would be asynchronous instead of synchronous. Our entire subscription flow assumed synchronous provisioning: submitSubscription called merchant-api-disney, received an activationUrl immediately, and returned it to the UI in the same response.
+
+My response process:
+
+1. Impact assessment (within 24 hours): I mapped the change against all existing artifacts. The orchestration spec needed a new "await callback" step. The state machine needed a new PROVISIONING intermediate state. Three acceptance criteria needed revision. The Kafka event sequence changed (ActivationCompleted would fire later via webhook, not during the same request). The UI needed a "processing" intermediate screen.
+
+2. Options with trade-offs: I presented two options to the product owner and engineering lead:
+   - Option A: Delay launch by 3 weeks to fully implement async flow with webhooks
+   - Option B: Launch with a polling fallback (UI polls reseller-service every 5 seconds for status updates) while we build the webhook handler in parallel
+
+3. Decision support: I recommended Option B with clear transition criteria — "We ship polling for launch, then cut over to webhooks when the webhook handler passes UAT. The polling code becomes the fallback for any future provider that doesn't support webhooks."
+
+4. Updated documentation: I revised all affected artifacts within 2 days: updated orchestration spec, new acceptance criteria for the polling behavior, transition criteria for the webhook cutover, and updated data mapping showing the new intermediate state.
+
+Result: We launched on schedule with polling. The webhook handler shipped 2 sprints later. The key was responding with a concrete impact assessment and actionable options, not just flagging the risk.`,
+  },
+  {
+    num: 26,
+    question: "What's your experience with creating and maintaining technical documentation?",
+    answer: `Technical documentation is one of my core deliverables as a BSA. On the Bell project, I created and maintained six types of living documents:
+
+1. Data Mappings: Field-level tracing documents showing UI Field → GraphQL Variable → Go Struct Field → PostgreSQL Column → Notes. I maintained 11+ mappings for the Add Subscription flow alone, and each new merchant integration added provider-specific field mappings. These were updated every time a schema changed.
+
+2. Orchestration Specs: Step-by-step flow documents for each business operation (order submission, activation, cancellation, reversal). Each step includes: the service responsible, the action performed, the input/output payload, the error handling behavior, and the saga compensation action. I maintained 3 core flows with 6 steps each.
+
+3. API Specifications: I reviewed and annotated OpenAPI specs for 9 backend services and 2 gRPC proto files. My role was ensuring the specs matched the data mappings and that field names, types, and constraints were consistent across layers.
+
+4. Domain Models: I created JDL-style entity-relationship models showing 6 entities (Subscription, Order, Provision, Session, AuditLog, FlowExecution) with their attributes, lifecycle state enums, and relationships. These models were the reference for database schema reviews.
+
+5. State Machine Diagrams: I documented the subscription lifecycle as a state machine (PENDING → ACTIVE → GRACE_PERIOD → CANCELLED → REVERSED) with all valid transitions and the business rules that trigger each.
+
+6. Error Catalogs: I documented 17 specific error scenarios organized into 4 tiers, each with trigger condition, HTTP status code, error response body, UI behavior, and recovery path.
+
+Key maintenance principle: I treat documentation like code — it's never "done," it's "current." Every sprint, I review and update affected documents. I also established a peer review process: before any document went to the dev team, another BSA reviewed it against a completeness checklist.`,
+  },
+  {
+    num: 27,
+    question: "How do you approach risk management in your projects?",
+    answer: `I approach risk management by identifying risks early, categorizing them by likelihood and impact, and building mitigation strategies into the requirements and architecture.
+
+On the Bell project, I categorized risks into four tiers:
+
+1. External dependency risks (highest impact): Merchant API availability was our biggest risk. Each provider (Netflix, Disney+, Bango, Bell Media, Radio-Canada) could go down independently. Mitigation: I wrote requirements for the circuit breaker pattern — if a merchant fails 5 consecutive calls within 30 seconds, the circuit opens and subsequent calls fail fast. I also required a DLQ with auto-remediation via the fallout-process Lambda.
+
+2. Data consistency risks: With CQRS architecture, write and read paths could diverge. Mitigation: I documented the eventual consistency window (under 5 seconds p99 via Kafka consumers) and ensured stakeholders understood and accepted this lag. I also wrote requirements for idempotent operations — submitting the same order twice returns the existing order rather than creating a duplicate.
+
+3. Integration change risks: External partners could change their API contracts. This actually happened with Disney+ going async. Mitigation: I advocated for the adapter pattern early — each merchant behind a common interface — so changes to one provider didn't propagate through the system. The Anti-Corruption Layer (household-api wrapping legacy CPM) was another mitigation against upstream changes.
+
+4. Knowledge and process risks: Single points of knowledge on the team. Mitigation: I created standardized templates for all BSA artifacts and established peer review, so multiple team members understood each integration. When I documented the Radio-Canada integration patterns, a junior BSA was able to independently use the templates for the next integration.
+
+My risk management principle: every risk should have a corresponding requirement or architectural decision. If we identify a risk but don't change anything, we haven't actually mitigated it — we've just acknowledged it.`,
+  },
+  {
+    num: 28,
+    question: "Can you describe your process for developing business systems analysis reports?",
+    answer: `My analysis reports follow a structured format that progresses from business context to technical detail, making them useful for both business and technical audiences.
+
+On the Bell project, my standard analysis report structure was:
+
+1. Business Problem Statement: What business need does this address? Example: "Bell customers need to add and manage streaming subscriptions (Netflix, Disney+, etc.) through a single unified interface, with bundled billing on their Bell account."
+
+2. Current State Analysis: How does the system work today? I trace the actual behavior by reading the codebase — not by relying on existing documentation that may be outdated. For the subscription flow, I documented: the current services involved (reseller-service, session-api, catalog-api), the current data flow (UI → BFF → AppSync → Go services → PostgreSQL/DynamoDB), and the current limitations.
+
+3. Gap Analysis: What's missing? For the Radio-Canada integration, the gaps were: no adapter for their specific auth scheme (HMAC), no handling for their unique grace period window (5 days), and no mapping for their product catalog format.
+
+4. Proposed Solution: Structured as deliverable artifacts:
+   - Data mapping: field-level tracing from UI to database
+   - Orchestration spec: step-by-step flow with error handling
+   - Acceptance criteria: testable conditions in Given-When-Then format
+   - State machine updates: any new status transitions
+
+5. Impact Assessment: Which services are affected? What's the testing scope? What are the dependencies and risks? For Disney+'s async change, I assessed impact across 4 services, 3 ACs, and the UI.
+
+6. Recommendations: Prioritized options with trade-offs. I always present at least two options so stakeholders can make informed decisions rather than receiving a mandate.
+
+Each report is a living document maintained in the team wiki and updated every sprint as implementation reveals new details.`,
+  },
+  {
+    num: 29,
+    question: "What tools do you consider essential for a Business Systems Analyst?",
+    answer: `Based on my Bell project experience, I organize essential BSA tools into five categories:
+
+1. Requirements Management: Jira for user stories, acceptance criteria, and backlog management. I used Jira's story linking (BR → Story → Test) to maintain traceability throughout the development lifecycle. Confluence for living documentation — data mappings, orchestration specs, and analysis reports that evolve with the project.
+
+2. Diagramming and Modeling: Mermaid (embedded in markdown) for sequence diagrams, state machines, entity-relationship diagrams, and system context diagrams. I chose Mermaid because diagrams live alongside the code and documentation — they're version-controlled and easy to update. For more complex visuals, draw.io or Lucidchart.
+
+3. API and Data Analysis: Postman for API testing and contract validation — verifying that actual responses match the OpenAPI spec. SQL clients for querying PostgreSQL (subscription data, orders, audit logs) to validate data mappings and analyze production behavior. On Bell, SQL queries against the audit log were how I discovered the stuck-orders issue.
+
+4. Code and Codebase Navigation: IDE (VS Code) for reading the Go codebase and the Next.js MFE. As a BSA, I don't write production code, but I read it extensively to trace data flows, understand error handling, and validate that implementation matches requirements. Git for version control and understanding code history.
+
+5. Communication and Collaboration: Slack for day-to-day coordination. Screen sharing tools for grooming sessions and stakeholder presentations. Whiteboarding tools (physical or Miro) for workshop-style sessions — the circuit breaker explanation to the VP was done on a physical whiteboard.
+
+The most important "tool" isn't software — it's the structured artifact templates (data mapping, orchestration spec, AC checklist) that ensure consistency across the team. Templates are force-multipliers that let any BSA produce high-quality deliverables.`,
+  },
+  {
+    num: 30,
+    question: "How do you ensure the scalability of business systems you work on?",
+    answer: `As a BSA, I ensure scalability by documenting non-functional requirements explicitly and validating that the architecture supports growth.
+
+On the Bell project, scalability was critical because we went from 2 merchants (Netflix, Bango) to 5 (adding Disney+, Bell Media, Radio-Canada) within a year, with plans for more. Here's how I addressed scalability at the requirements level:
+
+1. Adapter pattern for merchant scalability: I advocated for the MerchantProvider interface pattern early — a common Go interface (Provision, Deprovision, CheckStatus, HandleCallback) with provider-specific implementations. My requirements specified: "Adding a new merchant must not require changes to reseller-service core logic." This meant each new integration was isolated to implementing 4 interface methods and deploying a new merchant-api-<provider> service. The proof: Radio-Canada onboarding was 2 weeks because the pattern was established.
+
+2. CQRS for read/write scalability: I documented the requirement for separate read and write paths. The write path (reseller-service → PostgreSQL) could be scaled independently of the read path (aggregator-api merging PostgreSQL + CPM). When read traffic spiked during promotions, only the read services needed scaling.
+
+3. Event-driven architecture for throughput: I specified Kafka as the event backbone with at-least-once delivery semantics. This let downstream consumers (notifications, billing sync, analytics) scale independently without affecting the core transaction path. The requirement: "Kafka event publish must be non-blocking — order completion must not depend on consumer availability."
+
+4. Latency budgets: I documented P99 latency targets for every hop in the system: UI → BFF (<50ms), AppSync → reseller-service (500ms–2s), reseller-service → merchant-api (300ms–1.5s). These budgets became the baseline for performance testing and capacity planning.
+
+5. Circuit breaker isolation: I required per-merchant circuit breakers so one provider's failure doesn't cascade. This is horizontal scalability for reliability — each new merchant is isolated from the others.
+
+The principle: scalability requirements should be explicit and testable, not assumed.`,
+  },
+  {
+    num: 31,
+    question: "Can you explain the difference between a Business Requirement Document (BRD) and System Requirements Specifications (SRS)?",
+    answer: `The BRD and SRS serve different audiences and operate at different levels of abstraction. On the Bell project, I produced both and they were tightly linked.
+
+Business Requirement Document (BRD) — the "what" and "why":
+- Audience: Business stakeholders, product owners, executives
+- Content: Business objectives, scope, high-level features, success criteria, constraints
+- Language: Business terms, no technical implementation details
+- Example from Bell: "Bell residential customers must be able to add, manage, and cancel streaming subscriptions (Netflix, Disney+, Bell Media, Bango, Radio-Canada) through the self-serve portal, with charges appearing on their existing Bell account. New streaming providers must be onboardable within 4 weeks."
+
+System Requirements Specifications (SRS) — the "how":
+- Audience: Developers, architects, QA, technical stakeholders
+- Content: Functional requirements (data flows, API contracts, error handling), non-functional requirements (latency, availability, scalability), interface specifications, data models
+- Language: Technical specifics — service names, field types, status codes, protocols
+- Example from Bell: "submitSubscription mutation must: (1) validate sessionId via session-api (DynamoDB lookup), (2) write subscription record to PostgreSQL (status=PENDING), (3) call merchant-api-<providerId>.Provision(subscriptionId, productId) synchronously, (4) publish OrderCreated event to Kafka topic subscription-events (fire-and-forget), (5) log ORDER_PLACED to audit-api with correlationId. P99 latency: 500ms–2s."
+
+How they connect: Each BRD requirement traces to one or more SRS requirements. "Customers must be able to add subscriptions" (BRD) decomposes into: the data mapping (SRS), the orchestration spec (SRS), the acceptance criteria (SRS), and the error handling spec (SRS).
+
+On Bell, I maintained this traceability using Jira links: BR → Epic → Story (with ACs) → Test Case. The BRD was the stable anchor; the SRS evolved as the system design matured.`,
+  },
+  {
+    num: 32,
+    question: "How do you facilitate communication between business users and technical teams?",
+    answer: `I serve as the translator between business and technical teams, and my primary tools are shared artifacts, structured workshops, and real-time translation.
+
+1. Shared artifacts as common ground: On Bell, the data mapping was the artifact that both business and technical teams could point to. When the product owner said "the customer's plan should appear on the confirmation screen," I could show the data mapping: "That's the selectedProductId field, which flows from the UI through GraphQL to the subscriptions.product_id column. It's populated during the qualification step." The developer immediately knew which service and field to look at. The product owner confirmed it was the right data. Same artifact, two perspectives.
+
+2. Structured workshops for alignment: For cross-team decisions, I facilitate sessions where both sides see the same picture. When the billing team and engineering disagreed about real-time subscription status visibility, I drew the data flow on a whiteboard, asked the billing team "how soon do you need to see changes?" (answer: 30 seconds), and asked engineering "what's the current lag?" (answer: under 5 seconds). The conflict dissolved because both sides saw the same numbers.
+
+3. Real-time translation in meetings: In grooming sessions, when a developer says "we need to handle the race condition between the Kafka consumer and the direct API call," I translate for the product owner: "There's a small window where the customer might see stale data — we'll add a cache refresh to eliminate that." Conversely, when the product owner says "cancellation should be immediate," I translate for engineering: "The business expectation is that the UI updates immediately, even if the merchant's grace period means the subscription technically remains active for a few days."
+
+4. Documentation at multiple abstraction levels: I create the same information at different detail levels — system context diagram for executives, sequence diagram for developers, state machine for product owners. Everyone sees the same system through their preferred lens.`,
+  },
+  {
+    num: 33,
+    question: "What strategies do you use to prioritize project requirements?",
+    answer: `I use a multi-dimensional prioritization framework that considers business value, technical dependencies, risk, and stakeholder urgency.
+
+On the Bell project, here's how I applied each dimension:
+
+1. MoSCoW classification with stakeholder input: I categorize requirements as Must-Have, Should-Have, Could-Have, or Won't-Have (this release). For the initial platform launch, Must-Haves were: add subscription, cancel subscription, view subscriptions. Should-Haves: grace period handling, reversal flow. Could-Haves: promotional pricing, bundle management. This was validated with the product owner and the business sponsor.
+
+2. Dependency-driven ordering: I map technical dependencies and sequence requirements accordingly. On Bell, the session-api and catalog-api requirements had to be completed before the reseller-service order submission flow, because submission depended on session validation and product qualification. I visualized these dependencies in Jira and used them to sequence sprint backlogs.
+
+3. Risk-weighted scheduling: High-risk requirements (external integrations, new architectural patterns) get scheduled early. When we knew Disney+ would require async provisioning (a pattern we hadn't implemented), I pushed to start their integration spike 2 sprints before the target sprint. This gave us time to discover the async requirement and adapt.
+
+4. Value vs. effort quadrants: For competing requirements with similar business priority, I use a simple 2x2 matrix — high value/low effort items first (quick wins), then high value/high effort (strategic investments), then low value/low effort (if time permits), and defer low value/high effort.
+
+5. Contractual and regulatory constraints: Some requirements have non-negotiable deadlines. On Bell, merchant launch dates were contractual — these automatically became top priority regardless of other factors.
+
+The key: prioritization is a continuous process, not a one-time exercise. I re-prioritize every sprint based on new information, and I make the prioritization rationale visible to all stakeholders so decisions are transparent.`,
+  },
+  {
+    num: 34,
+    question: "Can you describe a time when you had to mediate stakeholder conflicts?",
+    answer: `On the Bell project, a significant conflict arose between the platform engineering team and the product team regarding the Radio-Canada integration approach.
+
+Situation: The product team wanted a fast, custom integration to meet a contractual launch deadline (6 weeks). The platform engineering team insisted on implementing the standard MerchantProvider adapter interface, which they estimated at 4 weeks for the full implementation — leaving almost no buffer for testing.
+
+The conflict was genuine: the product team had committed to a launch date with the Radio-Canada partnership team, while engineering had just spent weeks cleaning up technical debt from a previous rushed integration and didn't want to repeat the pattern.
+
+Action: I mediated by reframing the conversation from "fast vs. right" to "what's the minimum scope that satisfies both constraints?"
+
+First, I created a side-by-side comparison document: Option A (custom): 2-week delivery, but creates tech debt — separate error handling, monitoring, and onboarding docs needed. Option B (full adapter): 4-week delivery, follows the established pattern, uses existing circuit breaker and monitoring infrastructure.
+
+Then I proposed Option C (phased adapter): Implement Provision and Deprovision first (2.5 weeks) — this covers 90% of launch requirements (customers can add and cancel Radio-Canada subscriptions). Defer CheckStatus and HandleCallback to a fast-follow sprint (1.5 weeks post-launch). The adapter interface is used from day one, but scope is reduced.
+
+I presented this in a joint meeting with both stakeholders, showing: the product team gets their launch date (with a 1-week buffer for QA), and engineering gets the architectural consistency they need (adapter pattern from the start, no tech debt).
+
+Result: Both sides agreed to Option C. Radio-Canada launched on time, and the deferred methods shipped 2 sprints later. The key was acknowledging both stakeholders' legitimate concerns and finding a solution that addressed the underlying constraints, not just the surface positions.`,
+  },
+  {
+    num: 35,
+    question: "How do you approach testing and quality assurance in your projects?",
+    answer: `As a BSA, I contribute to quality assurance by ensuring requirements are testable, test plans are traceable, and validation covers all dimensions of system behavior.
+
+My QA approach on the Bell project had four layers:
+
+1. Requirements-driven test planning: Every acceptance criterion I write in Given-When-Then format becomes a test case. For the "Add Subscription" story, I had 6 ACs that generated 15+ test scenarios covering: happy path (3 scenarios), error scenarios (5 — one per error tier plus merchant-specific failures), edge cases (4 — duplicate submission, expired session, invalid account, unavailable provider), and async verification (3 — Kafka event published, notification sent, audit logged).
+
+2. Data mapping validation: After a feature is deployed to the test environment, I trace the data end-to-end using actual API responses. I verify each field in the data mapping: Does the GraphQL response contain the correct subscriptionId? Does the PostgreSQL record have status=PENDING? Does the Kafka OrderCreated event contain the correct billingAccountNumber? This catches field-level bugs that unit tests miss.
+
+3. Error scenario verification: I use test fixtures to simulate failures at each step of the orchestration. On Bell, I tested: merchant API returns 500 (circuit breaker should open after 5 failures), session expired (404 — UI should restart session flow), Kafka publish fails (order should still be committed, event goes to DLQ). I defined 17 specific error scenarios organized into 4 tiers, and QA used this as their negative test plan.
+
+4. Integration contract testing: I verify that the actual API behavior matches the OpenAPI spec. Field names, types, required/optional flags, and error response shapes must match. On Bell, we caught 3 contract mismatches during spec review that would have caused production failures.
+
+5. UAT support: I create UAT test scripts derived from acceptance criteria, prepare test data, validate the test environment, and triage defects with AC-level traceability.
+
+The principle: quality is built into the requirements, not bolted on during testing.`,
+  },
+  {
+    num: 36,
+    question: "Can you give an example of a successful project you have worked on and your contribution to its success?",
+    answer: `The Bell Canada Subscription Management Platform is the strongest example of a successful project where my BSA contributions were critical to the outcome.
+
+Project overview: Bell Canada needed a unified platform for residential customers to add, manage, and cancel streaming subscriptions (Netflix, Disney+, Bell Media, Bango, Radio-Canada) with charges bundled on their Bell account. The platform involved 60+ Go microservices, a Next.js micro-frontend, Kafka event backbone, and integrations with 5 external streaming providers.
+
+My specific contributions:
+
+1. Architecture analysis and documentation: I traced the entire codebase to create the foundational artifacts — data mappings for every integration flow, orchestration specs for the 3 core flows (order submission, activation, cancellation), state machine diagrams for the subscription lifecycle, and an entity-relationship model for 7 domain entities. These artifacts became the single source of truth for the entire team.
+
+2. Integration pattern advocacy: I analyzed the first two merchant integrations (Netflix, Bango) and identified that custom implementations wouldn't scale. I created a comparison document showing the operational cost of 5 custom integrations vs. the adapter pattern, which convinced the engineering lead to adopt the MerchantProvider interface. This decision reduced subsequent merchant onboarding from 5 weeks to 2 weeks.
+
+3. Defect prevention through analysis: By analyzing production data, I discovered that 2% of orders were stuck in PENDING status due to unhandled merchant timeouts. My analysis led to three system improvements: saga compensation for timeouts, a fallout-process Lambda for auto-remediation, and provider-specific circuit breaker thresholds. Stuck orders dropped from 2% to 0.01%.
+
+4. Team enablement: I created standardized templates and established a BSA peer review process that enabled junior analysts to independently document integrations. A junior BSA successfully delivered the Radio-Canada integration spec without my involvement.
+
+5. Stakeholder alignment: I bridged communication between the billing team, product team, and engineering on complex technical decisions — from CQRS consistency trade-offs to circuit breaker behavior — by translating between business impact and technical implementation.
+
+Result: The platform launched successfully with all 5 providers, handled production traffic reliably, and established patterns that made future integrations predictable and efficient. My BSA artifacts (data mappings, orchestration specs, ACs) were cited by the project lead as key enablers of the team's velocity.`,
+  },
 ];
 
 // ─── Technical Follow-up Questions ───────────────────────────────────────────
