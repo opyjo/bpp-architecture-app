@@ -14,6 +14,7 @@ import ServicesTab from "@/components/tabs/ServicesTab";
 import BsaCheatsheetTab from "@/components/tabs/BsaCheatsheetTab";
 import InterviewCoachTab from "@/components/tabs/InterviewCoachTab";
 import MicrofrontendsTab from "@/components/tabs/MicrofrontendsTab";
+import ApigeeTab from "@/components/tabs/ApigeeTab";
 
 const tabs = [
   { id: "arch", label: "Architecture" },
@@ -27,6 +28,7 @@ const tabs = [
   { id: "services", label: "Services" },
   { id: "mfe", label: "Microfrontends" },
   { id: "bsa", label: "BSA Cheatsheet" },
+  { id: "apigee", label: "Apigee" },
   { id: "ai", label: "AI Assistant" },
   { id: "coach", label: "Interview Coach" },
 ];
@@ -75,6 +77,7 @@ export default function Home() {
         {activeTab === "services" && <ServicesTab />}
         {activeTab === "mfe" && <MicrofrontendsTab />}
         {activeTab === "bsa" && <BsaCheatsheetTab />}
+        {activeTab === "apigee" && <ApigeeTab />}
         {activeTab === "ai" && <AiChatTab />}
         {activeTab === "coach" && <InterviewCoachTab />}
       </div>
