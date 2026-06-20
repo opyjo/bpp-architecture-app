@@ -417,6 +417,68 @@
   animation: nodeEnter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* ── Tab dropdown animations ──────────────────────────── */
+
+@keyframes dropdownSlideIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dropdownItemFadeIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.dropdown-panel {
+  animation: dropdownSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  backdrop-filter: blur(12px);
+}
+
+.dropdown-item {
+  animation: dropdownItemFadeIn 0.2s ease-out both;
+}
+
+/* Group tab tints */
+.tab-group-platform {
+  background: linear-gradient(135deg, rgba(74, 143, 232, 0.06), rgba(62, 184, 154, 0.06));
+}
+.tab-group-platform:hover {
+  background: linear-gradient(135deg, rgba(74, 143, 232, 0.13), rgba(62, 184, 154, 0.13));
+}
+.tab-group-platform.tab-group-active {
+  background: linear-gradient(135deg, rgba(74, 143, 232, 0.10), rgba(62, 184, 154, 0.10));
+}
+
+.tab-group-reference {
+  background: linear-gradient(135deg, rgba(124, 111, 205, 0.06), rgba(74, 143, 232, 0.06));
+}
+.tab-group-reference:hover {
+  background: linear-gradient(135deg, rgba(124, 111, 205, 0.13), rgba(74, 143, 232, 0.13));
+}
+.tab-group-reference.tab-group-active {
+  background: linear-gradient(135deg, rgba(124, 111, 205, 0.10), rgba(74, 143, 232, 0.10));
+}
+
+.tab-group-interview {
+  background: linear-gradient(135deg, rgba(232, 168, 58, 0.06), rgba(208, 96, 72, 0.06));
+}
+.tab-group-interview:hover {
+  background: linear-gradient(135deg, rgba(232, 168, 58, 0.13), rgba(208, 96, 72, 0.13));
+}
+.tab-group-interview.tab-group-active {
+  background: linear-gradient(135deg, rgba(232, 168, 58, 0.10), rgba(208, 96, 72, 0.10));
+}
+
+.tab-group-ai {
+  background: linear-gradient(135deg, rgba(88, 184, 122, 0.06), rgba(74, 143, 232, 0.06));
+}
+.tab-group-ai:hover {
+  background: linear-gradient(135deg, rgba(88, 184, 122, 0.13), rgba(74, 143, 232, 0.13));
+}
+.tab-group-ai.tab-group-active {
+  background: linear-gradient(135deg, rgba(88, 184, 122, 0.10), rgba(74, 143, 232, 0.10));
+}
+
 .analogy-callout {
   background: rgba(232, 168, 58, 0.06);
   border-color: rgba(232, 168, 58, 0.18);
