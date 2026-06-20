@@ -211,6 +211,91 @@ export const undoFlowSteps: FlowDiagramStep[] = [
   },
 ];
 
+// ─── AppSync lifecycle ───────────────────────────────────────────────
+// Separate node layout showing AppSync internals
+export const appsyncFlowNodes: FlowNode[] = [
+  { id: "bff",          label: "BFF",             subtitle: "Next.js API",      color: "#3eb89a", x: 30,  y: 120 },
+  { id: "appsync-api",  label: "AppSync API",     subtitle: "HTTPS endpoint",   color: "#4a8fe8", x: 170, y: 120 },
+  { id: "auth-layer",   label: "Authorization",   subtitle: "IAM / Cognito",    color: "#7c6fcd", x: 310, y: 40  },
+  { id: "schema",       label: "Schema",          subtitle: "GraphQL SDL",      color: "#7c6fcd", x: 450, y: 40  },
+  { id: "vtl-request",  label: "VTL Request",     subtitle: "Mapping template", color: "#e8a83a", x: 310, y: 120 },
+  { id: "resolver",     label: "Resolver",        subtitle: "Unit / Pipeline",  color: "#4a8fe8", x: 450, y: 120 },
+  { id: "datasource",   label: "Data Source",     subtitle: "Lambda / Dynamo",  color: "#58b87a", x: 590, y: 120 },
+  { id: "vtl-response", label: "VTL Response",    subtitle: "Mapping template", color: "#e8a83a", x: 310, y: 200 },
+  { id: "cloudwatch",   label: "CloudWatch",      subtitle: "Logs & metrics",   color: "#6b7590", x: 450, y: 200 },
+];
+
+export const appsyncLifecycleSteps: FlowDiagramStep[] = [
+  {
+    label: "1. GraphQL request received",
+    description:
+      "BFF sends a GraphQL operation (query, mutation, or subscription) to the AppSync HTTPS endpoint. The request body contains the operation name, variables, and an authorization token (IAM SigV4 signature or API key).",
+    activeNodes: ["bff", "appsync-api"],
+    activeEdge: ["bff", "appsync-api"],
+    mutation: "POST /graphql",
+    services: ["AppSync endpoint"],
+  },
+  {
+    label: "2. Authorization",
+    description:
+      "AppSync evaluates the authorization mode configured for the requested field. Supported modes: IAM (SigV4), API Key, Cognito User Pool, OIDC, and Lambda authorizer. Multi-auth allows different modes per field via @auth directives in the schema.",
+    activeNodes: ["appsync-api", "auth-layer"],
+    activeEdge: ["appsync-api", "auth-layer"],
+    services: ["IAM", "Cognito", "Lambda authorizer"],
+  },
+  {
+    label: "3. Schema validation",
+    description:
+      "AppSync validates the incoming operation against the strongly-typed GraphQL SDL schema. Checks field existence, argument types, required fields, and return types. Invalid operations are rejected with a descriptive error before any resolver executes.",
+    activeNodes: ["appsync-api", "auth-layer", "schema"],
+    activeEdge: ["auth-layer", "schema"],
+    services: ["GraphQL SDL (.graphql)"],
+  },
+  {
+    label: "4. Request mapping (VTL)",
+    description:
+      "The resolver's request mapping template (Apache Velocity Template Language) transforms GraphQL arguments into the format required by the data source. Has access to $context.arguments, $context.identity, $context.stash, and $util helpers for JSON, DynamoDB, and auth operations.",
+    activeNodes: ["appsync-api", "vtl-request"],
+    activeEdge: ["appsync-api", "vtl-request"],
+    mutation: "VTL request template",
+    services: ["$context.arguments", "$context.identity", "$util.*"],
+  },
+  {
+    label: "5. Resolver invocation",
+    description:
+      "AppSync invokes the resolver. Unit resolvers call a single data source. Pipeline resolvers chain multiple functions sequentially, passing results between stages via $context.stash. Each function has its own request/response mapping templates.",
+    activeNodes: ["vtl-request", "resolver"],
+    activeEdge: ["vtl-request", "resolver"],
+    mutation: "Unit resolver / Pipeline resolver",
+    services: ["Resolver functions", "$context.stash"],
+  },
+  {
+    label: "6. Data source execution",
+    description:
+      "The resolver calls the configured data source. In this architecture, Lambda functions host Go microservices (reseller-service, session-api, catalog-api). Other supported data sources: DynamoDB (direct CRUD), HTTP endpoints, RDS (Aurora Serverless), OpenSearch, and EventBridge.",
+    activeNodes: ["resolver", "datasource"],
+    activeEdge: ["resolver", "datasource"],
+    services: ["Lambda (Go)", "DynamoDB", "HTTP", "RDS"],
+  },
+  {
+    label: "7. Response mapping (VTL)",
+    description:
+      "The response mapping template transforms the data source output back into the GraphQL return type. Handles error mapping ($util.error), field selection, and result shaping. For pipeline resolvers, the final function's response template produces the return value.",
+    activeNodes: ["datasource", "vtl-response", "resolver"],
+    activeEdge: ["datasource", "vtl-response"],
+    mutation: "VTL response template",
+    services: ["$util.error()", "$util.toJson()", "$context.result"],
+  },
+  {
+    label: "8. Response & observability",
+    description:
+      "AppSync returns the typed GraphQL response (data + errors) to the BFF. CloudWatch captures full request/response logs (when field-level logging is enabled), resolver latency, 4XX/5XX error rates, and throttling metrics.",
+    activeNodes: ["vtl-response", "appsync-api", "bff", "cloudwatch"],
+    activeEdge: ["appsync-api", "bff"],
+    services: ["CloudWatch Logs", "CloudWatch Metrics", "X-Ray traces"],
+  },
+];
+
 // Map flow IDs to their step arrays
 export const flowDiagramMap: Record<string, FlowDiagramStep[]> = {
   "flow-add": addSubscriptionSteps,
@@ -218,4 +303,10 @@ export const flowDiagramMap: Record<string, FlowDiagramStep[]> = {
   "flow-change": changePlanSteps,
   "flow-agent": agentAssistedSteps,
   "flow-undo": undoFlowSteps,
+  "flow-appsync": appsyncLifecycleSteps,
+};
+
+// Map flow IDs to custom node layouts (when different from default flowNodes)
+export const flowNodeOverrides: Record<string, FlowNode[]> = {
+  "flow-appsync": appsyncFlowNodes,
 };

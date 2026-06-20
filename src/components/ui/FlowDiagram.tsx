@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { FlowDiagramStep, flowNodes } from "@/data/flow-diagrams";
+import { FlowDiagramStep, FlowNode, flowNodes } from "@/data/flow-diagrams";
 
 interface FlowDiagramProps {
   steps: FlowDiagramStep[];
+  nodes?: FlowNode[];
 }
 
 const NODE_W = 110;
@@ -12,18 +13,19 @@ const NODE_H = 46;
 const SVG_W = 730;
 const SVG_H = 300;
 
-function getNodeCenter(id: string): { x: number; y: number } | null {
-  const node = flowNodes.find((n) => n.id === id);
+function getNodeCenter(id: string, nodes: FlowNode[]): { x: number; y: number } | null {
+  const node = nodes.find((n) => n.id === id);
   if (!node) return null;
   return { x: node.x + NODE_W / 2, y: node.y + NODE_H / 2 };
 }
 
-export default function FlowDiagram({ steps }: FlowDiagramProps) {
+export default function FlowDiagram({ steps, nodes }: FlowDiagramProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const step = steps[currentStep];
+  const activeNodes = nodes ?? flowNodes;
 
-  const edgeFrom = getNodeCenter(step.activeEdge[0]);
-  const edgeTo = getNodeCenter(step.activeEdge[1]);
+  const edgeFrom = getNodeCenter(step.activeEdge[0], activeNodes);
+  const edgeTo = getNodeCenter(step.activeEdge[1], activeNodes);
 
   return (
     <div className="bg-arch-bg2 border border-arch-border rounded-lg overflow-hidden mb-3.5">
@@ -55,7 +57,7 @@ export default function FlowDiagram({ steps }: FlowDiagramProps) {
           </defs>
 
           {/* Render nodes */}
-          {flowNodes.map((node) => {
+          {activeNodes.map((node) => {
             const isActive = step.activeNodes.includes(node.id);
             return (
               <g

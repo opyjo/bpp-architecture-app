@@ -80,6 +80,23 @@ export const flows: Flow[] = [
       { screen: "3 — Confirm", action: "Customer confirms undo", mutation: '<span class="text-arch-amber font-mono text-[10px]">submitSubscription</span> → reseller-service reverts prior state PostgreSQL merchant-api-*' },
     ],
   },
+  {
+    id: "flow-appsync",
+    title: "AppSync — Request lifecycle",
+    description: 'How AWS AppSync processes every GraphQL request: authentication, schema validation, VTL mapping, resolver execution, and observability.',
+    audience: "Customer",
+    route: "BFF → AppSync → Resolver → Data Source → Response",
+    steps: [
+      { screen: "1 — Ingress", action: "GraphQL request received", mutation: '<span class="text-arch-teal font-mono text-[10px]">POST /graphql</span> → AppSync HTTPS endpoint with SigV4 or API key' },
+      { screen: "2 — Auth", action: "Authorization check", mutation: '<span class="text-arch-purple font-mono text-[10px]">IAM SigV4</span> / <span class="text-arch-purple font-mono text-[10px]">Cognito</span> / <span class="text-arch-purple font-mono text-[10px]">API Key</span> / <span class="text-arch-purple font-mono text-[10px]">Lambda auth</span> — multi-auth per-field via @auth' },
+      { screen: "3 — Validate", action: "Schema validation", mutation: 'Validates against <span class="text-arch-purple font-mono text-[10px]">GraphQL SDL</span> — field existence, argument types, required fields' },
+      { screen: "4 — Map request", action: "VTL request mapping", mutation: '<span class="text-arch-amber font-mono text-[10px]">VTL template</span> transforms $context.arguments → data source format' },
+      { screen: "5 — Resolve", action: "Resolver invocation", mutation: '<span class="text-arch-blue font-mono text-[10px]">Unit resolver</span> (single source) or <span class="text-arch-blue font-mono text-[10px]">Pipeline resolver</span> (chained functions via $context.stash)' },
+      { screen: "6 — Execute", action: "Data source call", mutation: '<span class="text-arch-teal font-mono text-[10px]">Lambda</span> (Go services) · <span class="text-arch-teal font-mono text-[10px]">DynamoDB</span> · <span class="text-arch-teal font-mono text-[10px]">HTTP</span> · <span class="text-arch-teal font-mono text-[10px]">RDS</span>' },
+      { screen: "7 — Map response", action: "VTL response mapping", mutation: '<span class="text-arch-amber font-mono text-[10px]">VTL template</span> transforms $context.result → GraphQL return type · $util.error() for errors' },
+      { screen: "8 — Egress", action: "Response & logging", mutation: 'Typed response → BFF · <span class="text-arch-text3 font-mono text-[10px]">CloudWatch</span> logs, latency metrics, <span class="text-arch-text3 font-mono text-[10px]">X-Ray</span> traces' },
+    ],
+  },
 ];
 
 export const customerVsAgent = {

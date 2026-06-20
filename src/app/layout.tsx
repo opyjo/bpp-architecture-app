@@ -4,7 +4,6 @@ import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import Header from "@/components/Header";
-import MainNav from "@/components/nav/MainNav";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,7 +25,6 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-arch-bg text-arch-text font-sans antialiased">
         <ThemeProvider>
           <Header />
-          <MainNav />
           {children}
         </ThemeProvider>
       </body>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import ArchitectureTab from "@/components/tabs/ArchitectureTab";
 import UiPagesTab from "@/components/tabs/UiPagesTab";
 import KafkaEventsTab from "@/components/tabs/KafkaEventsTab";
@@ -15,8 +16,22 @@ import BsaCheatsheetTab from "@/components/tabs/BsaCheatsheetTab";
 import InterviewCoachTab from "@/components/tabs/InterviewCoachTab";
 import MicrofrontendsTab from "@/components/tabs/MicrofrontendsTab";
 import ApigeeTab from "@/components/tabs/ApigeeTab";
+import OpenApiTab from "@/components/tabs/OpenApiTab";
+import ContractBuilderTab from "@/components/tabs/ContractBuilderTab";
 
-const tabGroups = [
+interface TabItem {
+  id: string;
+  label: string;
+  href?: string; // If set, renders as a link instead of a tab switch
+}
+
+interface TabGroup {
+  label: string;
+  tintClass: string;
+  tabs: TabItem[];
+}
+
+const tabGroups: TabGroup[] = [
   {
     label: "Platform",
     tintClass: "tab-group-platform",
@@ -45,12 +60,27 @@ const tabGroups = [
     tabs: [
       { id: "bsa", label: "BSA Cheatsheet" },
       { id: "apigee", label: "Apigee" },
+      { id: "openapi", label: "OpenAPI 3.0" },
+      { id: "coach", label: "Interview Coach" },
     ],
   },
-];
-const standaloneTabs = [
-  { id: "coach", label: "Interview Coach", tintClass: "tab-group-interview" },
-  { id: "ai", label: "AI Assistant", tintClass: "tab-group-ai" },
+  {
+    label: "AI Tools",
+    tintClass: "tab-group-ai",
+    tabs: [
+      { id: "analyze", label: "Ticket Analyzer", href: "/analyze" },
+      { id: "contract", label: "API Contract Builder" },
+      { id: "ai", label: "AI Assistant" },
+    ],
+  },
+  {
+    label: "Saved",
+    tintClass: "tab-group-reference",
+    tabs: [
+      { id: "analyses", label: "Saved Analyses", href: "/analyses" },
+      { id: "chats", label: "Saved Chats", href: "/chats" },
+    ],
+  },
 ];
 
 function TabDropdown({
@@ -59,7 +89,7 @@ function TabDropdown({
   setActiveTab,
   animIndex,
 }: {
-  group: (typeof tabGroups)[number];
+  group: TabGroup;
   activeTab: string;
   setActiveTab: (id: string) => void;
   animIndex: number;
@@ -67,7 +97,7 @@ function TabDropdown({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const activeChild = group.tabs.find((t) => t.id === activeTab);
+  const activeChild = group.tabs.find((t) => !t.href && t.id === activeTab);
   const isGroupActive = !!activeChild;
 
   const close = useCallback(() => setOpen(false), []);
@@ -116,23 +146,51 @@ function TabDropdown({
       </button>
       {open && (
         <div className="dropdown-panel absolute top-full left-0 mt-1 z-50 min-w-[210px] py-2 px-0.5 bg-arch-bg2/95 border border-arch-border rounded-lg shadow-lg shadow-black/20">
-          {group.tabs.map((tab, i) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setOpen(false);
-              }}
-              className={`dropdown-item w-full text-left px-3.5 py-2 text-xs font-medium transition-colors duration-150 ${
-                activeTab === tab.id
-                  ? "text-arch-blue bg-arch-blue/10"
-                  : "text-arch-text2 hover:text-arch-text hover:bg-arch-blue/[0.08]"
-              }`}
-              style={{ animationDelay: `${i * 30}ms` }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {group.tabs.map((tab, i) =>
+            tab.href ? (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                className="dropdown-item block w-full text-left px-3.5 py-2 text-xs font-medium text-arch-text2 hover:text-arch-text hover:bg-arch-blue/[0.08] transition-colors duration-150"
+                style={{ animationDelay: `${i * 30}ms` }}
+                onClick={() => setOpen(false)}
+              >
+                {tab.label}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="inline-block ml-1.5 opacity-40"
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </Link>
+            ) : (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setOpen(false);
+                }}
+                className={`dropdown-item w-full text-left px-3.5 py-2 text-xs font-medium transition-colors duration-150 ${
+                  activeTab === tab.id
+                    ? "text-arch-blue bg-arch-blue/10"
+                    : "text-arch-text2 hover:text-arch-text hover:bg-arch-blue/[0.08]"
+                }`}
+                style={{ animationDelay: `${i * 30}ms` }}
+              >
+                {tab.label}
+              </button>
+            )
+          )}
         </div>
       )}
     </div>
@@ -153,20 +211,6 @@ export default function Home() {
             setActiveTab={setActiveTab}
             animIndex={i}
           />
-        ))}
-        {standaloneTabs.map((tab, i) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{ animationDelay: `${(tabGroups.length + i) * 40}ms` }}
-            className={`tab-item px-3 py-2.5 text-xs font-medium whitespace-nowrap border-b-0 ${tab.tintClass} transition-all duration-200 ${
-              activeTab === tab.id
-                ? "tab-item-active tab-group-active text-arch-blue"
-                : "text-arch-text2 hover:text-arch-text"
-            }`}
-          >
-            {tab.label}
-          </button>
         ))}
         <div className="ml-auto flex items-center pr-3">
           <a
@@ -193,8 +237,10 @@ export default function Home() {
         {activeTab === "mfe" && <MicrofrontendsTab />}
         {activeTab === "bsa" && <BsaCheatsheetTab />}
         {activeTab === "apigee" && <ApigeeTab />}
-        {activeTab === "ai" && <AiChatTab />}
+        {activeTab === "openapi" && <OpenApiTab />}
         {activeTab === "coach" && <InterviewCoachTab />}
+        {activeTab === "contract" && <ContractBuilderTab />}
+        {activeTab === "ai" && <AiChatTab />}
       </div>
     </div>
   );

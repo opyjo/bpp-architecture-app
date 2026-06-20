@@ -4,7 +4,7 @@ import { useState } from "react";
 import SectionLayout from "@/components/ui/SectionLayout";
 import { routes, quickRefRows } from "@/data/routes";
 import { flows, customerVsAgent, mermaidSequenceDiagram } from "@/data/flows";
-import { flowDiagramMap } from "@/data/flow-diagrams";
+import { flowDiagramMap, flowNodeOverrides } from "@/data/flow-diagrams";
 import {
   componentTreeMap,
   componentTreeSidebarItems,
@@ -22,6 +22,7 @@ const sidebarItems = [
   { id: "flow-change", label: "Change plan" },
   { id: "flow-agent", label: "Agent-assisted" },
   { id: "flow-undo", label: "Undo flows" },
+  { id: "flow-appsync", label: "AppSync lifecycle" },
   { id: "cmp", label: "Customer vs Agent" },
   { id: "seq", label: "Sequence diagram" },
   { id: "quickref", label: "Quick reference" },
@@ -198,11 +199,12 @@ export default function UiPagesTab() {
         const flow = flows.find((f) => f.id === activeId);
         if (flow) {
           const diagramSteps = flowDiagramMap[flow.id];
+          const customNodes = flowNodeOverrides[flow.id];
           return (
             <div>
               <div className="text-sm font-semibold text-arch-text mb-1">{flow.title}</div>
               <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">{flow.description}</div>
-              {diagramSteps && <FlowDiagram steps={diagramSteps} />}
+              {diagramSteps && <FlowDiagram steps={diagramSteps} nodes={customNodes} />}
               <FlowDetailAccordion flow={flow} />
             </div>
           );
