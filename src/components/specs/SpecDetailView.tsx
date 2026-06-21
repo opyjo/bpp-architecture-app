@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { load as yamlLoad } from "js-yaml";
 import { useSavedSpecs } from "@/lib/hooks/useSavedSpecs";
 import type { SavedSpec } from "@/lib/types/saved-spec";
 import { Pencil, Check, Copy, CheckCheck, Download } from "lucide-react";
 import Breadcrumbs from "@/components/nav/Breadcrumbs";
+import SwaggerViewer from "@/components/contract-builder/SwaggerViewer";
 import { toast } from "sonner";
 
 export default function SpecDetailView({ specId }: { specId: string }) {
@@ -42,11 +44,23 @@ export default function SpecDetailView({ specId }: { specId: string }) {
   return <SpecDetailInner spec={spec} />;
 }
 
+type ViewMode = "swagger" | "yaml";
+
 function SpecDetailInner({ spec }: { spec: SavedSpec }) {
   const { updateSpec } = useSavedSpecs();
   const [title, setTitle] = useState(spec.title);
   const [editingTitle, setEditingTitle] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("swagger");
+
+  // Parse YAML to object for Swagger UI
+  const parsedSpec = useMemo(() => {
+    try {
+      return yamlLoad(spec.yaml_content) as object;
+    } catch {
+      return null;
+    }
+  }, [spec.yaml_content]);
 
   const handleTitleSave = async () => {
     const trimmed = title.trim() || "Untitled Spec";
@@ -76,11 +90,9 @@ function SpecDetailInner({ spec }: { spec: SavedSpec }) {
   // Basic YAML syntax highlighting
   const highlightYaml = (yaml: string) => {
     return yaml.split("\n").map((line, i) => {
-      // Comments
       if (line.trimStart().startsWith("#")) {
         return <span key={i} className="text-arch-text3 italic">{line}{"\n"}</span>;
       }
-      // Key: value pairs
       const keyMatch = line.match(/^(\s*)([\w-]+)(\s*:\s*)(.*)/);
       if (keyMatch) {
         const [, indent, key, colon, value] = keyMatch;
@@ -94,7 +106,6 @@ function SpecDetailInner({ spec }: { spec: SavedSpec }) {
           </span>
         );
       }
-      // List items
       const listMatch = line.match(/^(\s*)(- )(.*)/);
       if (listMatch) {
         const [, indent, dash, value] = listMatch;
@@ -113,22 +124,10 @@ function SpecDetailInner({ spec }: { spec: SavedSpec }) {
 
   const highlightValue = (val: string) => {
     if (!val) return null;
-    // Quoted strings
-    if (/^['"].*['"]$/.test(val)) {
-      return <span className="text-arch-green">{val}</span>;
-    }
-    // Numbers
-    if (/^\d+(\.\d+)?$/.test(val.trim())) {
-      return <span className="text-arch-amber">{val}</span>;
-    }
-    // Booleans
-    if (/^(true|false)$/i.test(val.trim())) {
-      return <span className="text-arch-coral">{val}</span>;
-    }
-    // URLs or $refs
-    if (val.includes("$ref") || val.includes("http")) {
-      return <span className="text-arch-blue">{val}</span>;
-    }
+    if (/^['"].*['"]$/.test(val)) return <span className="text-arch-green">{val}</span>;
+    if (/^\d+(\.\d+)?$/.test(val.trim())) return <span className="text-arch-amber">{val}</span>;
+    if (/^(true|false)$/i.test(val.trim())) return <span className="text-arch-coral">{val}</span>;
+    if (val.includes("$ref") || val.includes("http")) return <span className="text-arch-blue">{val}</span>;
     return <span className="text-arch-teal">{val}</span>;
   };
 
@@ -170,7 +169,31 @@ function SpecDetailInner({ spec }: { spec: SavedSpec }) {
           )}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 ml-3">
+        <div className="flex items-center gap-1.5 shrink-0 ml-3">
+          {/* View mode toggle */}
+          <div className="flex items-center bg-arch-bg3 border border-arch-border rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode("swagger")}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
+                viewMode === "swagger"
+                  ? "bg-arch-teal/15 text-arch-teal"
+                  : "text-arch-text3 hover:text-arch-text2"
+              }`}
+            >
+              Swagger UI
+            </button>
+            <button
+              onClick={() => setViewMode("yaml")}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
+                viewMode === "yaml"
+                  ? "bg-arch-purple/15 text-arch-purple"
+                  : "text-arch-text3 hover:text-arch-text2"
+              }`}
+            >
+              YAML
+            </button>
+          </div>
+
           <button
             onClick={handleCopy}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-arch-text2 hover:text-arch-text bg-arch-bg3 hover:bg-white/[0.08] border border-arch-border rounded-lg transition-colors"
@@ -188,13 +211,29 @@ function SpecDetailInner({ spec }: { spec: SavedSpec }) {
         </div>
       </div>
 
-      {/* YAML content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-5 py-4">
-          <pre className="text-[11.5px] font-mono leading-[1.7] bg-arch-bg2 border border-arch-border rounded-lg p-4 overflow-x-auto whitespace-pre">
-            {highlightYaml(spec.yaml_content)}
-          </pre>
-        </div>
+      {/* Content */}
+      <div className="flex-1 overflow-hidden">
+        {viewMode === "swagger" && parsedSpec ? (
+          <SwaggerViewer spec={parsedSpec} />
+        ) : viewMode === "swagger" && !parsedSpec ? (
+          <div className="flex flex-col items-center justify-center h-full text-arch-text3 gap-2">
+            <p className="text-[13px]">Failed to parse YAML for Swagger UI</p>
+            <button
+              onClick={() => setViewMode("yaml")}
+              className="text-[12px] text-arch-teal hover:underline"
+            >
+              View raw YAML instead
+            </button>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto h-full">
+            <div className="max-w-4xl mx-auto px-5 py-4">
+              <pre className="text-[11.5px] font-mono leading-[1.7] bg-arch-bg2 border border-arch-border rounded-lg p-4 overflow-x-auto whitespace-pre">
+                {highlightYaml(spec.yaml_content)}
+              </pre>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
