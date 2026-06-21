@@ -279,8 +279,8 @@ export default function TestPlanTab() {
 
         {/* Left panel: input (hidden when viewing saved) */}
         {viewMode === "generator" && !isViewingLoaded && (
-          <div className="w-[480px] shrink-0 flex flex-col border-r border-arch-border bg-arch-bg/50">
-            <div className="flex-1 flex flex-col p-4 gap-3 overflow-y-auto">
+          <div className="w-[480px] shrink-0 flex flex-col border-r border-arch-border bg-arch-bg/50 overflow-hidden">
+            <div className="flex flex-col p-4 gap-3 overflow-y-auto">
               {/* Test type selector */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-medium text-arch-text2">
@@ -308,7 +308,7 @@ export default function TestPlanTab() {
                 value={requirement}
                 onChange={(e) => setRequirement(e.target.value)}
                 placeholder="Paste your requirement, user story, or specification here..."
-                className="flex-1 min-h-[200px] resize-none bg-arch-bg2 border border-arch-border rounded-lg p-3 text-[12px] font-mono text-arch-text placeholder:text-arch-text3 focus:outline-none focus:border-arch-green/50 transition-colors"
+                className="h-[200px] resize-none bg-arch-bg2 border border-arch-border rounded-lg p-3 text-[12px] font-mono text-arch-text placeholder:text-arch-text3 focus:outline-none focus:border-arch-green/50 transition-colors"
               />
 
               {/* Char count */}

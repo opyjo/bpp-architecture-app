@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { flows } from "@/data/flows";
 import { allServiceDeepDives } from "@/data/service-deep-dives";
 import { useChat } from "@/lib/hooks/useChat";
-import { useSavedDiagrams } from "@/lib/hooks/useSavedDiagrams";
+import { useSavedSequenceDiagrams } from "@/lib/hooks/useSavedSequenceDiagrams";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
@@ -13,7 +13,7 @@ import MessageBubble from "@/components/ai/MessageBubble";
 import ChatInput from "@/components/ai/ChatInput";
 import SavedItemsPanel from "@/components/ui/SavedItemsPanel";
 import { toast } from "sonner";
-import type { SavedDiagram } from "@/lib/types/saved-diagram";
+import type { SavedSequenceDiagram } from "@/lib/types/saved-sequence-diagram";
 import {
   GitBranch,
   Copy,
@@ -82,13 +82,14 @@ export default function SequenceDiagramTab() {
   const [rightView, setRightView] = useState<RightView>("diagram");
   const [viewMode, setViewMode] = useState<ViewMode>("generator");
   const [copyFeedback, setCopyFeedback] = useState(false);
-  const [savedDiagrams, setSavedDiagrams] = useState<SavedDiagram[]>([]);
+  const [savedDiagrams, setSavedDiagrams] = useState<SavedSequenceDiagram[]>([]);
   const [isLoadingDiagrams, setIsLoadingDiagrams] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { fetchDiagrams, saveDiagram, deleteDiagram } = useSavedDiagrams();
+  const { fetchSequenceDiagrams, saveSequenceDiagram, deleteSequenceDiagram } =
+    useSavedSequenceDiagrams();
 
   const systemContext = buildSequenceContext();
 
@@ -107,14 +108,14 @@ export default function SequenceDiagramTab() {
   const loadSavedDiagrams = useCallback(async () => {
     setIsLoadingDiagrams(true);
     try {
-      const diagrams = await fetchDiagrams();
+      const diagrams = await fetchSequenceDiagrams();
       setSavedDiagrams(diagrams);
     } catch {
       toast.error("Failed to load saved diagrams");
     } finally {
       setIsLoadingDiagrams(false);
     }
-  }, [fetchDiagrams]);
+  }, [fetchSequenceDiagrams]);
 
   useEffect(() => {
     loadSavedDiagrams();
@@ -175,6 +176,16 @@ export default function SequenceDiagramTab() {
     URL.revokeObjectURL(url);
   };
 
+  const extractParticipants = (source: string): string[] => {
+    const participants: string[] = [];
+    const lines = source.split("\n");
+    for (const line of lines) {
+      const match = line.match(/^\s*participant\s+(.+?)(?:\s+as\s+.+)?$/);
+      if (match) participants.push(match[1].trim());
+    }
+    return participants;
+  };
+
   const handleSave = async () => {
     if (!mermaidSource.trim()) return;
     setIsSaving(true);
@@ -182,11 +193,13 @@ export default function SequenceDiagramTab() {
       const title = flowId
         ? flows.find((f) => f.id === flowId)?.title || "Sequence Diagram"
         : description.slice(0, 50) || "Sequence Diagram";
-      await saveDiagram({
+      const participants = extractParticipants(mermaidSource);
+      await saveSequenceDiagram({
         title,
         description: description || flowId || "",
         mermaid_source: mermaidSource,
         flow_id: flowId || undefined,
+        participants,
       });
       setSaveFeedback(true);
       setTimeout(() => setSaveFeedback(false), 2000);
@@ -199,7 +212,7 @@ export default function SequenceDiagramTab() {
     }
   };
 
-  const handleLoadDiagram = (d: SavedDiagram) => {
+  const handleLoadDiagram = (d: SavedSequenceDiagram) => {
     setMermaidSource(d.mermaid_source);
     setDescription(d.description);
     setFlowId(d.flow_id || "");
@@ -208,7 +221,7 @@ export default function SequenceDiagramTab() {
 
   const handleDeleteDiagram = async (id: string) => {
     try {
-      await deleteDiagram(id);
+      await deleteSequenceDiagram(id);
       setSavedDiagrams((prev) => prev.filter((d) => d.id !== id));
       toast.success("Diagram deleted");
     } catch {
@@ -306,7 +319,7 @@ export default function SequenceDiagramTab() {
       <div className="flex-1 flex overflow-hidden">
         {/* Saved diagrams panel */}
         {viewMode === "saved" && (
-          <SavedItemsPanel<SavedDiagram>
+          <SavedItemsPanel<SavedSequenceDiagram>
             items={savedDiagrams}
             isLoading={isLoadingDiagrams}
             onSelect={handleLoadDiagram}
