@@ -27,6 +27,7 @@ const RunbookManagerTab = dynamic(() => import("@/components/tabs/RunbookManager
 const CodeReviewTab = dynamic(() => import("@/components/tabs/CodeReviewTab"), { ssr: false });
 const SequenceDiagramTab = dynamic(() => import("@/components/tabs/SequenceDiagramTab"), { ssr: false });
 const TestPlanTab = dynamic(() => import("@/components/tabs/TestPlanTab"), { ssr: false });
+const TeleprompterTab = dynamic(() => import("@/components/tabs/TeleprompterTab"), { ssr: false });
 
 // Tab component mapping
 const TAB_COMPONENTS: Record<string, React.ComponentType> = {
@@ -44,6 +45,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   apigee: ApigeeTab,
   openapi: OpenApiTab,
   coach: InterviewCoachTab,
+  teleprompter: TeleprompterTab,
   contract: ContractBuilderTab,
   review: CodeReviewTab,
   sequence: SequenceDiagramTab,

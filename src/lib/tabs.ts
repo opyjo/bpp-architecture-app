@@ -41,6 +41,7 @@ export const tabGroups: TabGroup[] = [
       { id: "apigee", label: "Apigee" },
       { id: "openapi", label: "OpenAPI 3.0" },
       { id: "coach", label: "Interview Coach" },
+      { id: "teleprompter", label: "Teleprompter" },
     ],
   },
   {
