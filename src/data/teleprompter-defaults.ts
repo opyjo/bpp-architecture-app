@@ -19,12 +19,26 @@ export interface HighlightedPhrase {
   color: HighlightColor;
 }
 
+export interface CardSection {
+  id: string;
+  name: string;
+  bullets: HighlightedPhrase[];
+}
+
 export interface TeleprompterCard {
   id: string;
   title: string;
   category: CardCategory;
   bullets: HighlightedPhrase[];
+  sections?: CardSection[];
   fullText?: string;
+}
+
+export function getAllBullets(card: TeleprompterCard): HighlightedPhrase[] {
+  if (card.sections && card.sections.length > 0) {
+    return card.sections.flatMap((s) => s.bullets);
+  }
+  return card.bullets;
 }
 
 export const CATEGORY_COLORS: Record<CardCategory, string> = {

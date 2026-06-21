@@ -14,14 +14,17 @@ import {
   ChevronDown,
   LayoutGrid,
   Presentation,
+  Tags,
 } from "lucide-react";
 import { useTeleprompterCards } from "@/lib/hooks/useTeleprompterCards";
 import {
   type TeleprompterCard,
   type HighlightedPhrase,
   type CardCategory,
+  type CardSection,
   type HighlightColor,
   CATEGORY_COLORS,
+  getAllBullets,
 } from "@/data/teleprompter-defaults";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
@@ -101,6 +104,48 @@ function HighlightedBullet({ phrase }: { phrase: HighlightedPhrase }) {
   );
 }
 
+function KeywordChips({ bullets }: { bullets: HighlightedPhrase[] }) {
+  const chips: { keyword: string; color: HighlightColor }[] = [];
+  for (const bullet of bullets) {
+    const matches = bullet.text.matchAll(/\*\*(.*?)\*\*/g);
+    for (const m of matches) {
+      chips.push({ keyword: m[1], color: bullet.color });
+    }
+  }
+  if (chips.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2.5">
+      {chips.map((chip, i) => (
+        <span
+          key={i}
+          className={`px-3.5 py-1.5 rounded-full text-[16px] font-semibold ring-1 ${COLOR_BG_CLASSES[chip.color]} ${COLOR_TEXT_CLASSES[chip.color]} ${COLOR_RING_CLASSES[chip.color]}`}
+        >
+          {chip.keyword}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SectionedBullets({ sections }: { sections: CardSection[] }) {
+  return (
+    <div className="flex flex-col gap-6">
+      {sections.map((section) => (
+        <div key={section.id}>
+          <h3 className="text-[14px] font-semibold text-arch-text3 uppercase tracking-wider mb-3">
+            {section.name}
+          </h3>
+          <ul className="flex flex-col gap-4 pl-1">
+            {section.bullets.map((bullet, i) => (
+              <HighlightedBullet key={i} phrase={bullet} />
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function CategoryBadge({ category, size = "lg" }: { category: CardCategory; size?: "sm" | "lg" }) {
   return (
     <span
@@ -118,9 +163,11 @@ function CategoryBadge({ category, size = "lg" }: { category: CardCategory; size
 function CardView({
   card,
   onEdit,
+  keywordMode,
 }: {
   card: TeleprompterCard;
   onEdit: () => void;
+  keywordMode: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -128,7 +175,7 @@ function CardView({
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-3">
-          <h2 className="text-[28px] font-bold text-arch-text leading-tight">
+          <h2 className={`font-bold text-arch-text leading-tight ${keywordMode ? "text-[22px]" : "text-[28px]"}`}>
             {card.title}
           </h2>
           <CategoryBadge category={card.category} />
@@ -142,30 +189,142 @@ function CardView({
         </button>
       </div>
 
-      <ul className="flex flex-col gap-4 pl-1">
-        {card.bullets.map((bullet, i) => (
-          <HighlightedBullet key={i} phrase={bullet} />
-        ))}
-      </ul>
-
-      {card.fullText && (
-        <div className="border-t border-arch-border pt-4">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-2 text-[14px] font-medium text-arch-text3 hover:text-arch-text transition-colors"
-          >
-            <ChevronDown
-              size={14}
-              className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-            />
-            {expanded ? "Hide" : "Show"} full text
-          </button>
-          {expanded && (
-            <p className="mt-3 text-[16px] leading-relaxed text-arch-text3 whitespace-pre-wrap">
-              {card.fullText}
-            </p>
+      {keywordMode ? (
+        <KeywordChips bullets={getAllBullets(card)} />
+      ) : (
+        <>
+          {card.sections && card.sections.length > 0 ? (
+            <SectionedBullets sections={card.sections} />
+          ) : (
+            <ul className="flex flex-col gap-4 pl-1">
+              {card.bullets.map((bullet, i) => (
+                <HighlightedBullet key={i} phrase={bullet} />
+              ))}
+            </ul>
           )}
-        </div>
+
+          {card.fullText && (
+            <div className="border-t border-arch-border pt-4">
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="flex items-center gap-2 text-[14px] font-medium text-arch-text3 hover:text-arch-text transition-colors"
+              >
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+                />
+                {expanded ? "Hide" : "Show"} full text
+              </button>
+              {expanded && (
+                <p className="mt-3 text-[16px] leading-relaxed text-arch-text3 whitespace-pre-wrap">
+                  {card.fullText}
+                </p>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function toggleWordKeyword(text: string, wordIndex: number): string {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  let runningIndex = 0;
+  const newParts: string[] = [];
+
+  for (const part of parts) {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      newParts.push(part);
+    } else {
+      const words = part.split(/(\s+)/);
+      const rebuilt: string[] = [];
+      for (const word of words) {
+        if (/^\s+$/.test(word) || word === "") {
+          rebuilt.push(word);
+        } else {
+          if (runningIndex === wordIndex) {
+            rebuilt.push(`**${word}**`);
+          } else {
+            rebuilt.push(word);
+          }
+          runningIndex++;
+        }
+      }
+      newParts.push(rebuilt.join(""));
+    }
+  }
+
+  return newParts.join("");
+}
+
+function untagKeyword(text: string, keywordText: string, keywordOccurrence: number): string {
+  let occurrence = 0;
+  return text.replace(/\*\*(.*?)\*\*/g, (match, inner) => {
+    if (inner === keywordText) {
+      if (occurrence === keywordOccurrence) {
+        occurrence++;
+        return inner;
+      }
+      occurrence++;
+    }
+    return match;
+  });
+}
+
+function WordTokens({
+  text,
+  color,
+  onToggle,
+}: {
+  text: string;
+  color: HighlightColor;
+  onToggle: (newText: string) => void;
+}) {
+  if (!text.trim()) return null;
+
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  const tokens: { label: string; isKeyword: boolean; wordIndex: number; keywordOccurrence: number }[] = [];
+  let wordIndex = 0;
+  const keywordCounts: Record<string, number> = {};
+
+  for (const part of parts) {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      const keyword = part.slice(2, -2);
+      const occ = keywordCounts[keyword] ?? 0;
+      keywordCounts[keyword] = occ + 1;
+      tokens.push({ label: keyword, isKeyword: true, wordIndex: -1, keywordOccurrence: occ });
+    } else {
+      const words = part.split(/\s+/).filter(Boolean);
+      for (const word of words) {
+        tokens.push({ label: word, isKeyword: false, wordIndex, keywordOccurrence: 0 });
+        wordIndex++;
+      }
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {tokens.map((token, i) =>
+        token.isKeyword ? (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onToggle(untagKeyword(text, token.label, token.keywordOccurrence))}
+            className={`px-2 py-0.5 rounded text-[11px] font-semibold cursor-pointer ${COLOR_BG_CLASSES[color]} ${COLOR_TEXT_CLASSES[color]}`}
+          >
+            {token.label}
+          </button>
+        ) : (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onToggle(toggleWordKeyword(text, token.wordIndex))}
+            className="px-2 py-0.5 rounded text-[11px] text-arch-text3 hover:bg-arch-bg3 cursor-pointer"
+          >
+            {token.label}
+          </button>
+        )
       )}
     </div>
   );
@@ -181,34 +340,102 @@ function BulletEditor({
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-start gap-2">
-      <input
-        type="text"
-        value={bullet.text}
-        onChange={(e) => onChange({ ...bullet, text: e.target.value })}
-        className="flex-1 bg-arch-bg1 border border-arch-border rounded-lg px-3 py-1.5 text-[12px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
-        placeholder="Use **keyword** for highlights"
+    <div className="flex flex-col gap-0">
+      <div className="flex items-start gap-2">
+        <input
+          type="text"
+          value={bullet.text}
+          onChange={(e) => onChange({ ...bullet, text: e.target.value })}
+          className="flex-1 bg-arch-bg1 border border-arch-border rounded-lg px-3 py-1.5 text-[12px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+          placeholder="Type your bullet text here"
+        />
+        <select
+          value={bullet.color}
+          onChange={(e) =>
+            onChange({ ...bullet, color: e.target.value as HighlightColor })
+          }
+          className="bg-arch-bg1 border border-arch-border rounded-lg px-2 py-1.5 text-[11px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+        >
+          {ALL_COLORS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={onRemove}
+          className="p-1.5 text-arch-text3 hover:text-arch-coral transition-colors"
+          title="Remove bullet"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <WordTokens
+        text={bullet.text}
+        color={bullet.color}
+        onToggle={(newText) => onChange({ ...bullet, text: newText })}
       />
-      <select
-        value={bullet.color}
-        onChange={(e) =>
-          onChange({ ...bullet, color: e.target.value as HighlightColor })
-        }
-        className="bg-arch-bg1 border border-arch-border rounded-lg px-2 py-1.5 text-[11px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
-      >
-        {ALL_COLORS.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
+    </div>
+  );
+}
+
+function SectionEditor({
+  section,
+  onChange,
+  onRemove,
+}: {
+  section: CardSection;
+  onChange: (s: CardSection) => void;
+  onRemove: () => void;
+}) {
+  const updateBullet = (index: number, updated: HighlightedPhrase) => {
+    const newBullets = section.bullets.map((b, i) => (i === index ? updated : b));
+    onChange({ ...section, bullets: newBullets });
+  };
+
+  const removeBullet = (index: number) => {
+    onChange({ ...section, bullets: section.bullets.filter((_, i) => i !== index) });
+  };
+
+  const addBullet = () => {
+    onChange({ ...section, bullets: [...section.bullets, { text: "", color: "blue" }] });
+  };
+
+  return (
+    <div className="bg-arch-bg1 rounded-lg border border-arch-border p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <input
+          type="text"
+          value={section.name}
+          onChange={(e) => onChange({ ...section, name: e.target.value })}
+          className="flex-1 bg-transparent border-b border-arch-border px-1 py-0.5 text-[12px] font-semibold text-arch-text placeholder:text-arch-text3 focus:outline-none focus:border-arch-blue/50"
+          placeholder="Section name"
+        />
+        <button
+          onClick={onRemove}
+          className="p-1.5 text-arch-text3 hover:text-arch-coral transition-colors"
+          title="Remove section"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {section.bullets.map((bullet, i) => (
+          <BulletEditor
+            key={i}
+            bullet={bullet}
+            onChange={(b) => updateBullet(i, b)}
+            onRemove={() => removeBullet(i)}
+          />
         ))}
-      </select>
-      <button
-        onClick={onRemove}
-        className="p-1.5 text-arch-text3 hover:text-arch-coral transition-colors"
-        title="Remove bullet"
-      >
-        <X size={14} />
-      </button>
+        <button
+          onClick={addBullet}
+          className="flex items-center gap-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-blue transition-colors w-fit"
+        >
+          <Plus size={12} /> Add bullet
+        </button>
+      </div>
     </div>
   );
 }
@@ -229,6 +456,9 @@ function CardEditor({
   const [bullets, setBullets] = useState<HighlightedPhrase[]>([
     ...card.bullets,
   ]);
+  const [sections, setSections] = useState<CardSection[] | null>(
+    card.sections?.length ? card.sections.map((s) => ({ ...s, bullets: [...s.bullets] })) : null
+  );
   const [fullText, setFullText] = useState(card.fullText ?? "");
 
   const updateBullet = (index: number, updated: HighlightedPhrase) => {
@@ -243,15 +473,68 @@ function CardEditor({
     setBullets((prev) => [...prev, { text: "", color: "blue" }]);
   };
 
-  const handleSave = () => {
-    const trimmedBullets = bullets.filter((b) => b.text.trim());
-    if (!title.trim() || trimmedBullets.length === 0) return;
-    onSave({
-      title: title.trim(),
-      category,
-      bullets: trimmedBullets,
-      fullText: fullText.trim() || undefined,
+  const addSections = () => {
+    const firstSection: CardSection = {
+      id: crypto.randomUUID(),
+      name: "Section 1",
+      bullets: bullets.length > 0 ? [...bullets] : [{ text: "", color: "blue" }],
+    };
+    setSections([firstSection]);
+  };
+
+  const removeSections = () => {
+    if (sections) {
+      const allBullets = sections.flatMap((s) => s.bullets);
+      setBullets(allBullets.length > 0 ? allBullets : [{ text: "", color: "blue" }]);
+    }
+    setSections(null);
+  };
+
+  const updateSection = (index: number, updated: CardSection) => {
+    setSections((prev) => prev && prev.map((s, i) => (i === index ? updated : s)));
+  };
+
+  const removeSection = (index: number) => {
+    setSections((prev) => {
+      if (!prev) return prev;
+      const next = prev.filter((_, i) => i !== index);
+      return next.length > 0 ? next : null;
     });
+  };
+
+  const addSection = () => {
+    setSections((prev) => [
+      ...(prev ?? []),
+      { id: crypto.randomUUID(), name: "", bullets: [{ text: "", color: "blue" }] },
+    ]);
+  };
+
+  const handleSave = () => {
+    if (!title.trim()) return;
+
+    if (sections) {
+      const filteredSections = sections
+        .map((s) => ({ ...s, bullets: s.bullets.filter((b) => b.text.trim()) }))
+        .filter((s) => s.bullets.length > 0);
+      if (filteredSections.length === 0) return;
+      onSave({
+        title: title.trim(),
+        category,
+        bullets: [],
+        sections: filteredSections,
+        fullText: fullText.trim() || undefined,
+      });
+    } else {
+      const trimmedBullets = bullets.filter((b) => b.text.trim());
+      if (trimmedBullets.length === 0) return;
+      onSave({
+        title: title.trim(),
+        category,
+        bullets: trimmedBullets,
+        sections: undefined,
+        fullText: fullText.trim() || undefined,
+      });
+    }
   };
 
   return (
@@ -278,23 +561,62 @@ function CardEditor({
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-[11px] font-medium text-arch-text3 uppercase tracking-wider">
-          Bullets
-        </span>
-        {bullets.map((bullet, i) => (
-          <BulletEditor
-            key={i}
-            bullet={bullet}
-            onChange={(b) => updateBullet(i, b)}
-            onRemove={() => removeBullet(i)}
-          />
-        ))}
-        <button
-          onClick={addBullet}
-          className="flex items-center gap-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-blue transition-colors w-fit"
-        >
-          <Plus size={12} /> Add bullet
-        </button>
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium text-arch-text3 uppercase tracking-wider">
+            {sections ? "Sections" : "Bullets"}
+          </span>
+          {sections ? (
+            <button
+              onClick={removeSections}
+              className="text-[11px] font-medium text-arch-text3 hover:text-arch-coral transition-colors"
+            >
+              Remove Sections
+            </button>
+          ) : (
+            <button
+              onClick={addSections}
+              className="text-[11px] font-medium text-arch-text3 hover:text-arch-blue transition-colors"
+            >
+              Add Sections
+            </button>
+          )}
+        </div>
+
+        {sections ? (
+          <>
+            {sections.map((section, i) => (
+              <SectionEditor
+                key={section.id}
+                section={section}
+                onChange={(s) => updateSection(i, s)}
+                onRemove={() => removeSection(i)}
+              />
+            ))}
+            <button
+              onClick={addSection}
+              className="flex items-center gap-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-blue transition-colors w-fit"
+            >
+              <Plus size={12} /> Add section
+            </button>
+          </>
+        ) : (
+          <>
+            {bullets.map((bullet, i) => (
+              <BulletEditor
+                key={i}
+                bullet={bullet}
+                onChange={(b) => updateBullet(i, b)}
+                onRemove={() => removeBullet(i)}
+              />
+            ))}
+            <button
+              onClick={addBullet}
+              className="flex items-center gap-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-blue transition-colors w-fit"
+            >
+              <Plus size={12} /> Add bullet
+            </button>
+          </>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -421,7 +743,7 @@ function CardOverview({
             {card.title}
           </h3>
           <ul className="flex flex-col gap-1">
-            {card.bullets.slice(0, 3).map((bullet, j) => {
+            {getAllBullets(card).slice(0, 3).map((bullet, j) => {
               const preview = bullet.text
                 .replace(/\*\*/g, "")
                 .slice(0, 50);
@@ -440,9 +762,9 @@ function CardOverview({
                 </li>
               );
             })}
-            {card.bullets.length > 3 && (
+            {getAllBullets(card).length > 3 && (
               <li className="text-[10px] text-arch-text3 pl-2.5">
-                +{card.bullets.length - 3} more
+                +{getAllBullets(card).length - 3} more
               </li>
             )}
           </ul>
@@ -473,6 +795,7 @@ export default function TeleprompterTab() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
+  const [keywordMode, setKeywordMode] = useState(false);
 
   // Keyboard navigation
   useEffect(() => {
@@ -485,6 +808,9 @@ export default function TeleprompterTab() {
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         goNext();
+      } else if (e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setKeywordMode((prev) => !prev);
       }
     }
 
@@ -551,13 +877,26 @@ export default function TeleprompterTab() {
             )}
           </button>
           {!isEditing && !showOverview && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
-              title="Edit current card"
-            >
-              <Pencil size={12} /> Edit
-            </button>
+            <>
+              <button
+                onClick={() => setKeywordMode(!keywordMode)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors ${
+                  keywordMode
+                    ? "text-arch-purple bg-arch-purple/10"
+                    : "text-arch-text3 hover:text-arch-text hover:bg-arch-bg3"
+                }`}
+                title={keywordMode ? "Switch to full view (K)" : "Switch to keywords (K)"}
+              >
+                <Tags size={12} /> {keywordMode ? "Full" : "Keywords"}
+              </button>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+                title="Edit current card"
+              >
+                <Pencil size={12} /> Edit
+              </button>
+            </>
           )}
           <button
             onClick={handleAddCard}
@@ -605,6 +944,7 @@ export default function TeleprompterTab() {
                 <CardView
                   card={currentCard}
                   onEdit={() => setIsEditing(true)}
+                  keywordMode={keywordMode}
                 />
               )}
             </div>
