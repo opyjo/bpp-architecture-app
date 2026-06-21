@@ -1,4 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { createStreamingResponse } from "@/lib/ai/stream";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -18,32 +19,15 @@ Instructions:
 - Group endpoints with tags based on the package or file they come from.
 - If additional context files are provided (models, middleware, etc.), use them to enrich the spec.`;
 
-function sendEvent(
-  controller: ReadableStreamDefaultController,
-  event: Record<string, unknown>
-) {
-  controller.enqueue(
-    new TextEncoder().encode(JSON.stringify(event) + "\n")
-  );
-}
-
 export async function POST(request: Request) {
   const body = await request.json();
   const goCode: string = body.goCode ?? "";
   const additionalFiles: string[] = body.additionalFiles ?? [];
   const fileName: string = body.fileName ?? "handler.go";
-  const modelId: string = body.modelId ?? "";
+  const modelId: string = body.modelId || DEFAULT_MODEL_ID;
 
   if (!goCode.trim()) {
     return Response.json({ error: "No Go code provided" }, { status: 400 });
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey.startsWith("your-")) {
-    return Response.json(
-      { error: "ANTHROPIC_API_KEY is not configured. Add it to .env.local" },
-      { status: 500 }
-    );
   }
 
   let userContent = `Generate a complete OpenAPI 3.0 YAML specification for the following Go code.\n\nFile: ${fileName}\n\`\`\`go\n${goCode}\n\`\`\``;
@@ -55,49 +39,10 @@ export async function POST(request: Request) {
     });
   }
 
-  const { getModel } = await import("@/lib/ai/models");
-  const selectedModel = modelId ? getModel(modelId) : null;
-  const client = new Anthropic({ apiKey });
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        const response = await client.messages.create({
-          model: selectedModel?.modelId || "claude-sonnet-4-6",
-          max_tokens: 16384,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userContent }],
-          stream: true,
-        });
-
-        for await (const event of response) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            sendEvent(controller, {
-              type: "text_delta",
-              text: event.delta.text,
-            });
-          }
-        }
-
-        sendEvent(controller, { type: "done" });
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        sendEvent(controller, { type: "error", message });
-      } finally {
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "application/x-ndjson",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
+  return createStreamingResponse({
+    modelId,
+    systemPrompt: SYSTEM_PROMPT,
+    userContent,
+    maxTokens: 16384,
   });
 }

@@ -1,4 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { createStreamingResponse } from "@/lib/ai/stream";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -45,32 +46,15 @@ Any observations about how this code fits (or doesn't fit) the platform architec
 
 If a section has no items, omit it entirely. Be specific with line references when possible.`;
 
-function sendEvent(
-  controller: ReadableStreamDefaultController,
-  event: Record<string, unknown>
-) {
-  controller.enqueue(
-    new TextEncoder().encode(JSON.stringify(event) + "\n")
-  );
-}
-
 export async function POST(request: Request) {
   const body = await request.json();
   const code: string = body.code ?? "";
   const focus: string[] = body.focus ?? [];
   const language: string = body.language ?? "go";
-  const modelId: string = body.modelId ?? "";
+  const modelId: string = body.modelId || DEFAULT_MODEL_ID;
 
   if (!code.trim()) {
     return Response.json({ error: "No code provided" }, { status: 400 });
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey.startsWith("your-")) {
-    return Response.json(
-      { error: "ANTHROPIC_API_KEY is not configured. Add it to .env.local" },
-      { status: 500 }
-    );
   }
 
   const focusText =
@@ -80,49 +64,9 @@ export async function POST(request: Request) {
 
   const userContent = `Review the following ${language} code.${focusText}\n\n\`\`\`${language}\n${code}\n\`\`\``;
 
-  const { getModel } = await import("@/lib/ai/models");
-  const selectedModel = modelId ? getModel(modelId) : null;
-  const client = new Anthropic({ apiKey });
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        const response = await client.messages.create({
-          model: selectedModel?.modelId || "claude-sonnet-4-6",
-          max_tokens: 8192,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userContent }],
-          stream: true,
-        });
-
-        for await (const event of response) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            sendEvent(controller, {
-              type: "text_delta",
-              text: event.delta.text,
-            });
-          }
-        }
-
-        sendEvent(controller, { type: "done" });
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        sendEvent(controller, { type: "error", message });
-      } finally {
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "application/x-ndjson",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
+  return createStreamingResponse({
+    modelId,
+    systemPrompt: SYSTEM_PROMPT,
+    userContent,
   });
 }
