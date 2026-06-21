@@ -63,6 +63,7 @@ const TYPES: TypeConfig[] = [
     icon: GitBranch,
     color: "text-arch-green",
     bgColor: "bg-arch-green/10",
+    detailLink: (id) => `/sequence-diagrams/${id}`,
   },
   {
     id: "testplans",
@@ -84,6 +85,7 @@ const TYPES: TypeConfig[] = [
     icon: FileCode2,
     color: "text-arch-teal",
     bgColor: "bg-arch-teal/10",
+    detailLink: (id) => `/specs/${id}`,
   },
   {
     id: "analyses",

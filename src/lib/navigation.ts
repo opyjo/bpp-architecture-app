@@ -25,6 +25,12 @@ export function buildBreadcrumbs(
   } else if (pathname.startsWith("/chats/")) {
     crumbs.push({ label: "Saved Chats", href: "/chats" });
     crumbs.push({ label: dynamicLabel || "Detail" });
+  } else if (pathname.startsWith("/specs/")) {
+    crumbs.push({ label: "All Saved", href: "/saved" });
+    crumbs.push({ label: dynamicLabel || "API Spec" });
+  } else if (pathname.startsWith("/sequence-diagrams/")) {
+    crumbs.push({ label: "All Saved", href: "/saved" });
+    crumbs.push({ label: dynamicLabel || "Sequence Diagram" });
   }
 
   return crumbs;

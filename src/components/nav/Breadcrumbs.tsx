@@ -11,7 +11,7 @@ export default function Breadcrumbs({ dynamicLabel }: { dynamicLabel?: string })
   // Detail routes render their own breadcrumbs with dynamic labels — skip here
   const isDetailRoute =
     !dynamicLabel &&
-    (/^\/analyses\/.+/.test(pathname) || /^\/chats\/.+/.test(pathname));
+    (/^\/analyses\/.+/.test(pathname) || /^\/chats\/.+/.test(pathname) || /^\/specs\/.+/.test(pathname) || /^\/sequence-diagrams\/.+/.test(pathname));
   if (isDetailRoute) return null;
 
   const crumbs = buildBreadcrumbs(pathname, dynamicLabel);
