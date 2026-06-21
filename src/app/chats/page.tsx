@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSavedChats } from "@/lib/hooks/useSavedChats";
 import ChatList from "@/components/chats/ChatList";
 import type { SavedChat } from "@/lib/types/saved-chat";
-import Breadcrumbs from "@/components/nav/Breadcrumbs";
+
 import { toast } from "sonner";
 
 const BSA_PREFIX = "[BSA Coach]";
@@ -67,8 +67,7 @@ export default function ChatsPage() {
   return (
     <div className="flex-1 bg-arch-bg">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <Breadcrumbs />
-        <div className="flex items-center justify-between mb-4 mt-2">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-[14.5px] font-bold text-arch-text">
             Saved Chats
           </h1>

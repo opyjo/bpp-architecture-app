@@ -1,32 +1,3 @@
-import { Home, Search, Archive, MessageSquare } from "lucide-react";
-
-export const navItems = [
-  {
-    label: "Home",
-    href: "/",
-    icon: Home,
-    matchExact: true,
-  },
-  {
-    label: "Ticket Analyzer",
-    href: "/analyze",
-    icon: Search,
-    matchExact: false,
-  },
-  {
-    label: "Saved Analyses",
-    href: "/analyses",
-    icon: Archive,
-    matchExact: false,
-  },
-  {
-    label: "Saved Chats",
-    href: "/chats",
-    icon: MessageSquare,
-    matchExact: false,
-  },
-] as const;
-
 export interface BreadcrumbSegment {
   label: string;
   href?: string;
@@ -40,7 +11,9 @@ export function buildBreadcrumbs(
 
   const crumbs: BreadcrumbSegment[] = [{ label: "Home", href: "/" }];
 
-  if (pathname === "/analyze") {
+  if (pathname === "/saved") {
+    crumbs.push({ label: "All Saved" });
+  } else if (pathname === "/analyze") {
     crumbs.push({ label: "Ticket Analyzer" });
   } else if (pathname === "/analyses") {
     crumbs.push({ label: "Saved Analyses" });

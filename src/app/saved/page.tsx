@@ -5,14 +5,12 @@ import Link from "next/link";
 import { useSavedReviews } from "@/lib/hooks/useSavedReviews";
 import { useSavedTestPlans } from "@/lib/hooks/useSavedTestPlans";
 import { useSavedSpecs } from "@/lib/hooks/useSavedSpecs";
-import { useSavedDiagrams } from "@/lib/hooks/useSavedDiagrams";
 import { useSavedSequenceDiagrams } from "@/lib/hooks/useSavedSequenceDiagrams";
 import { useSavedAnalyses } from "@/lib/hooks/useSavedAnalyses";
 import { useSavedChats } from "@/lib/hooks/useSavedChats";
 import { useSavedRunbooks } from "@/lib/hooks/useSavedRunbooks";
 import { timeAgo } from "@/lib/utils";
 import { toast } from "sonner";
-import Breadcrumbs from "@/components/nav/Breadcrumbs";
 import {
   Code2,
   ClipboardCheck,
@@ -25,17 +23,21 @@ import {
   Trash2,
   Search,
   LayoutGrid,
+  GraduationCap,
+  Bot,
 } from "lucide-react";
+
+const BSA_PREFIX = "[BSA Coach]";
 
 type ContentType =
   | "all"
   | "reviews"
   | "testplans"
   | "specs"
-  | "diagrams"
   | "sequence_diagrams"
   | "analyses"
-  | "chats"
+  | "ai_chats"
+  | "coach_chats"
   | "runbooks";
 
 interface TypeConfig {
@@ -43,7 +45,7 @@ interface TypeConfig {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  activeColor: string;
+  bgColor: string;
   tabLink?: string;
   detailLink?: (id: string) => string;
 }
@@ -51,17 +53,17 @@ interface TypeConfig {
 const TYPES: TypeConfig[] = [
   {
     id: "all",
-    label: "All",
+    label: "All Items",
     icon: LayoutGrid,
-    color: "text-arch-text3",
-    activeColor: "bg-arch-blue/15 text-arch-blue",
+    color: "text-arch-blue",
+    bgColor: "bg-arch-blue/10",
   },
   {
     id: "sequence_diagrams",
     label: "Sequence Diagrams",
     icon: GitBranch,
     color: "text-arch-green",
-    activeColor: "bg-arch-green/15 text-arch-green",
+    bgColor: "bg-arch-green/10",
     tabLink: "/?tab=sequence",
   },
   {
@@ -69,7 +71,7 @@ const TYPES: TypeConfig[] = [
     label: "Test Plans",
     icon: ClipboardCheck,
     color: "text-arch-green",
-    activeColor: "bg-arch-green/15 text-arch-green",
+    bgColor: "bg-arch-green/10",
     tabLink: "/?tab=testplan",
   },
   {
@@ -77,7 +79,7 @@ const TYPES: TypeConfig[] = [
     label: "Code Reviews",
     icon: Code2,
     color: "text-arch-purple",
-    activeColor: "bg-arch-purple/15 text-arch-purple",
+    bgColor: "bg-arch-purple/10",
     tabLink: "/?tab=review",
   },
   {
@@ -85,31 +87,31 @@ const TYPES: TypeConfig[] = [
     label: "API Specs",
     icon: FileCode2,
     color: "text-arch-teal",
-    activeColor: "bg-arch-teal/15 text-arch-teal",
+    bgColor: "bg-arch-teal/10",
     tabLink: "/?tab=contract",
-  },
-  {
-    id: "diagrams",
-    label: "Diagrams",
-    icon: GitBranch,
-    color: "text-arch-teal",
-    activeColor: "bg-arch-teal/15 text-arch-teal",
-    tabLink: "/?tab=sequence",
   },
   {
     id: "analyses",
     label: "Analyses",
     icon: FileText,
-    color: "text-arch-amber",
-    activeColor: "bg-amber-500/15 text-amber-500",
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
     detailLink: (id) => `/analyses/${id}`,
   },
   {
-    id: "chats",
-    label: "Chats",
-    icon: MessageSquare,
-    color: "text-arch-blue",
-    activeColor: "bg-arch-blue/15 text-arch-blue",
+    id: "ai_chats",
+    label: "AI Assistant",
+    icon: Bot,
+    color: "text-arch-purple",
+    bgColor: "bg-arch-purple/10",
+    detailLink: (id) => `/chats/${id}`,
+  },
+  {
+    id: "coach_chats",
+    label: "Interview Coach",
+    icon: GraduationCap,
+    color: "text-arch-teal",
+    bgColor: "bg-arch-teal/10",
     detailLink: (id) => `/chats/${id}`,
   },
   {
@@ -117,12 +119,11 @@ const TYPES: TypeConfig[] = [
     label: "Runbooks",
     icon: BookOpen,
     color: "text-arch-coral",
-    activeColor: "bg-arch-coral/15 text-arch-coral",
+    bgColor: "bg-arch-coral/10",
     tabLink: "/?tab=runbooks",
   },
 ];
 
-// All types except "all"
 const DATA_TYPES = TYPES.filter((t) => t.id !== "all");
 
 interface SavedItem {
@@ -142,10 +143,10 @@ export default function SavedHubPage() {
     reviews: 0,
     testplans: 0,
     specs: 0,
-    diagrams: 0,
     sequence_diagrams: 0,
     analyses: 0,
-    chats: 0,
+    ai_chats: 0,
+    coach_chats: 0,
     runbooks: 0,
   });
   const [search, setSearch] = useState("");
@@ -153,7 +154,6 @@ export default function SavedHubPage() {
   const { fetchReviews, deleteReview } = useSavedReviews();
   const { fetchTestPlans, deleteTestPlan } = useSavedTestPlans();
   const { fetchSpecs, deleteSpec } = useSavedSpecs();
-  const { fetchDiagrams, deleteDiagram } = useSavedDiagrams();
   const { fetchSequenceDiagrams, deleteSequenceDiagram } =
     useSavedSequenceDiagrams();
   const { fetchAnalyses, deleteAnalysis } = useSavedAnalyses();
@@ -167,29 +167,38 @@ export default function SavedHubPage() {
         fetchReviews(),
         fetchTestPlans(),
         fetchSpecs(),
-        fetchDiagrams(),
         fetchSequenceDiagrams(),
         fetchAnalyses(),
         fetchChats(),
         fetchRunbooks(),
       ]);
 
-      const keys: ContentType[] = [
-        "reviews",
-        "testplans",
-        "specs",
-        "diagrams",
-        "sequence_diagrams",
-        "analyses",
-        "chats",
-        "runbooks",
-      ];
-
-      const newCounts: Record<string, number> = { all: 0 };
+      const newCounts: Record<string, number> = {
+        all: 0,
+        reviews: 0,
+        testplans: 0,
+        specs: 0,
+        sequence_diagrams: 0,
+        analyses: 0,
+        ai_chats: 0,
+        coach_chats: 0,
+        runbooks: 0,
+      };
       const items: SavedItem[] = [];
 
-      keys.forEach((key, i) => {
-        const r = results[i];
+      // Non-chat types mapped in order
+      const simpleKeys: { key: Exclude<ContentType, "all" | "ai_chats" | "coach_chats">; index: number }[] = [
+        { key: "reviews", index: 0 },
+        { key: "testplans", index: 1 },
+        { key: "specs", index: 2 },
+        { key: "sequence_diagrams", index: 3 },
+        { key: "analyses", index: 4 },
+        // chats at index 5 — handled separately
+        { key: "runbooks", index: 6 },
+      ];
+
+      simpleKeys.forEach(({ key, index }) => {
+        const r = results[index];
         if (r.status !== "fulfilled") {
           newCounts[key] = 0;
           return;
@@ -212,9 +221,6 @@ export default function SavedHubPage() {
             case "specs":
               subtitle = (row.service_name as string) || "";
               break;
-            case "diagrams":
-              subtitle = (row.description as string) || "";
-              break;
             case "sequence_diagrams":
               subtitle = (row.participants as string[])?.length
                 ? `${(row.participants as string[]).length} participants`
@@ -222,9 +228,6 @@ export default function SavedHubPage() {
               break;
             case "analyses":
               subtitle = `${(row.messages as unknown[])?.length || 0} messages`;
-              break;
-            case "chats":
-              subtitle = `${(row.messages as unknown[])?.length || 0} messages · ${row.model_id}`;
               break;
             case "runbooks":
               subtitle = (row.severity as string) || "";
@@ -240,7 +243,26 @@ export default function SavedHubPage() {
         });
       });
 
-      // Sort all items by updated_at descending
+      // Split chats into AI Assistant vs Interview Coach
+      const chatsResult = results[5];
+      if (chatsResult.status === "fulfilled") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const chats = chatsResult.value as any[];
+        chats.forEach((row) => {
+          const isCoach = (row.title as string)?.startsWith(BSA_PREFIX);
+          const type: ContentType = isCoach ? "coach_chats" : "ai_chats";
+          newCounts[type] += 1;
+          newCounts.all += 1;
+          items.push({
+            id: row.id,
+            title: row.title,
+            updated_at: row.updated_at,
+            subtitle: `${(row.messages as unknown[])?.length || 0} messages · ${row.model_id}`,
+            type,
+          });
+        });
+      }
+
       items.sort(
         (a, b) =>
           new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
@@ -267,10 +289,10 @@ export default function SavedHubPage() {
     reviews: deleteReview,
     testplans: deleteTestPlan,
     specs: deleteSpec,
-    diagrams: deleteDiagram,
     sequence_diagrams: deleteSequenceDiagram,
     analyses: deleteAnalysis,
-    chats: deleteChat,
+    ai_chats: deleteChat,
+    coach_chats: deleteChat,
     runbooks: deleteRunbook,
   };
 
@@ -299,7 +321,6 @@ export default function SavedHubPage() {
   const getItemTypeConfig = (type: ContentType) =>
     DATA_TYPES.find((t) => t.id === type);
 
-  // Filter items by active tab + search
   const displayItems = allItems
     .filter((item) => activeType === "all" || item.type === activeType)
     .filter(
@@ -313,9 +334,8 @@ export default function SavedHubPage() {
 
   return (
     <div className="flex-1 bg-arch-bg">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Breadcrumbs />
-        <div className="flex items-center justify-between mb-4 mt-2">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-5">
           <h1 className="text-[16px] font-bold text-arch-text">
             All Saved Items
           </h1>
@@ -326,144 +346,154 @@ export default function SavedHubPage() {
           )}
         </div>
 
-        {/* Filter tabs */}
-        {!loading && counts.all > 0 && (
-          <div className="flex items-center gap-1 mb-6 bg-arch-bg2 border border-arch-border rounded-lg p-1 overflow-x-auto">
-            {TYPES.map((type) => {
-              const isActive = activeType === type.id;
-              const count = counts[type.id];
-              return (
-                <button
-                  key={type.id}
-                  onClick={() => {
-                    setActiveType(type.id);
-                    setSearch("");
-                  }}
-                  className={`px-3 py-1.5 rounded-md text-[11.5px] font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                    isActive
-                      ? activeConfig.id === type.id
-                        ? type.activeColor
-                        : type.activeColor
-                      : "text-arch-text3 hover:text-arch-text hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {type.label}
-                  {count > 0 && (
-                    <span
-                      className={`text-[9.5px] px-1.5 py-0.5 rounded-full ${
-                        isActive
-                          ? "bg-white/20"
-                          : "bg-arch-bg3 text-arch-text3"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Search bar */}
-        {!loading && displayItems.length > 3 && (
-          <div className="mb-4 flex items-center gap-2 bg-arch-bg2 border border-arch-border rounded-lg px-3 py-2 focus-within:border-arch-blue/40 transition-colors">
-            <Search className="w-4 h-4 text-arch-text3 shrink-0" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Search ${activeType === "all" ? "all items" : activeConfig.label.toLowerCase()}...`}
-              className="flex-1 bg-transparent text-[12px] text-arch-text placeholder:text-arch-text3 focus:outline-none"
-            />
-          </div>
-        )}
-
-        {/* Items */}
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-arch-blue" />
           </div>
-        ) : displayItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-arch-text3">
-            {React.createElement(activeConfig.icon, {
-              className: "w-10 h-10 mb-3 opacity-30",
-            })}
-            <p className="text-[13px] font-medium">
-              {search
-                ? "No matching items"
-                : `No saved ${activeType === "all" ? "items" : activeConfig.label.toLowerCase()} yet`}
-            </p>
-          </div>
         ) : (
-          <div className="grid gap-3">
-            {displayItems.map((item) => {
-              const link = getItemLink(item);
-              const typeConfig = getItemTypeConfig(item.type);
-              const TypeIcon = typeConfig?.icon;
-              const content = (
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {/* Type badge on "All" tab */}
-                    {activeType === "all" && TypeIcon && (
-                      <div
-                        className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${typeConfig?.color} bg-white/[0.04]`}
-                      >
-                        <TypeIcon className="w-3.5 h-3.5" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold text-arch-text truncate">
-                        {item.title}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {activeType === "all" && typeConfig && (
-                          <span
-                            className={`text-[10px] font-medium ${typeConfig.color}`}
-                          >
-                            {typeConfig.label}
-                          </span>
-                        )}
-                        {item.subtitle && (
-                          <span className="text-[11px] text-arch-text3 truncate">
-                            {activeType === "all" ? "·" : ""} {item.subtitle}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10.5px] text-arch-text3 mt-1">
-                        {timeAgo(item.updated_at)}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDelete(item);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-arch-text3 hover:text-arch-coral hover:bg-arch-coral/10 rounded transition-all"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              );
+          <div className="flex gap-6">
+            {/* Sidebar */}
+            <aside className="w-52 shrink-0 sticky top-4 self-start">
+              <nav className="flex flex-col gap-0.5">
+                {TYPES.map((type) => {
+                  const isActive = activeType === type.id;
+                  const count = counts[type.id];
+                  const Icon = type.icon;
+                  return (
+                    <button
+                      key={type.id}
+                      onClick={() => {
+                        setActiveType(type.id);
+                        setSearch("");
+                      }}
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[12px] font-medium transition-all cursor-pointer ${
+                        isActive
+                          ? `${type.bgColor} ${type.color}`
+                          : "text-arch-text2 hover:text-arch-text hover:bg-white/[0.03]"
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? type.color : "text-arch-text3"}`} />
+                      <span className="flex-1 truncate">{type.label}</span>
+                      {count > 0 && (
+                        <span
+                          className={`text-[10px] tabular-nums px-1.5 py-0.5 rounded-full ${
+                            isActive
+                              ? "bg-white/20"
+                              : "bg-arch-bg3 text-arch-text3"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </aside>
 
-              return link ? (
-                <Link
-                  key={`${item.type}-${item.id}`}
-                  href={link}
-                  className="bg-arch-bg2 border border-arch-border rounded-xl p-4 hover:border-arch-blue/30 transition-colors group block"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div
-                  key={`${item.type}-${item.id}`}
-                  className="bg-arch-bg2 border border-arch-border rounded-xl p-4 group"
-                >
-                  {content}
+            {/* Content */}
+            <main className="flex-1 min-w-0">
+              {/* Search bar */}
+              <div className="mb-4 flex items-center gap-2 bg-arch-bg2 border border-arch-border rounded-lg px-3 py-2 focus-within:border-arch-blue/40 transition-colors">
+                <Search className="w-4 h-4 text-arch-text3 shrink-0" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={`Search ${activeType === "all" ? "all items" : activeConfig.label.toLowerCase()}...`}
+                  className="flex-1 bg-transparent text-[12px] text-arch-text placeholder:text-arch-text3 focus:outline-none"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="text-[10px] text-arch-text3 hover:text-arch-text px-1.5 py-0.5 rounded hover:bg-white/[0.06] transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {displayItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-arch-text3">
+                  {React.createElement(activeConfig.icon, {
+                    className: "w-10 h-10 mb-3 opacity-30",
+                  })}
+                  <p className="text-[13px] font-medium">
+                    {search
+                      ? "No matching items"
+                      : `No saved ${activeType === "all" ? "items" : activeConfig.label.toLowerCase()} yet`}
+                  </p>
                 </div>
-              );
-            })}
+              ) : (
+                <div className="grid gap-2.5">
+                  {displayItems.map((item) => {
+                    const link = getItemLink(item);
+                    const typeConfig = getItemTypeConfig(item.type);
+                    const TypeIcon = typeConfig?.icon;
+                    const content = (
+                      <div className="flex items-center gap-3">
+                        {/* Type icon */}
+                        {TypeIcon && (
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeConfig?.bgColor} ${typeConfig?.color}`}
+                          >
+                            <TypeIcon className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold text-arch-text truncate">
+                            {item.title}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {typeConfig && (
+                              <span
+                                className={`text-[10px] font-medium ${typeConfig.color}`}
+                              >
+                                {typeConfig.label}
+                              </span>
+                            )}
+                            {item.subtitle && (
+                              <span className="text-[11px] text-arch-text3 truncate">
+                                · {item.subtitle}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-[10.5px] text-arch-text3 whitespace-nowrap shrink-0">
+                          {timeAgo(item.updated_at)}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(item);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-arch-text3 hover:text-arch-coral hover:bg-arch-coral/10 rounded transition-all shrink-0"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+
+                    return link ? (
+                      <Link
+                        key={`${item.type}-${item.id}`}
+                        href={link}
+                        className="bg-arch-bg2 border border-arch-border rounded-xl px-4 py-3 hover:border-arch-blue/30 transition-colors group block"
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      <div
+                        key={`${item.type}-${item.id}`}
+                        className="bg-arch-bg2 border border-arch-border rounded-xl px-4 py-3 group"
+                      >
+                        {content}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </main>
           </div>
         )}
       </div>

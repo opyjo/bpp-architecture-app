@@ -7,6 +7,13 @@ import { buildBreadcrumbs } from "@/lib/navigation";
 
 export default function Breadcrumbs({ dynamicLabel }: { dynamicLabel?: string }) {
   const pathname = usePathname();
+
+  // Detail routes render their own breadcrumbs with dynamic labels — skip here
+  const isDetailRoute =
+    !dynamicLabel &&
+    (/^\/analyses\/.+/.test(pathname) || /^\/chats\/.+/.test(pathname));
+  if (isDetailRoute) return null;
+
   const crumbs = buildBreadcrumbs(pathname, dynamicLabel);
 
   if (crumbs.length === 0) return null;

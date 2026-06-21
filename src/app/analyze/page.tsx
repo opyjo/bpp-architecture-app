@@ -7,7 +7,7 @@ import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import { TICKET_ANALYZER_CONTEXT } from "@/lib/ai/ticket-analyzer-prompt";
 import TicketInput from "@/components/analyze/TicketInput";
 import AnalysisOutput from "@/components/analyze/AnalysisOutput";
-import Breadcrumbs from "@/components/nav/Breadcrumbs";
+
 
 const TICKET_TEXT_KEY = "analyzer-ticket-text";
 
@@ -94,8 +94,6 @@ export default function AnalyzePage() {
 
   return (
     <div className="flex-1 flex flex-col bg-arch-bg min-h-0">
-      <Breadcrumbs />
-
       {/* Save popover */}
       {showSavePopover && (
         <div className="mx-4 mt-2 px-3 py-2.5 rounded-lg bg-arch-bg2 border border-arch-border flex items-center gap-2">
