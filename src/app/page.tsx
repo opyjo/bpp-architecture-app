@@ -22,6 +22,7 @@ import ChangeImpactTab from "@/components/tabs/ChangeImpactTab";
 import RunbookManagerTab from "@/components/tabs/RunbookManagerTab";
 import CodeReviewTab from "@/components/tabs/CodeReviewTab";
 import SequenceDiagramTab from "@/components/tabs/SequenceDiagramTab";
+import TestPlanTab from "@/components/tabs/TestPlanTab";
 
 interface TabItem {
   id: string;
@@ -84,6 +85,7 @@ const tabGroups: TabGroup[] = [
       { id: "contract", label: "API Contract Builder" },
       { id: "review", label: "Code Review" },
       { id: "sequence", label: "Sequence Diagrams" },
+      { id: "testplan", label: "Test Plan" },
       { id: "ai", label: "AI Assistant" },
     ],
   },
@@ -256,6 +258,7 @@ export default function Home() {
         {activeTab === "contract" && <ContractBuilderTab />}
         {activeTab === "review" && <CodeReviewTab />}
         {activeTab === "sequence" && <SequenceDiagramTab />}
+        {activeTab === "testplan" && <TestPlanTab />}
         {activeTab === "impact" && <ChangeImpactTab />}
         {activeTab === "runbooks" && <RunbookManagerTab />}
         {activeTab === "ai" && <AiChatTab />}
