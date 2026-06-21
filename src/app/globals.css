@@ -63,6 +63,12 @@
   --color-arch-coral: var(--arch-coral);
   --color-arch-gray: var(--arch-gray);
   --color-arch-red: var(--arch-red);
+  --animate-keyword-glow: keyword-glow 3s ease-in-out infinite;
+}
+
+@keyframes keyword-glow {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.8; filter: brightness(1.2); }
 }
 
 /* Light mode (default) */

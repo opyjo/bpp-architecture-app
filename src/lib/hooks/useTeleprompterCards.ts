@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { toast } from "sonner";
 import {
   TeleprompterCard,
   DEFAULT_TELEPROMPTER_CARDS,
@@ -124,7 +125,9 @@ export function useTeleprompterCards() {
 
       // Fire-and-forget DB insert
       const { id: _, ...payload } = toDbRow(newCard, sortOrder);
-      saveTeleprompterCard(payload).catch(() => {});
+      saveTeleprompterCard(payload)
+        .then(() => toast.success("Card added"))
+        .catch(() => toast.error("Failed to save card"));
     },
     [cards.length, saveTeleprompterCard]
   );
@@ -144,7 +147,7 @@ export function useTeleprompterCards() {
       if (updates.fullText !== undefined) dbUpdates.full_text = updates.fullText ?? null;
 
       if (Object.keys(dbUpdates).length > 0) {
-        updateTeleprompterCard(id, dbUpdates).catch(() => {});
+        updateTeleprompterCard(id, dbUpdates).catch(() => toast.error("Failed to update card"));
       }
     },
     [updateTeleprompterCard]
@@ -159,7 +162,9 @@ export function useTeleprompterCards() {
       setCurrentIndex((i) => Math.min(i, cards.length - 2));
 
       // Fire-and-forget DB delete
-      deleteTeleprompterCard(id).catch(() => {});
+      deleteTeleprompterCard(id)
+        .then(() => toast.success("Card deleted"))
+        .catch(() => toast.error("Failed to delete card"));
     },
     [cards.length, deleteTeleprompterCard]
   );
@@ -179,7 +184,10 @@ export function useTeleprompterCards() {
             return saveTeleprompterCard(payload);
           })
         );
-      } catch { /* */ }
+        toast.success("Cards reset to defaults");
+      } catch {
+        toast.error("Failed to reset cards");
+      }
     })();
   }, [deleteAllTeleprompterCards, saveTeleprompterCard]);
 

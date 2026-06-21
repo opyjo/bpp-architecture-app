@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Plus,
   Pencil,
-  RotateCcw,
   Monitor,
   Trash2,
   Check,
@@ -14,7 +13,6 @@ import {
   ChevronDown,
   LayoutGrid,
   Presentation,
-  Tags,
 } from "lucide-react";
 import { useTeleprompterCards } from "@/lib/hooks/useTeleprompterCards";
 import {
@@ -80,9 +78,9 @@ const ALL_COLORS: HighlightColor[] = [
 function HighlightedBullet({ phrase }: { phrase: HighlightedPhrase }) {
   const parts = phrase.text.split(/(\*\*.*?\*\*)/g);
   return (
-    <li className="flex items-start gap-3 text-[20px] leading-relaxed text-arch-text2">
+    <li className="flex items-start gap-2.5 text-[15px] leading-relaxed text-arch-text2">
       <span
-        className={`mt-3 w-2.5 h-2.5 rounded-full shrink-0 ${COLOR_BG_CLASSES[phrase.color]} ring-2 ${COLOR_RING_CLASSES[phrase.color]}`}
+        className={`mt-2 w-2 h-2 rounded-full shrink-0 ${COLOR_BG_CLASSES[phrase.color]} ring-2 ${COLOR_RING_CLASSES[phrase.color]}`}
       />
       <span>
         {parts.map((part, i) => {
@@ -91,7 +89,7 @@ function HighlightedBullet({ phrase }: { phrase: HighlightedPhrase }) {
             return (
               <span
                 key={i}
-                className={`font-bold ${COLOR_TEXT_CLASSES[phrase.color]}`}
+                className={`font-bold ${COLOR_TEXT_CLASSES[phrase.color]} ${COLOR_BG_CLASSES[phrase.color]} px-1 py-0.5 rounded animate-keyword-glow`}
               >
                 {keyword}
               </span>
@@ -101,29 +99,6 @@ function HighlightedBullet({ phrase }: { phrase: HighlightedPhrase }) {
         })}
       </span>
     </li>
-  );
-}
-
-function KeywordChips({ bullets }: { bullets: HighlightedPhrase[] }) {
-  const chips: { keyword: string; color: HighlightColor }[] = [];
-  for (const bullet of bullets) {
-    const matches = bullet.text.matchAll(/\*\*(.*?)\*\*/g);
-    for (const m of matches) {
-      chips.push({ keyword: m[1], color: bullet.color });
-    }
-  }
-  if (chips.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-2.5">
-      {chips.map((chip, i) => (
-        <span
-          key={i}
-          className={`px-3.5 py-1.5 rounded-full text-[16px] font-semibold ring-1 ${COLOR_BG_CLASSES[chip.color]} ${COLOR_TEXT_CLASSES[chip.color]} ${COLOR_RING_CLASSES[chip.color]}`}
-        >
-          {chip.keyword}
-        </span>
-      ))}
-    </div>
   );
 }
 
@@ -163,11 +138,9 @@ function CategoryBadge({ category, size = "lg" }: { category: CardCategory; size
 function CardView({
   card,
   onEdit,
-  keywordMode,
 }: {
   card: TeleprompterCard;
   onEdit: () => void;
-  keywordMode: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -175,7 +148,7 @@ function CardView({
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-3">
-          <h2 className={`font-bold text-arch-text leading-tight ${keywordMode ? "text-[22px]" : "text-[28px]"}`}>
+          <h2 className="font-bold text-arch-text leading-tight text-[20px]">
             {card.title}
           </h2>
           <CategoryBadge category={card.category} />
@@ -189,40 +162,34 @@ function CardView({
         </button>
       </div>
 
-      {keywordMode ? (
-        <KeywordChips bullets={getAllBullets(card)} />
+      {card.sections && card.sections.length > 0 ? (
+        <SectionedBullets sections={card.sections} />
       ) : (
-        <>
-          {card.sections && card.sections.length > 0 ? (
-            <SectionedBullets sections={card.sections} />
-          ) : (
-            <ul className="flex flex-col gap-4 pl-1">
-              {card.bullets.map((bullet, i) => (
-                <HighlightedBullet key={i} phrase={bullet} />
-              ))}
-            </ul>
-          )}
+        <ul className="flex flex-col gap-4 pl-1">
+          {card.bullets.map((bullet, i) => (
+            <HighlightedBullet key={i} phrase={bullet} />
+          ))}
+        </ul>
+      )}
 
-          {card.fullText && (
-            <div className="border-t border-arch-border pt-4">
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="flex items-center gap-2 text-[14px] font-medium text-arch-text3 hover:text-arch-text transition-colors"
-              >
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-                />
-                {expanded ? "Hide" : "Show"} full text
-              </button>
-              {expanded && (
-                <p className="mt-3 text-[16px] leading-relaxed text-arch-text3 whitespace-pre-wrap">
-                  {card.fullText}
-                </p>
-              )}
-            </div>
+      {card.fullText && (
+        <div className="border-t border-arch-border pt-4">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-2 text-[13px] font-medium text-arch-text3 hover:text-arch-text transition-colors"
+          >
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+            />
+            {expanded ? "Hide" : "Show"} full text
+          </button>
+          {expanded && (
+            <p className="mt-3 text-[14px] leading-relaxed text-arch-text3 whitespace-pre-wrap">
+              {card.fullText}
+            </p>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -789,13 +756,10 @@ export default function TeleprompterTab() {
     addCard,
     updateCard,
     deleteCard,
-    resetToDefaults,
   } = useTeleprompterCards();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
-  const [keywordMode, setKeywordMode] = useState(false);
 
   // Keyboard navigation
   useEffect(() => {
@@ -808,9 +772,6 @@ export default function TeleprompterTab() {
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         goNext();
-      } else if (e.key === "k" || e.key === "K") {
-        e.preventDefault();
-        setKeywordMode((prev) => !prev);
       }
     }
 
@@ -838,11 +799,6 @@ export default function TeleprompterTab() {
     setConfirmDelete(false);
     deleteCard(currentCard.id);
     setIsEditing(false);
-  };
-
-  const handleResetDefaults = () => {
-    setConfirmReset(false);
-    resetToDefaults();
   };
 
   return (
@@ -877,26 +833,13 @@ export default function TeleprompterTab() {
             )}
           </button>
           {!isEditing && !showOverview && (
-            <>
-              <button
-                onClick={() => setKeywordMode(!keywordMode)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors ${
-                  keywordMode
-                    ? "text-arch-purple bg-arch-purple/10"
-                    : "text-arch-text3 hover:text-arch-text hover:bg-arch-bg3"
-                }`}
-                title={keywordMode ? "Switch to full view (K)" : "Switch to keywords (K)"}
-              >
-                <Tags size={12} /> {keywordMode ? "Full" : "Keywords"}
-              </button>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
-                title="Edit current card"
-              >
-                <Pencil size={12} /> Edit
-              </button>
-            </>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+              title="Edit current card"
+            >
+              <Pencil size={12} /> Edit
+            </button>
           )}
           <button
             onClick={handleAddCard}
@@ -904,13 +847,6 @@ export default function TeleprompterTab() {
             title="Add new card"
           >
             <Plus size={12} /> Add
-          </button>
-          <button
-            onClick={() => setConfirmReset(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
-            title="Reset to defaults"
-          >
-            <RotateCcw size={12} /> Reset
           </button>
         </div>
       </div>
@@ -944,7 +880,6 @@ export default function TeleprompterTab() {
                 <CardView
                   card={currentCard}
                   onEdit={() => setIsEditing(true)}
-                  keywordMode={keywordMode}
                 />
               )}
             </div>
@@ -971,14 +906,6 @@ export default function TeleprompterTab() {
         confirmLabel="Delete"
         onConfirm={handleDeleteCard}
         onCancel={() => setConfirmDelete(false)}
-      />
-      <ConfirmDialog
-        open={confirmReset}
-        title="Reset to Defaults"
-        message="This will replace all your cards with the original defaults. Any custom cards will be lost."
-        confirmLabel="Reset"
-        onConfirm={handleResetDefaults}
-        onCancel={() => setConfirmReset(false)}
       />
     </div>
   );
