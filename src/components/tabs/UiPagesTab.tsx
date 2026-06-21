@@ -4,7 +4,7 @@ import { useState } from "react";
 import SectionLayout from "@/components/ui/SectionLayout";
 import { routes, quickRefRows } from "@/data/routes";
 import { flows, customerVsAgent, mermaidSequenceDiagram } from "@/data/flows";
-import { flowDiagramMap, flowNodeOverrides } from "@/data/flow-diagrams";
+import { flowDiagramMap, flowNodeOverrides, type FlowDiagramStep } from "@/data/flow-diagrams";
 import {
   componentTreeMap,
   componentTreeSidebarItems,
@@ -35,38 +35,76 @@ function AudienceBadge({ audience }: { audience: string }) {
   return <span className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${color}`}>{audience}</span>;
 }
 
-function FlowDetailAccordion({ flow }: { flow: typeof flows[0] }) {
+function FlowDetailAccordion({ flow, diagramSteps }: { flow: typeof flows[0]; diagramSteps?: FlowDiagramStep[] }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="bg-arch-bg2 border border-arch-border rounded-lg overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full px-3.5 py-2 flex items-center gap-2 hover:bg-white/[0.03] transition-colors text-left"
+        className="w-full px-3.5 py-2.5 flex items-center gap-2 hover:bg-white/[0.03] transition-colors text-left"
       >
         <svg
-          className={`w-3 h-3 text-arch-text3 transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
+          className={`w-3.5 h-3.5 text-arch-blue transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
-        <span className="text-[10.5px] text-arch-text3">Detailed step reference</span>
+        <span className="text-[11px] font-semibold text-arch-text">Detailed step reference</span>
         <AudienceBadge audience={flow.audience} />
         <span className="text-[10px] font-mono text-arch-text3 ml-auto">{flow.route}</span>
       </button>
       {open && (
         <div className="border-t border-arch-border">
-          <div className="grid grid-cols-[160px_1fr_1fr] border-b border-white/5">
-            <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Screen</div>
-            <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Action</div>
-            <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Mutation → services</div>
-          </div>
-          {flow.steps.map((s, i) => (
-            <div key={i} className="grid grid-cols-[160px_1fr_1fr] border-b border-white/[0.04] last:border-b-0">
-              <div className="px-2.5 py-2 text-arch-purple font-mono text-[10px] border-r border-white/[0.04] leading-[1.6]">{s.screen}</div>
-              <div className="px-2.5 py-2 text-arch-text2 text-[11px] border-r border-white/[0.04] leading-[1.6]">{s.action}</div>
-              <div className="px-2.5 py-2 text-arch-teal font-mono text-[10px] leading-[1.6]" dangerouslySetInnerHTML={{ __html: s.mutation }} />
+          {/* Narrated step-by-step flow */}
+          {diagramSteps && (
+            <div className="px-3.5 py-3 space-y-3 border-b border-arch-border">
+              <div className="text-[9.5px] font-semibold tracking-[0.1em] uppercase text-arch-text3 mb-2">Step-by-step narration</div>
+              {diagramSteps.map((ds, i) => (
+                <div key={i} className="relative pl-6 pb-3 last:pb-0 border-l border-white/[0.06] ml-2">
+                  {/* Step number indicator */}
+                  <div className="absolute -left-[9px] top-0 w-[18px] h-[18px] rounded-full bg-arch-bg3 border border-arch-blue/40 flex items-center justify-center">
+                    <span className="text-[9px] font-bold text-arch-blue">{i + 1}</span>
+                  </div>
+                  {/* Step content */}
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-semibold text-arch-blue">{ds.label}</div>
+                    <div className="text-[11px] text-arch-text2 leading-[1.7]">{ds.description}</div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      {ds.mutation && (
+                        <span className="inline-block font-mono text-[9.5px] px-1.5 py-0.5 rounded bg-[rgba(232,168,58,0.1)] border border-[rgba(232,168,58,0.2)] text-arch-amber">
+                          {ds.mutation}
+                        </span>
+                      )}
+                      {ds.services.map((svc) => (
+                        <span key={svc} className="inline-block font-mono text-[9px] px-1.5 py-0.5 rounded bg-arch-bg3 border border-arch-border text-arch-text3">
+                          {svc}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {/* Quick-glance table */}
+          <div className="px-3.5 py-2.5">
+            <div className="text-[9.5px] font-semibold tracking-[0.1em] uppercase text-arch-text3 mb-2">Quick-glance table</div>
+            <div className="rounded border border-arch-border overflow-hidden">
+              <div className="grid grid-cols-[160px_1fr_1fr] border-b border-white/5">
+                <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Screen</div>
+                <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Action</div>
+                <div className="px-2.5 py-1 text-[9.5px] font-semibold tracking-[0.09em] uppercase text-arch-text3 bg-white/[0.02]">Mutation → services</div>
+              </div>
+              {flow.steps.map((s, i) => (
+                <div key={i} className="grid grid-cols-[160px_1fr_1fr] border-b border-white/[0.04] last:border-b-0">
+                  <div className="px-2.5 py-2 text-arch-purple font-mono text-[10px] border-r border-white/[0.04] leading-[1.6]">{s.screen}</div>
+                  <div className="px-2.5 py-2 text-arch-text2 text-[11px] border-r border-white/[0.04] leading-[1.6]">{s.action}</div>
+                  <div className="px-2.5 py-2 text-arch-teal font-mono text-[10px] leading-[1.6]" dangerouslySetInnerHTML={{ __html: s.mutation }} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -205,7 +243,7 @@ export default function UiPagesTab() {
               <div className="text-sm font-semibold text-arch-text mb-1">{flow.title}</div>
               <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">{flow.description}</div>
               {diagramSteps && <FlowDiagram steps={diagramSteps} nodes={customNodes} />}
-              <FlowDetailAccordion flow={flow} />
+              <FlowDetailAccordion flow={flow} diagramSteps={diagramSteps} />
             </div>
           );
         }
