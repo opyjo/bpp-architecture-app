@@ -18,6 +18,10 @@ import MicrofrontendsTab from "@/components/tabs/MicrofrontendsTab";
 import ApigeeTab from "@/components/tabs/ApigeeTab";
 import OpenApiTab from "@/components/tabs/OpenApiTab";
 import ContractBuilderTab from "@/components/tabs/ContractBuilderTab";
+import ChangeImpactTab from "@/components/tabs/ChangeImpactTab";
+import RunbookManagerTab from "@/components/tabs/RunbookManagerTab";
+import CodeReviewTab from "@/components/tabs/CodeReviewTab";
+import SequenceDiagramTab from "@/components/tabs/SequenceDiagramTab";
 
 interface TabItem {
   id: string;
@@ -65,11 +69,21 @@ const tabGroups: TabGroup[] = [
     ],
   },
   {
+    label: "Operations",
+    tintClass: "tab-group-ops",
+    tabs: [
+      { id: "impact", label: "Change Impact" },
+      { id: "runbooks", label: "Incident Runbooks" },
+    ],
+  },
+  {
     label: "AI Tools",
     tintClass: "tab-group-ai",
     tabs: [
       { id: "analyze", label: "Ticket Analyzer", href: "/analyze" },
       { id: "contract", label: "API Contract Builder" },
+      { id: "review", label: "Code Review" },
+      { id: "sequence", label: "Sequence Diagrams" },
       { id: "ai", label: "AI Assistant" },
     ],
   },
@@ -240,6 +254,10 @@ export default function Home() {
         {activeTab === "openapi" && <OpenApiTab />}
         {activeTab === "coach" && <InterviewCoachTab />}
         {activeTab === "contract" && <ContractBuilderTab />}
+        {activeTab === "review" && <CodeReviewTab />}
+        {activeTab === "sequence" && <SequenceDiagramTab />}
+        {activeTab === "impact" && <ChangeImpactTab />}
+        {activeTab === "runbooks" && <RunbookManagerTab />}
         {activeTab === "ai" && <AiChatTab />}
       </div>
     </div>

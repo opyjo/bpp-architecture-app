@@ -479,6 +479,16 @@
   background: linear-gradient(135deg, rgba(88, 184, 122, 0.10), rgba(74, 143, 232, 0.10));
 }
 
+.tab-group-ops {
+  background: linear-gradient(135deg, rgba(232, 168, 58, 0.06), rgba(232, 90, 90, 0.06));
+}
+.tab-group-ops:hover {
+  background: linear-gradient(135deg, rgba(232, 168, 58, 0.13), rgba(232, 90, 90, 0.13));
+}
+.tab-group-ops.tab-group-active {
+  background: linear-gradient(135deg, rgba(232, 168, 58, 0.10), rgba(232, 90, 90, 0.10));
+}
+
 .analogy-callout {
   background: rgba(232, 168, 58, 0.06);
   border-color: rgba(232, 168, 58, 0.18);
