@@ -46,7 +46,6 @@ interface TypeConfig {
   icon: React.ComponentType<{ className?: string }>;
   color: string;
   bgColor: string;
-  tabLink?: string;
   detailLink?: (id: string) => string;
 }
 
@@ -64,7 +63,6 @@ const TYPES: TypeConfig[] = [
     icon: GitBranch,
     color: "text-arch-green",
     bgColor: "bg-arch-green/10",
-    tabLink: "/?tab=sequence",
   },
   {
     id: "testplans",
@@ -72,7 +70,6 @@ const TYPES: TypeConfig[] = [
     icon: ClipboardCheck,
     color: "text-arch-green",
     bgColor: "bg-arch-green/10",
-    tabLink: "/?tab=testplan",
   },
   {
     id: "reviews",
@@ -80,7 +77,6 @@ const TYPES: TypeConfig[] = [
     icon: Code2,
     color: "text-arch-purple",
     bgColor: "bg-arch-purple/10",
-    tabLink: "/?tab=review",
   },
   {
     id: "specs",
@@ -88,7 +84,6 @@ const TYPES: TypeConfig[] = [
     icon: FileCode2,
     color: "text-arch-teal",
     bgColor: "bg-arch-teal/10",
-    tabLink: "/?tab=contract",
   },
   {
     id: "analyses",
@@ -120,7 +115,6 @@ const TYPES: TypeConfig[] = [
     icon: BookOpen,
     color: "text-arch-coral",
     bgColor: "bg-arch-coral/10",
-    tabLink: "/?tab=runbooks",
   },
 ];
 
@@ -313,9 +307,8 @@ export default function SavedHubPage() {
 
   const getItemLink = (item: SavedItem): string | undefined => {
     const config = DATA_TYPES.find((t) => t.id === item.type);
-    if (!config) return undefined;
-    if (config.detailLink) return config.detailLink(item.id);
-    return config.tabLink;
+    if (!config?.detailLink) return undefined;
+    return config.detailLink(item.id);
   };
 
   const getItemTypeConfig = (type: ContentType) =>
