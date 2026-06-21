@@ -40,9 +40,10 @@ function fromDbRow(row: SavedTeleprompterCard): TeleprompterCard {
 // ── Hook ────────────────────────────────────────────────────────────
 
 export function useTeleprompterCards() {
-  const [cards, setCards] = useState<TeleprompterCard[]>(DEFAULT_TELEPROMPTER_CARDS);
+  const [cards, setCards] = useState<TeleprompterCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const initialized = useRef(false);
 
   const {
@@ -66,6 +67,7 @@ export function useTeleprompterCards() {
           setCards(loaded);
           // Update localStorage cache
           try { localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded)); } catch { /* */ }
+          setIsLoading(false);
           return;
         }
       } catch {
@@ -79,18 +81,21 @@ export function useTeleprompterCards() {
           const parsed = JSON.parse(stored) as TeleprompterCard[];
           if (Array.isArray(parsed) && parsed.length > 0) {
             setCards(parsed);
+            setIsLoading(false);
             return;
           }
         }
       } catch { /* */ }
 
-      // Final fallback: defaults (already set as initial state)
+      // Final fallback: defaults
+      setCards(DEFAULT_TELEPROMPTER_CARDS);
+      setIsLoading(false);
     })();
   }, [fetchTeleprompterCards]);
 
   // Persist to localStorage on change (fast cache)
   useEffect(() => {
-    if (!initialized.current) return;
+    if (!initialized.current || cards.length === 0) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
     } catch { /* */ }
@@ -195,6 +200,7 @@ export function useTeleprompterCards() {
     cards,
     currentIndex,
     currentCard,
+    isLoading,
     isEditing,
     setIsEditing,
     goNext,

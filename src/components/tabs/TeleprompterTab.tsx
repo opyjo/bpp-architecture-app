@@ -151,7 +151,6 @@ function CardView({
           <h2 className="font-bold text-arch-text leading-tight text-[20px]">
             {card.title}
           </h2>
-          <CategoryBadge category={card.category} />
         </div>
         <button
           onClick={onEdit}
@@ -514,17 +513,6 @@ function CardEditor({
           className="bg-arch-bg1 border border-arch-border rounded-lg px-3 py-2 text-[14px] font-semibold text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
           placeholder="Card title"
         />
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as CardCategory)}
-          className="bg-arch-bg1 border border-arch-border rounded-lg px-3 py-1.5 text-[12px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50 w-fit"
-        >
-          {ALL_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -748,6 +736,7 @@ export default function TeleprompterTab() {
     cards,
     currentIndex,
     currentCard,
+    isLoading,
     isEditing,
     setIsEditing,
     goNext,
@@ -800,6 +789,32 @@ export default function TeleprompterTab() {
     deleteCard(currentCard.id);
     setIsEditing(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-arch-border">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-arch-purple/15 flex items-center justify-center">
+              <Monitor size={14} className="text-arch-purple" />
+            </div>
+            <h1 className="text-[14px] font-semibold text-arch-text">
+              Teleprompter
+            </h1>
+            <span className="text-[11px] text-arch-text3">
+              Quick-glance interview cards
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-6 h-6 border-2 border-arch-blue/30 border-t-arch-blue rounded-full animate-spin" />
+            <span className="text-[12px] text-arch-text3">Loading cards...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">
