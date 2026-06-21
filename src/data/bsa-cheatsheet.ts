@@ -1151,61 +1151,112 @@ export const behavioralQuestions: AssessmentQA[] = [
   {
     num: 1,
     question: "Tell me about a time you influenced stakeholders without formal authority.",
-    answer: `When we were planning the merchant adapter architecture on the Bell project, the backend lead wanted each merchant integration to be a standalone service with its own API contract — no shared interface. This would have meant 5 different API shapes, 5 different error handling patterns, and exponential complexity for the reseller-service routing logic.
+    answer: `Situation: During a project at Bell, two separate teams were building similar reporting features independently — one for customer-facing dashboards and one for internal agents. Each team had its own backlog, its own requirements, and neither was aware of the overlap. I was the BSA on the customer side and noticed the duplication during a cross-team standup.
 
-I didn't have authority to overrule the technical decision, so I took a different approach. I created a comparison document showing: (a) the current state — 2 integrations already live, each with unique error codes and provisioning flows, (b) the projected state at 5 merchants — 5 different client implementations in reseller-service, 5 different monitoring dashboards, 5 different runbooks, and (c) the proposed state — a common MerchantProvider interface (Provision, Deprovision, CheckStatus, HandleCallback) with provider-specific implementations behind it.
+Task: I needed to convince both product owners — neither of whom reported to me — to consolidate the work before both teams wasted weeks building the same thing.
 
-I then walked the backend lead through the onboarding projection: "When we add merchant #6, with the current approach we write a new client, new error mapping, new monitoring. With the adapter pattern, we implement 4 methods and deploy." I also showed how circuit breaker configuration could be standardized across all merchants.
+Action: Rather than escalating to management, I put together a one-page side-by-side comparison showing the overlapping fields, the shared data sources, and a rough estimate of the duplicated effort (about 4 weeks of combined dev time). I set up a 30-minute meeting with both POs and walked through the comparison. I framed it not as "you're doing it wrong" but as "here's an opportunity to deliver faster and share maintenance."
 
-The backend lead came around not because I argued the abstract merits of the adapter pattern, but because I showed the concrete operational cost of not using it. The team adopted the shared interface, and when we onboarded Radio-Canada 3 months later, it was a 2-week effort instead of the projected 5 weeks.`,
+Result: Both POs agreed to merge the work into a single, shared component. The consolidated effort delivered 2 weeks ahead of either team's original estimate. After that, both POs started looping me into planning earlier to catch overlaps before they became a problem.`,
   },
   {
     num: 2,
     question: "Describe a situation where requirements changed late in the cycle.",
-    answer: `Two weeks before the Disney+ integration launch, the Disney team notified us that their provisioning API would be async instead of sync. Our entire flow assumed synchronous provisioning — submitSubscription called merchant-api-disney, got back an activationUrl, and returned it to the UI in the same response.
+    answer: `Situation: We were two weeks from launching a new subscription feature when the external partner notified us that their response format would change — instead of sending back a confirmation immediately, they would send it later through a separate channel. Our entire user flow assumed an instant response.
 
-With async provisioning, we'd get a "pending" acknowledgment from Disney, and the actual provisioning result would arrive later via a webhook callback. This affected the orchestration flow (flow-runner-api saga steps), the UI (couldn't show activationUrl immediately), the state machine (needed a new PROVISIONING state), and the Kafka event sequence (ActivationCompleted would fire later, not during the same request).
+Task: I needed to assess the impact quickly, communicate it clearly, and present realistic options — not just raise an alarm.
 
-I assessed the impact within a day by mapping the change against our existing artifacts: updated the orchestration spec to show a new "await callback" step, identified 3 acceptance criteria that needed revision, and drafted a UI wireframe showing a "processing" state. I presented two options to the product owner: (a) delay launch by 3 weeks to fully implement async flow, or (b) launch with a polling fallback — the UI would poll reseller-service every 5 seconds for status updates while we built the webhook handler in parallel.
+Action: Within a day, I mapped out every part of our flow that was affected: the confirmation screen (couldn't show a success message right away), the email notification (would fire too early), and the status display (would show stale data). I drafted two options for the product owner: Option A — delay the launch by 3 weeks to fully redesign the flow, or Option B — launch with a simple "processing" screen that refreshes automatically, and build the full solution in the next sprint. I included the trade-offs of each in plain language.
 
-We chose option (b). I wrote the acceptance criteria for the interim polling approach, making sure to include the transition criteria for when we'd switch to webhooks. The polling approach shipped on time, and the webhook handler followed 2 sprints later. The key was responding to the change with a concrete impact assessment and actionable options, not just raising an alarm.`,
+Result: We chose Option B. I rewrote the acceptance criteria for the interim approach and made sure to document the transition plan for the full solution. We launched on time, customer complaints were minimal because the "processing" message set the right expectation, and the permanent fix shipped two sprints later. The PM later said the impact assessment saved the team from panic-driven decisions.`,
   },
   {
     num: 3,
     question: "How do you deal with conflicting opinions between business and engineering?",
-    answer: `I've found that most business-vs-engineering conflicts aren't actually about disagreeing on the goal — they're about different teams optimizing for different constraints without seeing each other's constraints.
+    answer: `Situation: The operations team wanted a status update to appear instantly after a customer made a change — they'd been getting complaints from agents saying "I just updated it but nothing changed." The development team pushed back, explaining that the system was designed with a small delay between writes and reads, and changing that would require a significant redesign.
 
-On the Bell project, the billing team wanted real-time subscription status visible to customer service agents. Engineering said the CQRS architecture meant reads were eventually consistent — the aggregator-api merged PostgreSQL and CPM data, and there could be a few seconds of lag after a status change. The billing team saw this as a bug; engineering saw it as a feature of the architecture.
+Task: Both sides were talking past each other — operations saw a broken experience, engineering saw a working architecture. I needed to bridge the gap and find common ground.
 
-I facilitated a session where I drew the actual data flow on a whiteboard: write to PostgreSQL → publish Kafka event → aggregator-api consumer updates read model → agent's next API call sees the new status. I asked the billing team: "How soon after a status change does the agent need to see it?" The answer was "within 30 seconds." I asked engineering: "What's the current p99 lag on the Kafka consumer?" The answer was "under 5 seconds."
+Action: I set up a short meeting and asked two simple questions. To the operations team: "How quickly does the agent actually need to see the update?" Their answer was "within 30 seconds — they just don't want to wait minutes." To the dev team: "What's the actual delay right now?" Their answer was "usually under 5 seconds." I wrote both numbers on the whiteboard side by side.
 
-The conflict dissolved once both sides saw the same numbers. The 5-second lag was well within the 30-second business requirement. The real issue was that the billing team didn't know the lag existed and feared it could be minutes or hours.
-
-My role in these situations is to translate between the two worlds: make the business constraint concrete ("30 seconds") and make the technical behavior measurable ("5 seconds p99"). When both sides can see the same data, the conflict usually resolves itself.`,
+Result: The conflict dissolved immediately. The 5-second delay was well within the 30-second business need. The real problem was that agents didn't know any delay existed and feared it could be minutes. We added a small "Refreshing..." indicator to the UI — a half-day fix — and agent complaints dropped to near zero. The lesson I took away is that most business-vs-engineering conflicts are really about missing information, not genuine disagreement.`,
   },
   {
     num: 4,
     question: "Tell me about a time you had to simplify a complex technical issue for non-technical stakeholders.",
-    answer: `During an incident on the Bell platform, the circuit breaker for the Netflix merchant-api opened after 5 consecutive failures, which meant all Netflix provisioning attempts were being rejected for 30 seconds. The ops team understood this immediately, but the VP of product wanted to know why customers were seeing errors and how to prevent it.
+    answer: `Situation: During a service outage affecting one of our streaming providers, the VP of product wanted to understand why some customers were seeing errors while others were fine, and whether this was a sign of a bigger system problem.
 
-I explained it using an analogy: "Think of the circuit breaker like a fuse in your house. When Netflix's system has a problem — like a power surge — our fuse trips to protect the rest of the house. For 30 seconds, Netflix orders show an error, but Disney+, Bell Media, and all other providers keep working normally. After 30 seconds, we try Netflix again. If it's back, orders resume automatically. If not, the fuse trips again."
+Task: I needed to explain the safety mechanism causing the errors in a way that was reassuring rather than alarming, without dumbing it down.
 
-Then I drew a simple 3-state diagram on the whiteboard: CLOSED (normal — orders go through), OPEN (tripped — orders fail fast with a friendly error), HALF-OPEN (testing — we try one order to see if Netflix is back). This took 2 minutes and the VP understood not only what happened, but why the design was intentional — without the circuit breaker, Netflix's outage would have slowed down all providers because reseller-service would be waiting for timeouts on every Netflix call.
+Action: I used a household analogy: "Think of it like a fuse box in your house. When one appliance has a problem — say, a short circuit in the kitchen — the fuse for that circuit trips. The kitchen loses power, but the living room, bedrooms, and everything else keeps working. After a short cooldown, the fuse resets and tries again. That's exactly what our system did — it isolated the problem with one provider so it wouldn't slow down everything else."
 
-The VP's follow-up question was: "Can we show the customer a different message when the circuit breaker is open versus when Netflix actually rejects the order?" That was a great product insight that came from understanding the technical behavior. I wrote the requirement: "Given the circuit breaker for a provider is open, when a customer attempts to subscribe, then show 'This provider is temporarily unavailable — please try again in a few minutes' instead of a generic error."`,
+Result: The VP immediately understood and actually asked a great follow-up question: "Can we show the customer a friendlier message when the fuse is tripped versus when the provider actually says no?" That insight led to a new requirement I wrote up that afternoon — different error messages for temporary outages versus actual rejections. The whole conversation took 5 minutes and turned a stressful incident review into a productive improvement.`,
   },
   {
     num: 5,
     question: "How do you mentor other analysts or support team standards?",
-    answer: `On the Bell project, I was the senior BSA on a team with two junior analysts. My approach was to establish reusable templates and then coach through real stories rather than abstract training.
+    answer: `Situation: I joined a team where two junior BSAs were struggling with consistency — their requirements documents varied widely in format, and developers frequently came back with questions because edge cases weren't covered.
 
-First, I created four template artifacts that became team standards: (1) a data mapping template (UI → GraphQL → Go → DB → Notes), (2) an orchestration spec template (Step, Service, Action, Trigger, Payload, Error Handling), (3) an acceptance criteria checklist that reminded analysts to cover happy path, errors, edge cases, and async behavior, and (4) a requirements review template structured as business problem → pre-design requirements → data flow → acceptance criteria.
+Task: I wanted to raise the quality bar without being prescriptive or making the junior analysts feel micromanaged.
 
-Then I paired with each junior analyst on their first integration story. I didn't write it for them — I asked guiding questions: "What's the system of record for this data? What happens if this external call fails? Is this step synchronous or asynchronous? Does the user need to wait for this?" These are the same questions I ask myself, and hearing the reasoning process was more valuable than seeing a finished artifact.
+Action: I took three steps. First, I created simple, reusable templates for the most common document types — a data mapping template, an acceptance criteria checklist (covering happy path, error cases, and edge cases), and a requirements summary template. Second, instead of lecturing, I paired with each analyst on their next story. I didn't write it for them — I asked guiding questions: "What happens if this step fails? Does the user need to wait for this? Where does this data actually come from?" Third, I set up a lightweight peer review process: before any requirements doc went to the dev team, another BSA reviewed it using a simple checklist.
 
-I also established a peer review process: before any requirements document went to the development team, another BSA reviewed it. The review checklist included: Are all fields in the data mapping? Are error scenarios covered in the ACs? Is the orchestration spec consistent with the data mapping? Does the flow account for the saga compensation path?
+Result: Within a month, the developers stopped asking "what about this scenario?" because the docs already covered it. One of the junior analysts independently handled a complex integration story — including edge cases I hadn't thought of — without any help from me. That was the real proof it worked. The templates and peer review process became team standards that outlasted my time on the project.`,
+  },
+  {
+    num: 6,
+    question: "Tell me about a time you missed something important in your requirements. How did you handle it?",
+    answer: `Situation: I had written the acceptance criteria for a cancellation flow and felt confident it was thorough. But during QA, the testers discovered that if a customer cancelled during a promotional period, the system applied a penalty fee that nobody had accounted for — not in my requirements, not in the UI, and not in the backend logic.
 
-The measure of success was when one of the junior analysts independently documented the Radio-Canada integration — including the grace period edge case — without my involvement. She used the templates, asked the right questions of the backend team, and produced a complete spec that the developers accepted in the first grooming session.`,
+Task: I needed to own the miss, fix the gap quickly, and put a safeguard in place so it wouldn't happen again.
+
+Action: First, I acknowledged the gap openly in standup rather than trying to quietly patch it — the team needed to know, and I didn't want testers to lose trust in the requirements. Then I set up a quick call with the billing team to understand the full set of penalty scenarios (there were three, not just one). I updated the acceptance criteria within the day, added a new UI screen for the penalty disclosure, and worked with the developer to add the fee calculation logic.
+
+Result: The fix shipped before the feature went live, so no customers were impacted. More importantly, I added "promotional/billing edge cases" as a standing item on my requirements checklist. I also started scheduling a 15-minute "what could go wrong?" brainstorm with QA before finalizing any acceptance criteria. That practice caught two similar gaps in the next quarter before they reached development.`,
+  },
+  {
+    num: 7,
+    question: "Describe a time you had to manage competing priorities from multiple stakeholders.",
+    answer: `Situation: I was supporting three product owners simultaneously — one needed requirements for a new feature launching in 4 weeks, another needed urgent bug investigation for a live issue, and a third wanted me to join discovery sessions for a future initiative. All three considered their work the top priority.
+
+Task: I couldn't do all three at full capacity at the same time, and I needed to manage expectations without damaging any of the relationships.
+
+Action: I blocked out an hour to assess the real urgency and effort for each. The live bug turned out to need about 2 hours of investigation, not a full week. The new feature had a hard launch date but only needed 3 of the 12 user stories written immediately — the rest could follow. The discovery sessions were important but wouldn't produce actionable work for another 2 weeks. I put together a simple one-week plan showing how I'd allocate my time and shared it with all three POs in a single email, asking each to flag if they disagreed with the priority order.
+
+Result: The transparency was the key. All three POs appreciated seeing the full picture rather than each thinking I was deprioritizing their work. The live bug was resolved that afternoon, I delivered the critical stories for the launch on schedule, and I joined the discovery sessions the following week. One PO later told me, "I've never had an analyst show me what else was on their plate — it made it much easier to be patient."`,
+  },
+  {
+    num: 8,
+    question: "Tell me about a time you disagreed with a decision. What did you do?",
+    answer: `Situation: During sprint planning, the product owner decided to skip writing acceptance criteria for a set of "simple" stories, arguing they were straightforward enough that the developers could figure them out. I disagreed — in my experience, the stories that seem simple are often the ones that get misinterpreted.
+
+Task: I didn't want to come across as bureaucratic, but I also didn't want the team to ship something that didn't match expectations and then waste time reworking it.
+
+Action: I didn't argue in the meeting. Instead, I took one of the "simple" stories and spent 15 minutes writing quick acceptance criteria — just bullet points, nothing formal. When I shared them with the developer who'd picked up the story, he pointed out two assumptions that were wrong in the original description. If he'd built it as described, it would have needed rework.
+
+Result: I brought this example back to the PO — not in a "told you so" way, but as evidence that even quick criteria catch misunderstandings early. The PO agreed to a compromise: we didn't need formal Given-When-Then for everything, but every story would get at least a bullet-point checklist of expected behavior before development started. That lightweight process stuck and reduced our rework rate noticeably over the next quarter.`,
+  },
+  {
+    num: 9,
+    question: "How do you build relationships with new teams or stakeholders?",
+    answer: `Situation: I was moved to a new team mid-project where the developers and QA had been working together for months. I was the replacement BSA, and the previous analyst had left without much documentation. The team was skeptical of the new person slowing them down.
+
+Task: I needed to earn the team's trust quickly and become productive without asking them to re-explain everything from scratch.
+
+Action: For the first week, I focused on listening rather than prescribing. I sat in on every standup and retro without adding opinions. I read through the existing Jira board, past PRs, and whatever documentation existed to build my own understanding. I set up 15-minute one-on-ones with each developer and the QA lead, not to ask "how does everything work?" but to ask "what's the biggest pain point in how requirements get to you?" The answers were gold — they wanted clearer error scenarios and less ambiguity around edge cases.
+
+Result: By week two, I was writing requirements that addressed the exact gaps the team had identified. The lead developer told me during retro that it was the smoothest BSA transition they'd experienced. The key was starting by understanding their pain points rather than imposing my own process. I've used that "listen first, then add value" approach on every new team since.`,
+  },
+  {
+    num: 10,
+    question: "Tell me about a time you improved a process or workflow on your team.",
+    answer: `Situation: Our requirements review process was a bottleneck. Every requirements document had to be reviewed in a 1-hour meeting with the full team — developers, QA, PO, and the architect. These meetings were slow, often went off-topic, and people started skipping them because they felt like a waste of time. Stories were going into development with unreviewed requirements as a result.
+
+Task: I needed to make the review process faster and more effective so the team would actually use it, not avoid it.
+
+Action: I proposed splitting the review into two stages. Stage 1: an asynchronous review — I'd share the document 24 hours before the meeting, and reviewers would leave comments and questions directly in the document. Stage 2: a 20-minute (not 60-minute) sync meeting focused only on the unresolved questions. I also created a simple review checklist — 8 questions like "Are error scenarios covered?" and "Is the data source identified for every field?" — so reviewers knew what to look for instead of reading aimlessly.
+
+Result: Meeting time dropped from 60 minutes to 20 minutes on average. Attendance went from about 60% to nearly 100% because people knew it would be short and focused. The quality of feedback actually improved because reviewers had time to think through the document before the meeting rather than reading it for the first time in the room. The PO adopted the same async-first pattern for design reviews, and it became a team standard.`,
   },
 ];
 
