@@ -9,6 +9,7 @@ import ChatInput from "@/components/ai/ChatInput";
 import ModelSelector from "@/components/ai/ModelSelector";
 import { Save, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { bsaCoachSystemContext } from "@/data/bsa-cheatsheet";
 
 const COACH_PROMPTS = [
@@ -65,7 +66,7 @@ export default function InterviewCoachTab() {
       setSaveFeedback(true);
       setTimeout(() => setSaveFeedback(false), 2000);
     } catch {
-      // save failed silently
+      toast.error("Failed to save chat");
     } finally {
       setIsSaving(false);
     }

@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTestPlanGenerator } from "@/lib/hooks/useTestPlanGenerator";
 import { useSavedTestPlans } from "@/lib/hooks/useSavedTestPlans";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+import SavedItemsPanel from "@/components/ui/SavedItemsPanel";
+import ModelSelector from "@/components/ai/ModelSelector";
+import { downloadAsMarkdown } from "@/lib/utils";
+import { toast } from "sonner";
 import type { SavedTestPlan } from "@/lib/types/saved-test-plan";
 import {
   ClipboardCheck,
@@ -13,9 +18,9 @@ import {
   RotateCcw,
   Check,
   BookOpen,
-  Trash2,
-  Clock,
   ArrowLeft,
+  Square,
+  Download,
 } from "lucide-react";
 
 type TestType =
@@ -36,13 +41,14 @@ const TEST_TYPE_OPTIONS: { id: TestType; label: string }[] = [
 type ViewMode = "generator" | "saved";
 
 export default function TestPlanTab() {
-  const { planOutput, isGenerating, error, generate, reset } =
+  const { planOutput, isGenerating, error, generate, stop, reset } =
     useTestPlanGenerator();
   const { fetchTestPlans, saveTestPlan, deleteTestPlan } =
     useSavedTestPlans();
 
   const [requirement, setRequirement] = useState("");
   const [testTypes, setTestTypes] = useState<TestType[]>([]);
+  const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("generator");
   const [savedPlans, setSavedPlans] = useState<SavedTestPlan[]>([]);
@@ -58,7 +64,7 @@ export default function TestPlanTab() {
       const plans = await fetchTestPlans();
       setSavedPlans(plans);
     } catch {
-      // silently fail
+      toast.error("Failed to load saved test plans");
     } finally {
       setIsLoadingPlans(false);
     }
@@ -78,7 +84,7 @@ export default function TestPlanTab() {
 
   const handleGenerate = () => {
     if (!requirement.trim()) return;
-    generate(requirement, testTypes);
+    generate(requirement, testTypes, modelId);
   };
 
   const handleCopy = async () => {
@@ -88,7 +94,7 @@ export default function TestPlanTab() {
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
     } catch {
-      // copy failed
+      toast.error("Failed to copy to clipboard");
     }
   };
 
@@ -105,9 +111,10 @@ export default function TestPlanTab() {
       });
       setSaveFeedback(true);
       setTimeout(() => setSaveFeedback(false), 2000);
+      toast.success("Test plan saved");
       await loadSavedPlans();
     } catch {
-      // save failed
+      toast.error("Failed to save test plan");
     } finally {
       setIsSaving(false);
     }
@@ -123,8 +130,9 @@ export default function TestPlanTab() {
       await deleteTestPlan(id);
       setSavedPlans((prev) => prev.filter((p) => p.id !== id));
       if (loadedPlan?.id === id) setLoadedPlan(null);
+      toast.success("Test plan deleted");
     } catch {
-      // delete failed
+      toast.error("Failed to delete test plan");
     }
   };
 
@@ -155,6 +163,7 @@ export default function TestPlanTab() {
           <span className="text-[13px] font-semibold text-arch-text truncate">
             {isViewingLoaded ? "Saved Test Plan" : "Test Plan Generator"}
           </span>
+          <ModelSelector value={modelId} onChange={setModelId} disabled={isGenerating} />
           {isGenerating && (
             <span className="flex items-center gap-1.5 text-[11px] text-arch-green">
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -176,6 +185,15 @@ export default function TestPlanTab() {
             <BookOpen className="w-3 h-3" />
             Saved ({savedPlans.length})
           </button>
+          {isGenerating && (
+            <button
+              onClick={stop}
+              className="text-[11px] text-arch-coral hover:text-arch-coral/80 transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+            >
+              <Square className="w-3 h-3 fill-current" />
+              Stop
+            </button>
+          )}
           {hasOutput && !isViewingLoaded && (
             <>
               <button
@@ -198,6 +216,13 @@ export default function TestPlanTab() {
               >
                 <Copy className="w-3 h-3" />
                 {copyFeedback ? "Copied!" : "Copy"}
+              </button>
+              <button
+                onClick={() => downloadAsMarkdown(displayContent, "test-plan.md")}
+                className="text-[11px] text-arch-text3 hover:text-arch-teal transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+              >
+                <Download className="w-3 h-3" />
+                .md
               </button>
               <button
                 onClick={() => {
@@ -234,80 +259,22 @@ export default function TestPlanTab() {
       <div className="flex-1 flex overflow-hidden">
         {/* Saved plans panel */}
         {viewMode === "saved" && (
-          <div className="w-[400px] shrink-0 flex flex-col border-r border-arch-border bg-arch-bg/50">
-            <div className="px-4 pt-4 pb-3 border-b border-arch-border">
-              <h3 className="text-[13px] font-semibold text-arch-text flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-arch-blue" />
-                Saved Test Plans
-              </h3>
-              <p className="text-[11px] text-arch-text3 mt-1">
-                {savedPlans.length} saved plan
-                {savedPlans.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {isLoadingPlans ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Loader2 className="w-6 h-6 animate-spin text-arch-blue" />
-                  <span className="text-[13px] text-arch-text3">
-                    Loading saved plans...
-                  </span>
-                </div>
-              ) : savedPlans.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-2">
-                  <BookOpen className="w-8 h-8 text-arch-text3" />
-                  <span className="text-[13px] text-arch-text3">
-                    No saved test plans yet
-                  </span>
-                </div>
-              ) : (
-                savedPlans.map((p) => (
-                  <div
-                    key={p.id}
-                    onClick={() => handleLoadPlan(p)}
-                    className={`rounded-lg border transition-colors cursor-pointer group ${
-                      loadedPlan?.id === p.id
-                        ? "border-arch-blue/40 bg-arch-blue/5"
-                        : "border-arch-border bg-arch-bg2/60 hover:bg-arch-bg2"
-                    }`}
-                  >
-                    <div className="w-full text-left px-4 py-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[13px] font-medium text-arch-text truncate">
-                            {p.title}
-                          </div>
-                          <div className="text-[11px] text-arch-green font-mono mt-0.5">
-                            {p.test_types?.join(", ") || "all types"}
-                          </div>
-                          <div className="flex items-center gap-1 mt-1.5 text-[10px] text-arch-text3">
-                            <Clock className="w-3 h-3" />
-                            {new Date(p.updated_at).toLocaleDateString(
-                              undefined,
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeletePlan(p.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-arch-text3 hover:text-arch-coral transition-all p-1 rounded hover:bg-arch-coral/10"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <SavedItemsPanel<SavedTestPlan>
+            items={savedPlans}
+            isLoading={isLoadingPlans}
+            activeId={loadedPlan?.id}
+            onSelect={handleLoadPlan}
+            onDelete={handleDeletePlan}
+            emptyMessage="No saved test plans yet"
+            headerTitle="Saved Test Plans"
+            renderTitle={(p) => p.title}
+            renderSubtitle={(p) => p.test_types?.join(", ") || "all types"}
+            searchable
+            searchFn={(p, q) =>
+              p.title.toLowerCase().includes(q) ||
+              (p.test_types?.join(", ") || "").toLowerCase().includes(q)
+            }
+          />
         )}
 
         {/* Left panel: input (hidden when viewing saved) */}
@@ -343,6 +310,11 @@ export default function TestPlanTab() {
                 placeholder="Paste your requirement, user story, or specification here..."
                 className="flex-1 min-h-[200px] resize-none bg-arch-bg2 border border-arch-border rounded-lg p-3 text-[12px] font-mono text-arch-text placeholder:text-arch-text3 focus:outline-none focus:border-arch-green/50 transition-colors"
               />
+
+              {/* Char count */}
+              <div className={`text-[10px] font-mono ${requirement.length > 10000 ? "text-arch-coral" : "text-arch-text3"}`}>
+                {requirement.length.toLocaleString()} chars
+              </div>
 
               {/* Generate button */}
               <button

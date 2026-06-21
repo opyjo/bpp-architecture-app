@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { streamNDJSON } from "@/lib/stream";
 
 export interface UseCodeReviewReturn {
   reviewOutput: string;
   isReviewing: boolean;
   error: string | null;
-  review: (code: string, focus: string[], language?: string) => Promise<void>;
+  review: (code: string, focus: string[], language?: string, modelId?: string) => Promise<void>;
+  stop: () => void;
   reset: () => void;
 }
 
@@ -17,7 +19,7 @@ export function useCodeReview(): UseCodeReviewReturn {
   const abortRef = useRef<AbortController | null>(null);
 
   const review = useCallback(
-    async (code: string, focus: string[], language: string = "go") => {
+    async (code: string, focus: string[], language: string = "go", modelId?: string) => {
       if (!code.trim() || isReviewing) return;
 
       setError(null);
@@ -28,55 +30,13 @@ export function useCodeReview(): UseCodeReviewReturn {
       abortRef.current = controller;
 
       try {
-        const res = await fetch("/api/code-review", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, focus, language }),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          throw new Error(errBody.error || `API error: ${res.status}`);
-        }
-
-        const reader = res.body?.getReader();
-        if (!reader) throw new Error("No response stream");
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let accumulated = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            let event: { type: string; text?: string; message?: string };
-            try {
-              event = JSON.parse(line);
-            } catch {
-              continue;
-            }
-
-            switch (event.type) {
-              case "text_delta":
-                accumulated += event.text ?? "";
-                setReviewOutput(accumulated);
-                break;
-              case "error":
-                setError(event.message ?? "Unknown error");
-                break;
-              case "done":
-                break;
-            }
-          }
-        }
+        await streamNDJSON(
+          "/api/code-review",
+          { code, focus, language, modelId },
+          controller.signal,
+          (_text, accumulated) => setReviewOutput(accumulated),
+          (message) => setError(message)
+        );
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError(
@@ -91,6 +51,12 @@ export function useCodeReview(): UseCodeReviewReturn {
     [isReviewing]
   );
 
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsReviewing(false);
+  }, []);
+
   const reset = useCallback(() => {
     abortRef.current?.abort();
     setReviewOutput("");
@@ -98,5 +64,5 @@ export function useCodeReview(): UseCodeReviewReturn {
     setIsReviewing(false);
   }, []);
 
-  return { reviewOutput, isReviewing, error, review, reset };
+  return { reviewOutput, isReviewing, error, review, stop, reset };
 }

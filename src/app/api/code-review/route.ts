@@ -59,6 +59,7 @@ export async function POST(request: Request) {
   const code: string = body.code ?? "";
   const focus: string[] = body.focus ?? [];
   const language: string = body.language ?? "go";
+  const modelId: string = body.modelId ?? "";
 
   if (!code.trim()) {
     return Response.json({ error: "No code provided" }, { status: 400 });
@@ -79,13 +80,15 @@ export async function POST(request: Request) {
 
   const userContent = `Review the following ${language} code.${focusText}\n\n\`\`\`${language}\n${code}\n\`\`\``;
 
+  const { getModel } = await import("@/lib/ai/models");
+  const selectedModel = modelId ? getModel(modelId) : null;
   const client = new Anthropic({ apiKey });
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
         const response = await client.messages.create({
-          model: "claude-sonnet-4-6",
+          model: selectedModel?.modelId || "claude-sonnet-4-6",
           max_tokens: 8192,
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: userContent }],

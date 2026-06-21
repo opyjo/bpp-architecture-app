@@ -1,7 +1,9 @@
+import { GITHUB_REPOS } from "@/lib/ai/tools";
+
 export const runtime = "nodejs";
 
-const REPO_OWNER = "opyjo";
-const REPO_NAME = "mygorepo";
+const REPO_FULL_NAME = GITHUB_REPOS["go-repo-new"] ?? "opyjo/mygorepo";
+const [REPO_OWNER, REPO_NAME] = REPO_FULL_NAME.split("/");
 
 /** Curated list of the 10 most important subscription manager services */
 const KEY_SERVICES = [

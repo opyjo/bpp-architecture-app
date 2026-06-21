@@ -1,33 +1,37 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import ArchitectureTab from "@/components/tabs/ArchitectureTab";
-import UiPagesTab from "@/components/tabs/UiPagesTab";
-import KafkaEventsTab from "@/components/tabs/KafkaEventsTab";
-import ReferenceTab from "@/components/tabs/ReferenceTab";
-import AiChatTab from "@/components/tabs/AiChatTab";
-import LambdaFunctionsTab from "@/components/tabs/LambdaFunctionsTab";
-import RepoExplorerTab from "@/components/tabs/RepoExplorerTab";
-import FeatureFlagsTab from "@/components/tabs/FeatureFlagsTab";
-import LearningsTab from "@/components/tabs/LearningsTab";
-import ServicesTab from "@/components/tabs/ServicesTab";
-import BsaCheatsheetTab from "@/components/tabs/BsaCheatsheetTab";
-import InterviewCoachTab from "@/components/tabs/InterviewCoachTab";
-import MicrofrontendsTab from "@/components/tabs/MicrofrontendsTab";
-import ApigeeTab from "@/components/tabs/ApigeeTab";
-import OpenApiTab from "@/components/tabs/OpenApiTab";
-import ContractBuilderTab from "@/components/tabs/ContractBuilderTab";
-import ChangeImpactTab from "@/components/tabs/ChangeImpactTab";
-import RunbookManagerTab from "@/components/tabs/RunbookManagerTab";
-import CodeReviewTab from "@/components/tabs/CodeReviewTab";
-import SequenceDiagramTab from "@/components/tabs/SequenceDiagramTab";
-import TestPlanTab from "@/components/tabs/TestPlanTab";
+
+// Dynamic imports for all tabs except ArchitectureTab (default tab, loaded eagerly)
+const UiPagesTab = dynamic(() => import("@/components/tabs/UiPagesTab"), { ssr: false });
+const KafkaEventsTab = dynamic(() => import("@/components/tabs/KafkaEventsTab"), { ssr: false });
+const ReferenceTab = dynamic(() => import("@/components/tabs/ReferenceTab"), { ssr: false });
+const AiChatTab = dynamic(() => import("@/components/tabs/AiChatTab"), { ssr: false });
+const LambdaFunctionsTab = dynamic(() => import("@/components/tabs/LambdaFunctionsTab"), { ssr: false });
+const RepoExplorerTab = dynamic(() => import("@/components/tabs/RepoExplorerTab"), { ssr: false });
+const FeatureFlagsTab = dynamic(() => import("@/components/tabs/FeatureFlagsTab"), { ssr: false });
+const LearningsTab = dynamic(() => import("@/components/tabs/LearningsTab"), { ssr: false });
+const ServicesTab = dynamic(() => import("@/components/tabs/ServicesTab"), { ssr: false });
+const BsaCheatsheetTab = dynamic(() => import("@/components/tabs/BsaCheatsheetTab"), { ssr: false });
+const InterviewCoachTab = dynamic(() => import("@/components/tabs/InterviewCoachTab"), { ssr: false });
+const MicrofrontendsTab = dynamic(() => import("@/components/tabs/MicrofrontendsTab"), { ssr: false });
+const ApigeeTab = dynamic(() => import("@/components/tabs/ApigeeTab"), { ssr: false });
+const OpenApiTab = dynamic(() => import("@/components/tabs/OpenApiTab"), { ssr: false });
+const ContractBuilderTab = dynamic(() => import("@/components/tabs/ContractBuilderTab"), { ssr: false });
+const ChangeImpactTab = dynamic(() => import("@/components/tabs/ChangeImpactTab"), { ssr: false });
+const RunbookManagerTab = dynamic(() => import("@/components/tabs/RunbookManagerTab"), { ssr: false });
+const CodeReviewTab = dynamic(() => import("@/components/tabs/CodeReviewTab"), { ssr: false });
+const SequenceDiagramTab = dynamic(() => import("@/components/tabs/SequenceDiagramTab"), { ssr: false });
+const TestPlanTab = dynamic(() => import("@/components/tabs/TestPlanTab"), { ssr: false });
 
 interface TabItem {
   id: string;
   label: string;
-  href?: string; // If set, renders as a link instead of a tab switch
+  href?: string;
 }
 
 interface TabGroup {
@@ -93,11 +97,43 @@ const tabGroups: TabGroup[] = [
     label: "Saved",
     tintClass: "tab-group-reference",
     tabs: [
+      { id: "saved-hub", label: "All Saved", href: "/saved" },
       { id: "analyses", label: "Saved Analyses", href: "/analyses" },
       { id: "chats", label: "Saved Chats", href: "/chats" },
     ],
   },
 ];
+
+// All valid tab IDs (non-href tabs)
+const ALL_TAB_IDS = tabGroups
+  .flatMap((g) => g.tabs)
+  .filter((t) => !t.href)
+  .map((t) => t.id);
+
+// Tab component mapping
+const TAB_COMPONENTS: Record<string, React.ComponentType> = {
+  arch: ArchitectureTab,
+  pages: UiPagesTab,
+  events: KafkaEventsTab,
+  lambdas: LambdaFunctionsTab,
+  repo: RepoExplorerTab,
+  ref: ReferenceTab,
+  flags: FeatureFlagsTab,
+  learnings: LearningsTab,
+  services: ServicesTab,
+  mfe: MicrofrontendsTab,
+  bsa: BsaCheatsheetTab,
+  apigee: ApigeeTab,
+  openapi: OpenApiTab,
+  coach: InterviewCoachTab,
+  contract: ContractBuilderTab,
+  review: CodeReviewTab,
+  sequence: SequenceDiagramTab,
+  testplan: TestPlanTab,
+  impact: ChangeImpactTab,
+  runbooks: RunbookManagerTab,
+  ai: AiChatTab,
+};
 
 function TabDropdown({
   group,
@@ -213,8 +249,33 @@ function TabDropdown({
   );
 }
 
-export default function Home() {
-  const [activeTab, setActiveTab] = useState("arch");
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Initialize from URL param or default to "arch"
+  const initialTab = searchParams.get("tab") || "arch";
+  const [activeTab, setActiveTab] = useState(
+    ALL_TAB_IDS.includes(initialTab) ? initialTab : "arch"
+  );
+
+  // Track visited tabs — once visited, stay mounted (preserves state)
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(
+    () => new Set([ALL_TAB_IDS.includes(initialTab) ? initialTab : "arch"])
+  );
+
+  const handleSetActiveTab = useCallback(
+    (id: string) => {
+      setActiveTab(id);
+      setVisitedTabs((prev) => {
+        if (prev.has(id)) return prev;
+        return new Set(prev).add(id);
+      });
+      // Update URL without scroll
+      router.replace(`/?tab=${id}`, { scroll: false });
+    },
+    [router]
+  );
 
   return (
     <div className="flex-1 flex flex-col">
@@ -224,7 +285,7 @@ export default function Home() {
             key={group.label}
             group={group}
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={handleSetActiveTab}
             animIndex={i}
           />
         ))}
@@ -241,28 +302,34 @@ export default function Home() {
         </div>
       </div>
       <div className="flex-1 overflow-hidden">
-        {activeTab === "arch" && <ArchitectureTab />}
-        {activeTab === "pages" && <UiPagesTab />}
-        {activeTab === "events" && <KafkaEventsTab />}
-        {activeTab === "lambdas" && <LambdaFunctionsTab />}
-        {activeTab === "repo" && <RepoExplorerTab />}
-        {activeTab === "ref" && <ReferenceTab />}
-        {activeTab === "flags" && <FeatureFlagsTab />}
-        {activeTab === "learnings" && <LearningsTab />}
-        {activeTab === "services" && <ServicesTab />}
-        {activeTab === "mfe" && <MicrofrontendsTab />}
-        {activeTab === "bsa" && <BsaCheatsheetTab />}
-        {activeTab === "apigee" && <ApigeeTab />}
-        {activeTab === "openapi" && <OpenApiTab />}
-        {activeTab === "coach" && <InterviewCoachTab />}
-        {activeTab === "contract" && <ContractBuilderTab />}
-        {activeTab === "review" && <CodeReviewTab />}
-        {activeTab === "sequence" && <SequenceDiagramTab />}
-        {activeTab === "testplan" && <TestPlanTab />}
-        {activeTab === "impact" && <ChangeImpactTab />}
-        {activeTab === "runbooks" && <RunbookManagerTab />}
-        {activeTab === "ai" && <AiChatTab />}
+        {ALL_TAB_IDS.map((tabId) => {
+          if (!visitedTabs.has(tabId)) return null;
+          const Component = TAB_COMPONENTS[tabId];
+          if (!Component) return null;
+          return (
+            <div
+              key={tabId}
+              className={activeTab === tabId ? "h-full" : "hidden"}
+            >
+              <Component />
+            </div>
+          );
+        })}
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-arch-blue/30 border-t-arch-blue rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }

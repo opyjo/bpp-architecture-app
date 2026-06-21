@@ -1,4 +1,4 @@
-const GITHUB_REPOS: Record<string, string> = {
+export const GITHUB_REPOS: Record<string, string> = {
   "go-repo-new": "opyjo/mygorepo",
   "node-mono-real": "opyjo/node_mono0906",
 };

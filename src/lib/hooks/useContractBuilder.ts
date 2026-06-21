@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { load as yamlLoad } from "js-yaml";
+import { streamNDJSON } from "@/lib/stream";
 
 const STORAGE_KEY = "contract-builder-last-spec";
 
@@ -13,16 +14,15 @@ export interface UseContractBuilderReturn {
   error: string | null;
   generate: (
     goCode: string,
-    opts?: { additionalFiles?: string[]; fileName?: string }
+    opts?: { additionalFiles?: string[]; fileName?: string; modelId?: string }
   ) => Promise<void>;
+  stop: () => void;
   reset: () => void;
 }
 
 function stripMarkdownFences(text: string): string {
   let result = text.trim();
-  // Remove opening fence like ```yaml or ```
   result = result.replace(/^```(?:ya?ml)?\s*\n?/, "");
-  // Remove closing fence
   result = result.replace(/\n?```\s*$/, "");
   return result;
 }
@@ -54,7 +54,7 @@ export function useContractBuilder(): UseContractBuilderReturn {
   const generate = useCallback(
     async (
       goCode: string,
-      opts?: { additionalFiles?: string[]; fileName?: string }
+      opts?: { additionalFiles?: string[]; fileName?: string; modelId?: string }
     ) => {
       if (!goCode.trim() || isGenerating) return;
 
@@ -68,82 +68,41 @@ export function useContractBuilder(): UseContractBuilderReturn {
       abortRef.current = controller;
 
       try {
-        const res = await fetch("/api/contract-builder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        await streamNDJSON(
+          "/api/contract-builder",
+          {
             goCode,
             additionalFiles: opts?.additionalFiles,
             fileName: opts?.fileName,
-          }),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          throw new Error(errBody.error || `API error: ${res.status}`);
-        }
-
-        const reader = res.body?.getReader();
-        if (!reader) throw new Error("No response stream");
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let accumulated = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            let event: { type: string; text?: string; message?: string };
+            modelId: opts?.modelId,
+          },
+          controller.signal,
+          (_text, accumulated) => setYamlOutput(accumulated),
+          (message) => setError(message),
+          (accumulated) => {
+            const cleaned = stripMarkdownFences(accumulated);
+            setYamlOutput(cleaned);
             try {
-              event = JSON.parse(line);
-            } catch {
-              continue;
-            }
-
-            switch (event.type) {
-              case "text_delta":
-                accumulated += event.text ?? "";
-                setYamlOutput(accumulated);
-                break;
-              case "error":
-                setError(event.message ?? "Unknown error");
-                break;
-              case "done": {
-                const cleaned = stripMarkdownFences(accumulated);
-                setYamlOutput(cleaned);
+              const parsed = yamlLoad(cleaned);
+              if (parsed && typeof parsed === "object") {
+                setParsedSpec(parsed as object);
                 try {
-                  const parsed = yamlLoad(cleaned);
-                  if (parsed && typeof parsed === "object") {
-                    setParsedSpec(parsed as object);
-                    // Save to localStorage
-                    try {
-                      localStorage.setItem(STORAGE_KEY, cleaned);
-                    } catch {
-                      // storage full
-                    }
-                  } else {
-                    setParseError("AI output is not a valid YAML object");
-                  }
-                } catch (e) {
-                  setParseError(
-                    e instanceof Error
-                      ? `YAML parse error: ${e.message}`
-                      : "Failed to parse YAML"
-                  );
+                  localStorage.setItem(STORAGE_KEY, cleaned);
+                } catch {
+                  // storage full
                 }
-                break;
+              } else {
+                setParseError("AI output is not a valid YAML object");
               }
+            } catch (e) {
+              setParseError(
+                e instanceof Error
+                  ? `YAML parse error: ${e.message}`
+                  : "Failed to parse YAML"
+              );
             }
           }
-        }
+        );
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError(
@@ -157,6 +116,12 @@ export function useContractBuilder(): UseContractBuilderReturn {
     },
     [isGenerating]
   );
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsGenerating(false);
+  }, []);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
@@ -179,6 +144,7 @@ export function useContractBuilder(): UseContractBuilderReturn {
     isGenerating,
     error,
     generate,
+    stop,
     reset,
   };
 }

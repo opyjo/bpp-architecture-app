@@ -10,6 +10,7 @@ import SuggestedPrompts from "@/components/ai/SuggestedPrompts";
 import ModelSelector from "@/components/ai/ModelSelector";
 import { Save, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function AiChatTab() {
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
@@ -55,7 +56,7 @@ export default function AiChatTab() {
       setSaveFeedback(true);
       setTimeout(() => setSaveFeedback(false), 2000);
     } catch {
-      // save failed silently
+      toast.error("Failed to save chat");
     } finally {
       setIsSaving(false);
     }

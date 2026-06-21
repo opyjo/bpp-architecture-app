@@ -64,6 +64,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const requirement: string = body.requirement ?? "";
   const testTypes: string[] = body.testTypes ?? [];
+  const modelId: string = body.modelId ?? "";
 
   if (!requirement.trim()) {
     return Response.json({ error: "No requirement provided" }, { status: 400 });
@@ -84,13 +85,15 @@ export async function POST(request: Request) {
 
   const userContent = `Generate a comprehensive test plan for the following requirement:${testTypeText}\n\n---\n\n${requirement}`;
 
+  const { getModel } = await import("@/lib/ai/models");
+  const selectedModel = modelId ? getModel(modelId) : null;
   const client = new Anthropic({ apiKey });
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
         const response = await client.messages.create({
-          model: "claude-sonnet-4-6",
+          model: selectedModel?.modelId || "claude-sonnet-4-6",
           max_tokens: 8192,
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: userContent }],

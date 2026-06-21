@@ -11,6 +11,8 @@ import CodeBlock from "@/components/ui/CodeBlock";
 import ModelSelector from "@/components/ai/ModelSelector";
 import MessageBubble from "@/components/ai/MessageBubble";
 import ChatInput from "@/components/ai/ChatInput";
+import SavedItemsPanel from "@/components/ui/SavedItemsPanel";
+import { toast } from "sonner";
 import type { SavedDiagram } from "@/lib/types/saved-diagram";
 import {
   GitBranch,
@@ -20,10 +22,9 @@ import {
   Loader2,
   Check,
   BookOpen,
-  Trash2,
-  Clock,
   Code2,
   Eye,
+  Square,
 } from "lucide-react";
 
 type RightView = "diagram" | "source";
@@ -109,7 +110,7 @@ export default function SequenceDiagramTab() {
       const diagrams = await fetchDiagrams();
       setSavedDiagrams(diagrams);
     } catch {
-      // silently fail
+      toast.error("Failed to load saved diagrams");
     } finally {
       setIsLoadingDiagrams(false);
     }
@@ -127,7 +128,6 @@ export default function SequenceDiagramTab() {
     if (!lastAssistant) return;
 
     let content = lastAssistant.content.trim();
-    // Strip markdown fences if present
     content = content.replace(/^```(?:mermaid)?\s*\n?/, "");
     content = content.replace(/\n?```\s*$/, "");
     content = content.trim();
@@ -161,7 +161,7 @@ export default function SequenceDiagramTab() {
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
     } catch {
-      // copy failed
+      toast.error("Failed to copy to clipboard");
     }
   };
 
@@ -190,9 +190,10 @@ export default function SequenceDiagramTab() {
       });
       setSaveFeedback(true);
       setTimeout(() => setSaveFeedback(false), 2000);
+      toast.success("Diagram saved");
       await loadSavedDiagrams();
     } catch {
-      // save failed
+      toast.error("Failed to save diagram");
     } finally {
       setIsSaving(false);
     }
@@ -209,8 +210,9 @@ export default function SequenceDiagramTab() {
     try {
       await deleteDiagram(id);
       setSavedDiagrams((prev) => prev.filter((d) => d.id !== id));
+      toast.success("Diagram deleted");
     } catch {
-      // delete failed
+      toast.error("Failed to delete diagram");
     }
   };
 
@@ -245,6 +247,15 @@ export default function SequenceDiagramTab() {
             <BookOpen className="w-3 h-3" />
             Saved ({savedDiagrams.length})
           </button>
+          {isStreaming && (
+            <button
+              onClick={stopStreaming}
+              className="text-[11px] text-arch-coral hover:text-arch-coral/80 transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+            >
+              <Square className="w-3 h-3 fill-current" />
+              Stop
+            </button>
+          )}
           {mermaidSource && (
             <>
               <button
@@ -295,78 +306,21 @@ export default function SequenceDiagramTab() {
       <div className="flex-1 flex overflow-hidden">
         {/* Saved diagrams panel */}
         {viewMode === "saved" && (
-          <div className="w-[380px] shrink-0 flex flex-col border-r border-arch-border bg-arch-bg/50">
-            <div className="px-4 pt-4 pb-3 border-b border-arch-border">
-              <h3 className="text-[13px] font-semibold text-arch-text flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-arch-blue" />
-                Saved Diagrams
-              </h3>
-              <p className="text-[11px] text-arch-text3 mt-1">
-                {savedDiagrams.length} saved diagram
-                {savedDiagrams.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {isLoadingDiagrams ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Loader2 className="w-6 h-6 animate-spin text-arch-blue" />
-                  <span className="text-[13px] text-arch-text3">
-                    Loading...
-                  </span>
-                </div>
-              ) : savedDiagrams.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-2">
-                  <BookOpen className="w-8 h-8 text-arch-text3" />
-                  <span className="text-[13px] text-arch-text3">
-                    No saved diagrams yet
-                  </span>
-                </div>
-              ) : (
-                savedDiagrams.map((d) => (
-                  <div
-                    key={d.id}
-                    onClick={() => handleLoadDiagram(d)}
-                    className="rounded-lg border border-arch-border bg-arch-bg2/60 hover:bg-arch-bg2 transition-colors cursor-pointer group"
-                  >
-                    <div className="w-full text-left px-4 py-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[13px] font-medium text-arch-text truncate">
-                            {d.title}
-                          </div>
-                          {d.description && (
-                            <div className="text-[10px] text-arch-text3 mt-0.5 truncate">
-                              {d.description}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1 mt-1.5 text-[10px] text-arch-text3">
-                            <Clock className="w-3 h-3" />
-                            {new Date(d.updated_at).toLocaleDateString(
-                              undefined,
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDiagram(d.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-arch-text3 hover:text-arch-coral transition-all p-1 rounded hover:bg-arch-coral/10"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <SavedItemsPanel<SavedDiagram>
+            items={savedDiagrams}
+            isLoading={isLoadingDiagrams}
+            onSelect={handleLoadDiagram}
+            onDelete={handleDeleteDiagram}
+            emptyMessage="No saved diagrams yet"
+            headerTitle="Saved Diagrams"
+            renderTitle={(d) => d.title}
+            renderSubtitle={(d) => d.description || ""}
+            searchable
+            searchFn={(d, q) =>
+              d.title.toLowerCase().includes(q) ||
+              (d.description || "").toLowerCase().includes(q)
+            }
+          />
         )}
 
         {/* Left panel: inputs + chat refinement */}

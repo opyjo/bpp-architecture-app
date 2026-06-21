@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { streamNDJSON } from "@/lib/stream";
 
 export interface UseTestPlanGeneratorReturn {
   planOutput: string;
   isGenerating: boolean;
   error: string | null;
-  generate: (requirement: string, testTypes: string[]) => Promise<void>;
+  generate: (requirement: string, testTypes: string[], modelId?: string) => Promise<void>;
+  stop: () => void;
   reset: () => void;
 }
 
@@ -17,7 +19,7 @@ export function useTestPlanGenerator(): UseTestPlanGeneratorReturn {
   const abortRef = useRef<AbortController | null>(null);
 
   const generate = useCallback(
-    async (requirement: string, testTypes: string[]) => {
+    async (requirement: string, testTypes: string[], modelId?: string) => {
       if (!requirement.trim() || isGenerating) return;
 
       setError(null);
@@ -28,55 +30,13 @@ export function useTestPlanGenerator(): UseTestPlanGeneratorReturn {
       abortRef.current = controller;
 
       try {
-        const res = await fetch("/api/test-plan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requirement, testTypes }),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          throw new Error(errBody.error || `API error: ${res.status}`);
-        }
-
-        const reader = res.body?.getReader();
-        if (!reader) throw new Error("No response stream");
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let accumulated = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            let event: { type: string; text?: string; message?: string };
-            try {
-              event = JSON.parse(line);
-            } catch {
-              continue;
-            }
-
-            switch (event.type) {
-              case "text_delta":
-                accumulated += event.text ?? "";
-                setPlanOutput(accumulated);
-                break;
-              case "error":
-                setError(event.message ?? "Unknown error");
-                break;
-              case "done":
-                break;
-            }
-          }
-        }
+        await streamNDJSON(
+          "/api/test-plan",
+          { requirement, testTypes, modelId },
+          controller.signal,
+          (_text, accumulated) => setPlanOutput(accumulated),
+          (message) => setError(message)
+        );
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError(
@@ -91,6 +51,12 @@ export function useTestPlanGenerator(): UseTestPlanGeneratorReturn {
     [isGenerating]
   );
 
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsGenerating(false);
+  }, []);
+
   const reset = useCallback(() => {
     abortRef.current?.abort();
     setPlanOutput("");
@@ -98,5 +64,5 @@ export function useTestPlanGenerator(): UseTestPlanGeneratorReturn {
     setIsGenerating(false);
   }, []);
 
-  return { planOutput, isGenerating, error, generate, reset };
+  return { planOutput, isGenerating, error, generate, stop, reset };
 }

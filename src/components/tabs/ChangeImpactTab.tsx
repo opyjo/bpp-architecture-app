@@ -15,12 +15,14 @@ import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import ModelSelector from "@/components/ai/ModelSelector";
 import MessageBubble from "@/components/ai/MessageBubble";
 import ChatInput from "@/components/ai/ChatInput";
+import { downloadAsMarkdown } from "@/lib/utils";
 import {
   GitBranch,
   Zap,
   BarChart3,
   MessageSquare,
   Loader2,
+  Download,
 } from "lucide-react";
 
 type RightPanel = "graph" | "analysis";
@@ -77,11 +79,10 @@ export default function ChangeImpactTab() {
   const handleAiAnalysis = () => {
     if (!serviceId) return;
     setRightPanel("analysis");
-    if (messages.length === 0) {
-      const service = allServiceDeepDives.find((s) => s.id === serviceId);
-      const prompt = `Analyze the impact of a ${changeTypeLabels[changeType].toLowerCase()} on ${service?.displayName || serviceId}.${description ? ` Details: ${description}` : ""}`;
-      sendMessage(prompt);
-    }
+    // Always send a new analysis prompt (user can clearHistory() to reset context)
+    const service = allServiceDeepDives.find((s) => s.id === serviceId);
+    const prompt = `Analyze the impact of a ${changeTypeLabels[changeType].toLowerCase()} on ${service?.displayName || serviceId}.${description ? ` Details: ${description}` : ""}`;
+    sendMessage(prompt);
   };
 
   const selectedService = allServiceDeepDives.find((s) => s.id === serviceId);
@@ -105,11 +106,28 @@ export default function ChangeImpactTab() {
         </div>
         <div className="flex items-center gap-1">
           {rightPanel === "analysis" && (
-            <ModelSelector
-              value={modelId}
-              onChange={setModelId}
-              disabled={isStreaming}
-            />
+            <>
+              <ModelSelector
+                value={modelId}
+                onChange={setModelId}
+                disabled={isStreaming}
+              />
+              {messages.length > 0 && (
+                <button
+                  onClick={() => {
+                    const content = messages
+                      .filter((m) => m.role === "assistant")
+                      .map((m) => m.content)
+                      .join("\n\n---\n\n");
+                    downloadAsMarkdown(content, "impact-analysis.md");
+                  }}
+                  className="text-[11px] text-arch-text3 hover:text-arch-teal transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  .md
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

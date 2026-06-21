@@ -32,6 +32,7 @@ export async function POST(request: Request) {
   const goCode: string = body.goCode ?? "";
   const additionalFiles: string[] = body.additionalFiles ?? [];
   const fileName: string = body.fileName ?? "handler.go";
+  const modelId: string = body.modelId ?? "";
 
   if (!goCode.trim()) {
     return Response.json({ error: "No Go code provided" }, { status: 400 });
@@ -54,13 +55,15 @@ export async function POST(request: Request) {
     });
   }
 
+  const { getModel } = await import("@/lib/ai/models");
+  const selectedModel = modelId ? getModel(modelId) : null;
   const client = new Anthropic({ apiKey });
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
         const response = await client.messages.create({
-          model: "claude-sonnet-4-6",
+          model: selectedModel?.modelId || "claude-sonnet-4-6",
           max_tokens: 16384,
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: userContent }],

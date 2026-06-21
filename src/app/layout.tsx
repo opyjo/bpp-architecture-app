@@ -4,6 +4,7 @@ import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import Header from "@/components/Header";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -12,7 +13,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Subscription Manager — Architecture",
-  description: "Bell Canada · go-repo-new · Next.js 14 BFF → AppSync → Go microservices",
+  description: "Bell Canada · go-repo-new · Next.js 16 BFF → AppSync → Go microservices",
 };
 
 export default function RootLayout({
@@ -26,6 +27,7 @@ export default function RootLayout({
         <ThemeProvider>
           <Header />
           {children}
+          <Toaster position="bottom-right" richColors theme="system" />
         </ThemeProvider>
       </body>
     </html>

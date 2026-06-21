@@ -5,6 +5,7 @@ import { useSavedAnalyses } from "@/lib/hooks/useSavedAnalyses";
 import AnalysisList from "@/components/analyses/AnalysisList";
 import type { SavedAnalysis } from "@/lib/types/saved-analysis";
 import Breadcrumbs from "@/components/nav/Breadcrumbs";
+import { toast } from "sonner";
 
 export default function AnalysesPage() {
   const { fetchAnalyses, updateAnalysis, deleteAnalysis } = useSavedAnalyses();
@@ -16,7 +17,7 @@ export default function AnalysesPage() {
       const data = await fetchAnalyses();
       setAnalyses(data);
     } catch {
-      // fetch failed
+      toast.error("Failed to load analyses");
     } finally {
       setLoading(false);
     }

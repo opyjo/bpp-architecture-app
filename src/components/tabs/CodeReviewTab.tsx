@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useCodeReview } from "@/lib/hooks/useCodeReview";
 import { useSavedReviews } from "@/lib/hooks/useSavedReviews";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+import SavedItemsPanel from "@/components/ui/SavedItemsPanel";
+import ModelSelector from "@/components/ai/ModelSelector";
+import { downloadAsMarkdown } from "@/lib/utils";
+import { toast } from "sonner";
 import type { SavedReview } from "@/lib/types/saved-review";
 import {
   Code2,
@@ -13,9 +18,9 @@ import {
   RotateCcw,
   Check,
   BookOpen,
-  Trash2,
-  Clock,
   ArrowLeft,
+  Square,
+  Download,
 } from "lucide-react";
 
 type FocusArea =
@@ -42,12 +47,13 @@ const LANGUAGES = [
 type ViewMode = "reviewer" | "saved";
 
 export default function CodeReviewTab() {
-  const { reviewOutput, isReviewing, error, review, reset } = useCodeReview();
+  const { reviewOutput, isReviewing, error, review, stop, reset } = useCodeReview();
   const { fetchReviews, saveReview, deleteReview } = useSavedReviews();
 
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("go");
   const [focusAreas, setFocusAreas] = useState<FocusArea[]>([]);
+  const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("reviewer");
   const [savedReviews, setSavedReviews] = useState<SavedReview[]>([]);
@@ -63,7 +69,7 @@ export default function CodeReviewTab() {
       const reviews = await fetchReviews();
       setSavedReviews(reviews);
     } catch {
-      // silently fail
+      toast.error("Failed to load saved reviews");
     } finally {
       setIsLoadingReviews(false);
     }
@@ -83,7 +89,7 @@ export default function CodeReviewTab() {
 
   const handleReview = () => {
     if (!code.trim()) return;
-    review(code, focusAreas, language);
+    review(code, focusAreas, language, modelId);
   };
 
   const handleCopy = async () => {
@@ -93,7 +99,7 @@ export default function CodeReviewTab() {
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
     } catch {
-      // copy failed
+      toast.error("Failed to copy to clipboard");
     }
   };
 
@@ -111,9 +117,10 @@ export default function CodeReviewTab() {
       });
       setSaveFeedback(true);
       setTimeout(() => setSaveFeedback(false), 2000);
+      toast.success("Review saved");
       await loadSavedReviews();
     } catch {
-      // save failed
+      toast.error("Failed to save review");
     } finally {
       setIsSaving(false);
     }
@@ -129,8 +136,9 @@ export default function CodeReviewTab() {
       await deleteReview(id);
       setSavedReviews((prev) => prev.filter((r) => r.id !== id));
       if (loadedReview?.id === id) setLoadedReview(null);
+      toast.success("Review deleted");
     } catch {
-      // delete failed
+      toast.error("Failed to delete review");
     }
   };
 
@@ -161,6 +169,7 @@ export default function CodeReviewTab() {
           <span className="text-[13px] font-semibold text-arch-text truncate">
             {isViewingLoaded ? "Saved Review" : "Code Review"}
           </span>
+          <ModelSelector value={modelId} onChange={setModelId} disabled={isReviewing} />
           {isReviewing && (
             <span className="flex items-center gap-1.5 text-[11px] text-arch-purple">
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -182,6 +191,15 @@ export default function CodeReviewTab() {
             <BookOpen className="w-3 h-3" />
             Saved ({savedReviews.length})
           </button>
+          {isReviewing && (
+            <button
+              onClick={stop}
+              className="text-[11px] text-arch-coral hover:text-arch-coral/80 transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+            >
+              <Square className="w-3 h-3 fill-current" />
+              Stop
+            </button>
+          )}
           {hasOutput && !isViewingLoaded && (
             <>
               <button
@@ -204,6 +222,13 @@ export default function CodeReviewTab() {
               >
                 <Copy className="w-3 h-3" />
                 {copyFeedback ? "Copied!" : "Copy"}
+              </button>
+              <button
+                onClick={() => downloadAsMarkdown(displayContent, "code-review.md")}
+                className="text-[11px] text-arch-text3 hover:text-arch-teal transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
+              >
+                <Download className="w-3 h-3" />
+                .md
               </button>
               <button
                 onClick={() => {
@@ -240,80 +265,22 @@ export default function CodeReviewTab() {
       <div className="flex-1 flex overflow-hidden">
         {/* Saved reviews panel */}
         {viewMode === "saved" && (
-          <div className="w-[400px] shrink-0 flex flex-col border-r border-arch-border bg-arch-bg/50">
-            <div className="px-4 pt-4 pb-3 border-b border-arch-border">
-              <h3 className="text-[13px] font-semibold text-arch-text flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-arch-blue" />
-                Saved Reviews
-              </h3>
-              <p className="text-[11px] text-arch-text3 mt-1">
-                {savedReviews.length} saved review
-                {savedReviews.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {isLoadingReviews ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Loader2 className="w-6 h-6 animate-spin text-arch-blue" />
-                  <span className="text-[13px] text-arch-text3">
-                    Loading saved reviews...
-                  </span>
-                </div>
-              ) : savedReviews.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-2">
-                  <BookOpen className="w-8 h-8 text-arch-text3" />
-                  <span className="text-[13px] text-arch-text3">
-                    No saved reviews yet
-                  </span>
-                </div>
-              ) : (
-                savedReviews.map((r) => (
-                  <div
-                    key={r.id}
-                    onClick={() => handleLoadReview(r)}
-                    className={`rounded-lg border transition-colors cursor-pointer group ${
-                      loadedReview?.id === r.id
-                        ? "border-arch-blue/40 bg-arch-blue/5"
-                        : "border-arch-border bg-arch-bg2/60 hover:bg-arch-bg2"
-                    }`}
-                  >
-                    <div className="w-full text-left px-4 py-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[13px] font-medium text-arch-text truncate">
-                            {r.title}
-                          </div>
-                          <div className="text-[11px] text-arch-purple font-mono mt-0.5">
-                            {r.language}
-                          </div>
-                          <div className="flex items-center gap-1 mt-1.5 text-[10px] text-arch-text3">
-                            <Clock className="w-3 h-3" />
-                            {new Date(r.updated_at).toLocaleDateString(
-                              undefined,
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteReview(r.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-arch-text3 hover:text-arch-coral transition-all p-1 rounded hover:bg-arch-coral/10"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <SavedItemsPanel<SavedReview>
+            items={savedReviews}
+            isLoading={isLoadingReviews}
+            activeId={loadedReview?.id}
+            onSelect={handleLoadReview}
+            onDelete={handleDeleteReview}
+            emptyMessage="No saved reviews yet"
+            headerTitle="Saved Reviews"
+            renderTitle={(r) => r.title}
+            renderSubtitle={(r) => r.language}
+            searchable
+            searchFn={(r, q) =>
+              r.title.toLowerCase().includes(q) ||
+              r.language.toLowerCase().includes(q)
+            }
+          />
         )}
 
         {/* Left panel: input (hidden when viewing saved) */}
@@ -371,6 +338,11 @@ export default function CodeReviewTab() {
                 placeholder={`Paste your ${LANGUAGES.find((l) => l.id === language)?.label || ""} code here...`}
                 className="flex-1 min-h-[200px] resize-none bg-arch-bg2 border border-arch-border rounded-lg p-3 text-[12px] font-mono text-arch-text placeholder:text-arch-text3 focus:outline-none focus:border-arch-purple/50 transition-colors"
               />
+
+              {/* Char count */}
+              <div className={`text-[10px] font-mono ${code.length > 10000 ? "text-arch-coral" : "text-arch-text3"}`}>
+                {code.length.toLocaleString()} chars
+              </div>
 
               {/* Review button */}
               <button

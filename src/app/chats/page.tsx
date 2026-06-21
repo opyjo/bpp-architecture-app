@@ -5,6 +5,7 @@ import { useSavedChats } from "@/lib/hooks/useSavedChats";
 import ChatList from "@/components/chats/ChatList";
 import type { SavedChat } from "@/lib/types/saved-chat";
 import Breadcrumbs from "@/components/nav/Breadcrumbs";
+import { toast } from "sonner";
 
 const BSA_PREFIX = "[BSA Coach]";
 
@@ -31,7 +32,7 @@ export default function ChatsPage() {
       const data = await fetchChats();
       setChats(data);
     } catch {
-      // fetch failed
+      toast.error("Failed to load chats");
     } finally {
       setLoading(false);
     }
