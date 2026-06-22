@@ -316,6 +316,136 @@ export const TEMPLATE_CARDS: Omit<TeleprompterCard, "id">[] = [
       { text: "Measure success by **team output and growth**, not individual heroics", color: "green" },
     ],
   },
+  {
+    title: "Technical: Specifying an API Contract & OpenAPI",
+    category: "Technical",
+    bullets: [
+      { text: "Start with **stakeholder workshops** to define the domain model, key resources, and expected consumers", color: "teal" },
+      { text: "Draft the **OpenAPI 3.x spec** in YAML — paths, schemas, error models — before writing any code (**contract-first**)", color: "blue" },
+      { text: "Use **Swagger Editor** or **Stoplight** for visual review with non-technical stakeholders, generate **mock servers** (Prism/WireMock) so consumers can test before implementation", color: "purple" },
+      { text: "Validate with **integration tests** against the spec — any drift between contract and code breaks the build", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: API Versioning & Breaking Changes",
+    category: "Technical",
+    bullets: [
+      { text: "Prefer **additive changes** — new optional fields, new endpoints — to avoid version bumps entirely", color: "teal" },
+      { text: "Use **semantic versioning** on contracts — major bumps only for breaking changes, communicated via **deprecation headers**", color: "blue" },
+      { text: "Run **old and new versions in parallel** with a sunset window — give consumers time to migrate", color: "purple" },
+      { text: "Track consumer usage via **API gateway analytics** (Apigee) to know when it's safe to decommission the old version", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Producing a Data Mapping Document",
+    category: "Technical",
+    bullets: [
+      { text: "Start with **source analysis** — extract field inventory from COBOL copybooks, DB schemas, or existing API payloads", color: "teal" },
+      { text: "Map each source field to the **target domain model** — define transformations, type coercions, default values, nullable rules", color: "blue" },
+      { text: "Document in a **Confluence table** — columns: source field, type, target field, type, transformation rule, notes", color: "purple" },
+      { text: "Validate with **automated sample data runs** — compare expected vs. actual output across edge cases and **1000+ data variants**", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Domain Modelling Approach",
+    category: "Technical",
+    bullets: [
+      { text: "Start with **event storming** — sticky notes for domain events, commands, and aggregates with business + tech in the room", color: "teal" },
+      { text: "Identify **bounded contexts** — where language and ownership diverge, draw the service boundaries", color: "blue" },
+      { text: "Define **aggregate roots** — enforce invariants within a boundary, communicate across boundaries via **domain events**", color: "purple" },
+      { text: "Iterate the model with **real user journeys** — walk through scenarios to validate the model holds under edge cases", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: State Machine — Policy Lifecycle",
+    category: "Technical",
+    bullets: [
+      { text: "Defined a **policy lifecycle state machine** — states: Draft → Submitted → Underwriting → Approved → Active → Lapsed → Cancelled", color: "teal" },
+      { text: "Each transition had **guard conditions** — e.g., Submitted → Underwriting requires all mandatory fields validated", color: "blue" },
+      { text: "Implemented as an **event-driven model** — state transitions emitted events to Kafka, downstream systems reacted accordingly", color: "purple" },
+      { text: "Visualized in **Confluence with Mermaid diagrams** — both business and engineering could trace and validate the flow", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Integration Patterns",
+    category: "Technical",
+    bullets: [
+      { text: "**Event-driven / async messaging** — Kafka topics with Avro schemas, idempotent consumers, DLQ for failures", color: "teal" },
+      { text: "**Request/reply APIs** — REST with OpenAPI contracts, gRPC for internal service-to-service where latency matters", color: "blue" },
+      { text: "**Strangler fig pattern** for legacy migration — incrementally route traffic from monolith to new services", color: "purple" },
+      { text: "**Anti-corruption layer** — translate between legacy and modern domain models at integration boundaries", color: "coral" },
+    ],
+  },
+  {
+    title: "Technical: Data Integrity Across Systems",
+    category: "Technical",
+    bullets: [
+      { text: "**Idempotency keys** on every message and API call — safe retries without duplicate side effects", color: "teal" },
+      { text: "**Schema validation** at boundaries — Avro schema registry enforces backward/forward compatibility", color: "blue" },
+      { text: "**Reconciliation jobs** — periodic comparison of source and target data stores to catch drift early", color: "purple" },
+      { text: "**Compensating transactions** in sagas — if step N fails, automatically roll back steps 1..N-1", color: "coral" },
+    ],
+  },
+  {
+    title: "Technical: Writing Acceptance Criteria",
+    category: "Technical",
+    bullets: [
+      { text: "Use **Given/When/Then** (Gherkin) format — forces clarity on preconditions, actions, and expected outcomes", color: "teal" },
+      { text: "Each criterion must be **independently testable** — if QA can't write a test from it, it needs more detail", color: "blue" },
+      { text: "Always include **edge cases and error paths** — not just the happy path", color: "purple" },
+      { text: "Review with **dev, QA, and business** together in refinement — alignment before sprint commitment", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Handling Ambiguous Requirements",
+    category: "Technical",
+    bullets: [
+      { text: "Document **what you know vs. what's unknown** — make gaps visible to stakeholders explicitly", color: "teal" },
+      { text: "Propose **two or three options** with tradeoffs — let the business choose rather than guessing", color: "blue" },
+      { text: "Build a **thin vertical slice** first — end-to-end proof of concept to flush out unknowns early", color: "purple" },
+      { text: "Set up **regular sync cadence** with product — don't wait for perfect requirements, iterate weekly", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Story Grooming & Pointing",
+    category: "Technical",
+    bullets: [
+      { text: "Run **backlog refinement** weekly — PO presents context, team asks clarifying questions, stories get refined", color: "teal" },
+      { text: "Use **story points** (Fibonacci) for relative sizing — based on complexity, uncertainty, and effort combined", color: "blue" },
+      { text: "Break stories larger than **8 points** into smaller vertical slices — each deployable independently", color: "purple" },
+      { text: "Time-box pointing to **2 minutes per story** — no consensus means the story needs more refinement, not more debate", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Business Wants vs. Architecture Constraints",
+    category: "Technical",
+    bullets: [
+      { text: "Never say **\"no\"** — say **\"here's what it costs\"** with concrete tradeoffs: time, tech debt, and risk", color: "teal" },
+      { text: "Propose **alternatives** that achieve the business outcome within current architectural constraints", color: "blue" },
+      { text: "If the gap is fundamental, suggest a **phased approach** — tactical solution now, strategic refactor later", color: "purple" },
+      { text: "Document the **decision and accepted tradeoffs** — make it a conscious choice, not accidental debt", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Apigee & API Gateway Experience",
+    category: "Technical",
+    bullets: [
+      { text: "Used **Apigee Edge** as the gateway layer — rate limiting, OAuth token validation, request/response transformation", color: "teal" },
+      { text: "Configured **API products and developer portals** — self-service onboarding for internal and partner consumers", color: "blue" },
+      { text: "Set up **analytics and monitoring** — traffic dashboards, error rate alerts, latency tracking per API proxy", color: "purple" },
+      { text: "Used **shared flows** for cross-cutting concerns — logging, CORS, security policies applied consistently across APIs", color: "green" },
+    ],
+  },
+  {
+    title: "Technical: Documentation — Confluence, Visio & More",
+    category: "Technical",
+    bullets: [
+      { text: "**Confluence** as single source of truth — ADRs, runbooks, data mappings, and onboarding guides", color: "teal" },
+      { text: "**Mermaid/PlantUML** for diagrams-as-code — sequence, state, and C4 architecture diagrams versioned in Git", color: "blue" },
+      { text: "**Visio/Lucidchart** for stakeholder-facing flows — when business teams need polished, presentable visuals", color: "purple" },
+      { text: "**OpenAPI specs** as living API documentation — auto-generated and always in sync with the codebase", color: "green" },
+    ],
+  },
 ];
 
 export const DEFAULT_TELEPROMPTER_CARDS: TeleprompterCard[] = [
@@ -499,6 +629,305 @@ export const DEFAULT_TELEPROMPTER_CARDS: TeleprompterCard[] = [
       },
       {
         text: "**Result**: Both sides aligned, MVP shipped on time, **full delivery 1 week early** — built trust across teams",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-9",
+    title: "Specifying an API Contract & OpenAPI",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Start with **stakeholder workshops** to define the domain model, key resources, and expected consumers",
+        color: "teal",
+      },
+      {
+        text: "Draft the **OpenAPI 3.x spec** in YAML — paths, schemas, error models — before writing any code (**contract-first**)",
+        color: "blue",
+      },
+      {
+        text: "Use **Swagger Editor** or **Stoplight** for visual review with non-technical stakeholders, generate **mock servers** (Prism/WireMock) so consumers can test before implementation",
+        color: "purple",
+      },
+      {
+        text: "Validate with **integration tests** against the spec — any drift between contract and code breaks the build",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-10",
+    title: "API Versioning & Breaking Changes",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Prefer **additive changes** — new optional fields, new endpoints — to avoid version bumps entirely",
+        color: "teal",
+      },
+      {
+        text: "Use **semantic versioning** on contracts — major bumps only for breaking changes, communicated via **deprecation headers**",
+        color: "blue",
+      },
+      {
+        text: "Run **old and new versions in parallel** with a sunset window — give consumers time to migrate",
+        color: "purple",
+      },
+      {
+        text: "Track consumer usage via **API gateway analytics** (Apigee) to know when it's safe to decommission the old version",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-11",
+    title: "Producing a Data Mapping Document",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Start with **source analysis** — extract field inventory from COBOL copybooks, DB schemas, or existing API payloads",
+        color: "teal",
+      },
+      {
+        text: "Map each source field to the **target domain model** — define transformations, type coercions, default values, nullable rules",
+        color: "blue",
+      },
+      {
+        text: "Document in a **Confluence table** — columns: source field, type, target field, type, transformation rule, notes",
+        color: "purple",
+      },
+      {
+        text: "Validate with **automated sample data runs** — compare expected vs. actual output across edge cases and **1000+ data variants**",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-12",
+    title: "Domain Modelling Approach",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Start with **event storming** — sticky notes for domain events, commands, and aggregates with business + tech in the room",
+        color: "teal",
+      },
+      {
+        text: "Identify **bounded contexts** — where language and ownership diverge, draw the service boundaries",
+        color: "blue",
+      },
+      {
+        text: "Define **aggregate roots** — enforce invariants within a boundary, communicate across boundaries via **domain events**",
+        color: "purple",
+      },
+      {
+        text: "Iterate the model with **real user journeys** — walk through scenarios to validate the model holds under edge cases",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-13",
+    title: "State Machine: Policy Lifecycle",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Defined a **policy lifecycle state machine** — states: Draft → Submitted → Underwriting → Approved → Active → Lapsed → Cancelled",
+        color: "teal",
+      },
+      {
+        text: "Each transition had **guard conditions** — e.g., Submitted → Underwriting requires all mandatory fields validated",
+        color: "blue",
+      },
+      {
+        text: "Implemented as an **event-driven model** — state transitions emitted events to Kafka, downstream systems reacted accordingly",
+        color: "purple",
+      },
+      {
+        text: "Visualized in **Confluence with Mermaid diagrams** — both business and engineering could trace and validate the flow",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-14",
+    title: "Integration Patterns",
+    category: "Technical",
+    bullets: [
+      {
+        text: "**Event-driven / async messaging** — Kafka topics with Avro schemas, idempotent consumers, DLQ for failures",
+        color: "teal",
+      },
+      {
+        text: "**Request/reply APIs** — REST with OpenAPI contracts, gRPC for internal service-to-service where latency matters",
+        color: "blue",
+      },
+      {
+        text: "**Strangler fig pattern** for legacy migration — incrementally route traffic from monolith to new services",
+        color: "purple",
+      },
+      {
+        text: "**Anti-corruption layer** — translate between legacy and modern domain models at integration boundaries",
+        color: "coral",
+      },
+    ],
+  },
+  {
+    id: "default-15",
+    title: "Data Integrity Across Systems",
+    category: "Technical",
+    bullets: [
+      {
+        text: "**Idempotency keys** on every message and API call — safe retries without duplicate side effects",
+        color: "teal",
+      },
+      {
+        text: "**Schema validation** at boundaries — Avro schema registry enforces backward/forward compatibility",
+        color: "blue",
+      },
+      {
+        text: "**Reconciliation jobs** — periodic comparison of source and target data stores to catch drift early",
+        color: "purple",
+      },
+      {
+        text: "**Compensating transactions** in sagas — if step N fails, automatically roll back steps 1..N-1",
+        color: "coral",
+      },
+    ],
+  },
+  {
+    id: "default-16",
+    title: "Writing Acceptance Criteria",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Use **Given/When/Then** (Gherkin) format — forces clarity on preconditions, actions, and expected outcomes",
+        color: "teal",
+      },
+      {
+        text: "Each criterion must be **independently testable** — if QA can't write a test from it, it needs more detail",
+        color: "blue",
+      },
+      {
+        text: "Always include **edge cases and error paths** — not just the happy path",
+        color: "purple",
+      },
+      {
+        text: "Review with **dev, QA, and business** together in refinement — alignment before sprint commitment",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-17",
+    title: "Handling Ambiguous or Undocumented Requirements",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Document **what you know vs. what's unknown** — make gaps visible to stakeholders explicitly",
+        color: "teal",
+      },
+      {
+        text: "Propose **two or three options** with tradeoffs — let the business choose rather than guessing",
+        color: "blue",
+      },
+      {
+        text: "Build a **thin vertical slice** first — end-to-end proof of concept to flush out unknowns early",
+        color: "purple",
+      },
+      {
+        text: "Set up **regular sync cadence** with product — don't wait for perfect requirements, iterate weekly",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-18",
+    title: "Story Grooming & Pointing",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Run **backlog refinement** weekly — PO presents context, team asks clarifying questions, stories get refined",
+        color: "teal",
+      },
+      {
+        text: "Use **story points** (Fibonacci) for relative sizing — based on complexity, uncertainty, and effort combined",
+        color: "blue",
+      },
+      {
+        text: "Break stories larger than **8 points** into smaller vertical slices — each deployable independently",
+        color: "purple",
+      },
+      {
+        text: "Time-box pointing to **2 minutes per story** — no consensus means the story needs more refinement, not more debate",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-19",
+    title: "Business Wants vs. Architecture Constraints",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Never say **\"no\"** — say **\"here's what it costs\"** with concrete tradeoffs: time, tech debt, and risk",
+        color: "teal",
+      },
+      {
+        text: "Propose **alternatives** that achieve the business outcome within current architectural constraints",
+        color: "blue",
+      },
+      {
+        text: "If the gap is fundamental, suggest a **phased approach** — tactical solution now, strategic refactor later",
+        color: "purple",
+      },
+      {
+        text: "Document the **decision and accepted tradeoffs** — make it a conscious choice, not accidental debt",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-20",
+    title: "Apigee & API Gateway Experience",
+    category: "Technical",
+    bullets: [
+      {
+        text: "Used **Apigee Edge** as the gateway layer — rate limiting, OAuth token validation, request/response transformation",
+        color: "teal",
+      },
+      {
+        text: "Configured **API products and developer portals** — self-service onboarding for internal and partner consumers",
+        color: "blue",
+      },
+      {
+        text: "Set up **analytics and monitoring** — traffic dashboards, error rate alerts, latency tracking per API proxy",
+        color: "purple",
+      },
+      {
+        text: "Used **shared flows** for cross-cutting concerns — logging, CORS, security policies applied consistently across APIs",
+        color: "green",
+      },
+    ],
+  },
+  {
+    id: "default-21",
+    title: "Documentation: Confluence, Visio & More",
+    category: "Technical",
+    bullets: [
+      {
+        text: "**Confluence** as single source of truth — ADRs, runbooks, data mappings, and onboarding guides",
+        color: "teal",
+      },
+      {
+        text: "**Mermaid/PlantUML** for diagrams-as-code — sequence, state, and C4 architecture diagrams versioned in Git",
+        color: "blue",
+      },
+      {
+        text: "**Visio/Lucidchart** for stakeholder-facing flows — when business teams need polished, presentable visuals",
+        color: "purple",
+      },
+      {
+        text: "**OpenAPI specs** as living API documentation — auto-generated and always in sync with the codebase",
         color: "green",
       },
     ],
