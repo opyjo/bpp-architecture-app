@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,6 +13,9 @@ import {
   ChevronDown,
   LayoutGrid,
   Presentation,
+  Copy,
+  FileText,
+  FileStack,
 } from "lucide-react";
 import { useTeleprompterCards } from "@/lib/hooks/useTeleprompterCards";
 import {
@@ -23,6 +26,7 @@ import {
   type HighlightColor,
   CATEGORY_COLORS,
   getAllBullets,
+  TEMPLATE_CARDS,
 } from "@/data/teleprompter-defaults";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
@@ -138,9 +142,11 @@ function CategoryBadge({ category, size = "lg" }: { category: CardCategory; size
 function CardView({
   card,
   onEdit,
+  onClone,
 }: {
   card: TeleprompterCard;
   onEdit: () => void;
+  onClone: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -152,13 +158,22 @@ function CardView({
             {card.title}
           </h2>
         </div>
-        <button
-          onClick={onEdit}
-          className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors shrink-0"
-          title="Edit card"
-        >
-          <Pencil size={16} />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={onClone}
+            className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+            title="Clone card"
+          >
+            <Copy size={16} />
+          </button>
+          <button
+            onClick={onEdit}
+            className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+            title="Edit card"
+          >
+            <Pencil size={16} />
+          </button>
+        </div>
       </div>
 
       {card.sections && card.sections.length > 0 ? (
@@ -743,12 +758,16 @@ export default function TeleprompterTab() {
     goPrev,
     goTo,
     addCard,
+    cloneCard,
     updateCard,
     deleteCard,
   } = useTeleprompterCards();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
 
   // Keyboard navigation
   useEffect(() => {
@@ -768,12 +787,37 @@ export default function TeleprompterTab() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isEditing, goNext, goPrev]);
 
+  // Close add menu on outside click
+  useEffect(() => {
+    if (!showAddMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setShowAddMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showAddMenu]);
+
   const handleAddCard = () => {
     addCard({
       title: "New Card",
       category: "Opening",
       bullets: [{ text: "**Key point** — add your content here", color: "blue" }],
     });
+    setIsEditing(true);
+    setShowAddMenu(false);
+  };
+
+  const handleAddFromTemplate = (template: Omit<TeleprompterCard, "id">) => {
+    addCard(template);
+    setIsEditing(true);
+    setShowTemplatePicker(false);
+    setShowAddMenu(false);
+  };
+
+  const handleCloneCard = () => {
+    cloneCard(currentCard.id);
     setIsEditing(true);
   };
 
@@ -856,13 +900,33 @@ export default function TeleprompterTab() {
               <Pencil size={12} /> Edit
             </button>
           )}
-          <button
-            onClick={handleAddCard}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
-            title="Add new card"
-          >
-            <Plus size={12} /> Add
-          </button>
+          <div className="relative" ref={addMenuRef}>
+            <button
+              onClick={() => setShowAddMenu(!showAddMenu)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+              title="Add new card"
+            >
+              <Plus size={12} /> Add <ChevronDown size={10} />
+            </button>
+            {showAddMenu && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-arch-bg2 border border-arch-border rounded-xl shadow-lg shadow-black/15 py-1 z-50">
+                <button
+                  onClick={handleAddCard}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-arch-text hover:bg-arch-bg3 transition-colors"
+                >
+                  <FileText size={14} className="text-arch-text3" />
+                  Blank Card
+                </button>
+                <button
+                  onClick={() => { setShowTemplatePicker(true); setShowAddMenu(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-arch-text hover:bg-arch-bg3 transition-colors"
+                >
+                  <FileStack size={14} className="text-arch-text3" />
+                  From Template...
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -895,6 +959,7 @@ export default function TeleprompterTab() {
                 <CardView
                   card={currentCard}
                   onEdit={() => setIsEditing(true)}
+                  onClone={handleCloneCard}
                 />
               )}
             </div>
@@ -922,6 +987,55 @@ export default function TeleprompterTab() {
         onConfirm={handleDeleteCard}
         onCancel={() => setConfirmDelete(false)}
       />
+
+      {/* Template picker modal */}
+      {showTemplatePicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-2xl mx-4 bg-arch-bg2 border border-arch-border rounded-2xl shadow-xl shadow-black/20 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-arch-border">
+              <div>
+                <h2 className="text-[16px] font-semibold text-arch-text">Choose a Template</h2>
+                <p className="text-[12px] text-arch-text3 mt-0.5">Pick a starting point and customize it</p>
+              </div>
+              <button
+                onClick={() => setShowTemplatePicker(false)}
+                className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-4 max-h-[60vh] overflow-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {TEMPLATE_CARDS.map((template, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleAddFromTemplate(template)}
+                    className="text-left p-4 rounded-xl border border-arch-border bg-arch-bg1 hover:border-arch-text3/30 hover:shadow-md hover:scale-[1.02] transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <CategoryBadge category={template.category} size="sm" />
+                    </div>
+                    <h3 className="text-[13px] font-semibold text-arch-text leading-snug mb-2">
+                      {template.title}
+                    </h3>
+                    <ul className="flex flex-col gap-1">
+                      {getAllBullets(template as TeleprompterCard).slice(0, 3).map((bullet, j) => {
+                        const preview = bullet.text.replace(/\*\*/g, "").slice(0, 55);
+                        return (
+                          <li key={j} className="flex items-start gap-1.5 text-[11px] text-arch-text3 leading-snug">
+                            <span className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${COLOR_BG_CLASSES[bullet.color]} ring-1 ${COLOR_RING_CLASSES[bullet.color]}`} />
+                            <span className="line-clamp-1">{preview}{bullet.text.replace(/\*\*/g, "").length > 55 ? "..." : ""}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

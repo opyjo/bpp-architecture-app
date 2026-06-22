@@ -137,6 +137,38 @@ export function useTeleprompterCards() {
     [cards.length, saveTeleprompterCard]
   );
 
+  const cloneCard = useCallback(
+    (id: string) => {
+      const source = cards.find((c) => c.id === id);
+      if (!source) return;
+
+      const cloned: TeleprompterCard = {
+        ...structuredClone(source),
+        id: crypto.randomUUID(),
+        title: `${source.title} (Copy)`,
+      };
+
+      // Regenerate section IDs so they're unique
+      if (cloned.sections) {
+        cloned.sections = cloned.sections.map((s) => ({
+          ...s,
+          id: crypto.randomUUID(),
+        }));
+      }
+
+      const sortOrder = cards.length;
+      setCards((prev) => [...prev, cloned]);
+      setCurrentIndex(cards.length);
+
+      // Fire-and-forget DB insert
+      const { id: _id, ...payload } = toDbRow(cloned, sortOrder);
+      saveTeleprompterCard(payload)
+        .then(() => toast.success("Card cloned"))
+        .catch(() => toast.error("Failed to clone card"));
+    },
+    [cards, saveTeleprompterCard]
+  );
+
   const updateCard = useCallback(
     (id: string, updates: Partial<Omit<TeleprompterCard, "id">>) => {
       setCards((prev) =>
@@ -207,6 +239,7 @@ export function useTeleprompterCards() {
     goPrev,
     goTo,
     addCard,
+    cloneCard,
     updateCard,
     deleteCard,
     resetToDefaults,
