@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
@@ -18,6 +18,23 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Subscription Manager — Architecture",
   description: "Bell Canada · go-repo-new · Next.js 16 BFF → AppSync → Go microservices",
+  applicationName: "SM Teleprompter",
+  appleWebApp: {
+    capable: true,
+    title: "Teleprompter",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f9fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1117" },
+  ],
 };
 
 export default function RootLayout({

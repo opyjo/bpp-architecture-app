@@ -18,12 +18,12 @@ export default function Header() {
     <header className="bg-arch-bg2 border-b border-arch-border px-6 py-3.5 flex items-center justify-between gap-2.5 flex-wrap">
       <div>
         <div className="text-sm font-semibold tracking-tight">Subscription Manager — Architecture</div>
-        <div className="text-[11px] text-arch-text3 mt-0.5 font-mono">
+        <div className="hidden sm:block text-[11px] text-arch-text3 mt-0.5 font-mono">
           Bell Canada · go-repo-new · Next.js 14 BFF → AppSync → Go microservices
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex gap-1 flex-wrap">
+        <div className="hidden md:flex gap-1 flex-wrap">
           {badges.map((b) => (
             <span
               key={b.label}

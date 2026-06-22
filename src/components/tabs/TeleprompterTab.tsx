@@ -908,15 +908,15 @@ function PresentationOverlay({
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-arch-bg1">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-arch-border/50">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-arch-border/50">
+        <div className="flex items-center gap-3 sm:gap-4">
           <CategoryBadge category={card.category} />
           <span className="text-[14px] text-arch-text3 tabular-nums">
             {currentIndex + 1} / {total}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[12px] text-arch-text3 mr-2">
+          <span className="hidden sm:inline text-[12px] text-arch-text3 mr-2">
             ESC to exit
           </span>
           <button
@@ -930,9 +930,9 @@ function PresentationOverlay({
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center overflow-auto px-8 py-10">
+      <div className="flex-1 flex items-start sm:items-center justify-center overflow-auto px-4 sm:px-8 py-6 sm:py-10">
         <div className="w-full max-w-5xl">
-          <h1 className="font-bold text-arch-text text-[32px] md:text-[40px] leading-tight mb-10">
+          <h1 className="font-bold text-arch-text text-[28px] sm:text-[32px] md:text-[40px] leading-tight mb-6 sm:mb-10">
             {card.title}
           </h1>
 
@@ -970,14 +970,14 @@ function PresentationOverlay({
       </div>
 
       {/* Bottom navigation */}
-      <div className="flex items-center justify-between px-8 py-4 border-t border-arch-border/50">
+      <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-arch-border/50">
         <button
           onClick={onPrev}
-          className="flex items-center gap-2 px-4 py-2 text-[14px] text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 text-[14px] text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 active:bg-arch-bg3 rounded-lg transition-colors"
         >
           <ChevronLeft size={20} /> Previous
         </button>
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-2">
           {Array.from({ length: total }, (_, i) => (
             <span
               key={i}
@@ -1148,15 +1148,15 @@ export default function TeleprompterTab() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-arch-border">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-arch-purple/15 flex items-center justify-center">
+      <div className="flex items-center justify-between gap-2 px-3 sm:px-5 py-3 border-b border-arch-border">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-arch-purple/15 flex items-center justify-center shrink-0">
             <Monitor size={14} className="text-arch-purple" />
           </div>
-          <h1 className="text-[14px] font-semibold text-arch-text">
+          <h1 className="text-[14px] font-semibold text-arch-text shrink-0">
             Teleprompter
           </h1>
-          <span className="text-[11px] text-arch-text3">
+          <span className="hidden md:inline text-[11px] text-arch-text3 truncate">
             Quick-glance interview cards
           </span>
         </div>
@@ -1217,7 +1217,7 @@ export default function TeleprompterTab() {
 
       {showOverview ? (
         /* Overview grid */
-        <div className="flex-1 overflow-auto p-5">
+        <div className="flex-1 overflow-auto p-3 sm:p-5">
           {/* Category filter bar */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <button
@@ -1280,8 +1280,8 @@ export default function TeleprompterTab() {
       ) : (
         <>
           {/* Card area */}
-          <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
-            <div className="w-full max-w-4xl bg-arch-bg2 border border-arch-border rounded-2xl shadow-lg shadow-black/10 p-8 md:p-10">
+          <div className="flex-1 flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-auto">
+            <div className="w-full max-w-4xl bg-arch-bg2 border border-arch-border rounded-2xl shadow-lg shadow-black/10 p-5 sm:p-8 md:p-10">
               {isEditing ? (
                 <CardEditor
                   card={currentCard}
@@ -1303,7 +1303,7 @@ export default function TeleprompterTab() {
           </div>
 
           {/* Footer navigation */}
-          <div className="px-5 py-3 border-t border-arch-border">
+          <div className="px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-arch-border">
             <NavigationControls
               currentIndex={currentIndex}
               total={cards.length}
