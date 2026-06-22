@@ -1,22 +1,40 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Plus,
   Pencil,
   Monitor,
   Trash2,
   Check,
   X,
-  ChevronDown,
   LayoutGrid,
   Presentation,
   Copy,
   FileText,
   FileStack,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useTeleprompterCards } from "@/lib/hooks/useTeleprompterCards";
 import {
   type TeleprompterCard,
@@ -141,12 +159,18 @@ function CategoryBadge({ category, size = "lg" }: { category: CardCategory; size
 
 function CardView({
   card,
+  cardIndex,
+  totalCards,
   onEdit,
   onClone,
+  onPresent,
 }: {
   card: TeleprompterCard;
+  cardIndex: number;
+  totalCards: number;
   onEdit: () => void;
   onClone: () => void;
+  onPresent: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -682,64 +706,296 @@ function NavigationControls({
   );
 }
 
+function SortableCardItem({
+  card,
+  index,
+  isCurrent,
+  onSelect,
+}: {
+  card: TeleprompterCard;
+  index: number;
+  isCurrent: boolean;
+  onSelect: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`text-left p-4 rounded-xl border transition-all hover:shadow-md ${
+        isCurrent
+          ? "bg-arch-bg2 border-arch-blue/40 shadow-md ring-1 ring-arch-blue/20"
+          : "bg-arch-bg2 border-arch-border hover:border-arch-text3/30"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            className="cursor-grab active:cursor-grabbing text-arch-text3 hover:text-arch-text touch-none"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical size={12} />
+          </button>
+          <span className="text-[11px] font-medium text-arch-text3 tabular-nums">
+            {index + 1}
+          </span>
+        </div>
+        <CategoryBadge category={card.category} size="sm" />
+      </div>
+      <button onClick={onSelect} className="text-left w-full">
+        <h3 className="text-[13px] font-semibold text-arch-text leading-snug mb-2">
+          {card.title}
+        </h3>
+        <ul className="flex flex-col gap-1">
+          {getAllBullets(card).slice(0, 3).map((bullet, j) => {
+            const preview = bullet.text
+              .replace(/\*\*/g, "")
+              .slice(0, 50);
+            return (
+              <li
+                key={j}
+                className="flex items-start gap-1.5 text-[11px] text-arch-text3 leading-snug"
+              >
+                <span
+                  className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${COLOR_BG_CLASSES[bullet.color]} ring-1 ${COLOR_RING_CLASSES[bullet.color]}`}
+                />
+                <span className="line-clamp-1">
+                  {preview}
+                  {bullet.text.replace(/\*\*/g, "").length > 50 ? "..." : ""}
+                </span>
+              </li>
+            );
+          })}
+          {getAllBullets(card).length > 3 && (
+            <li className="text-[10px] text-arch-text3 pl-2.5">
+              +{getAllBullets(card).length - 3} more
+            </li>
+          )}
+        </ul>
+      </button>
+    </div>
+  );
+}
+
 function CardOverview({
   cards,
   currentIndex,
   onSelect,
+  onReorder,
 }: {
   cards: TeleprompterCard[];
   currentIndex: number;
   onSelect: (index: number) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
 }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = cards.findIndex((c) => c.id === active.id);
+    const newIndex = cards.findIndex((c) => c.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      onReorder(oldIndex, newIndex);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-      {cards.map((card, i) => (
-        <button
-          key={card.id}
-          onClick={() => onSelect(i)}
-          className={`text-left p-4 rounded-xl border transition-all hover:shadow-md hover:scale-[1.02] ${
-            i === currentIndex
-              ? "bg-arch-bg2 border-arch-blue/40 shadow-md ring-1 ring-arch-blue/20"
-              : "bg-arch-bg2 border-arch-border hover:border-arch-text3/30"
-          }`}
-        >
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <span className="text-[11px] font-medium text-arch-text3 tabular-nums">
-              {i + 1}
-            </span>
-            <CategoryBadge category={card.category} size="sm" />
-          </div>
-          <h3 className="text-[13px] font-semibold text-arch-text leading-snug mb-2">
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={cards.map((c) => c.id)}
+        strategy={rectSortingStrategy}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {cards.map((card, i) => (
+            <SortableCardItem
+              key={card.id}
+              card={card}
+              index={i}
+              isCurrent={i === currentIndex}
+              onSelect={() => onSelect(i)}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+// ── Presentation overlay ──────────────────────────────────────────────────
+
+function PresentationBullet({ phrase }: { phrase: HighlightedPhrase }) {
+  const parts = phrase.text.split(/(\*\*.*?\*\*)/g);
+  return (
+    <li className="flex items-start gap-4 text-[22px] md:text-[26px] leading-relaxed text-arch-text2">
+      <span
+        className={`mt-3 w-3 h-3 rounded-full shrink-0 ${COLOR_BG_CLASSES[phrase.color]} ring-2 ${COLOR_RING_CLASSES[phrase.color]}`}
+      />
+      <span>
+        {parts.map((part, i) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            const keyword = part.slice(2, -2);
+            return (
+              <span
+                key={i}
+                className={`font-bold ${COLOR_TEXT_CLASSES[phrase.color]} ${COLOR_BG_CLASSES[phrase.color]} px-1.5 py-0.5 rounded animate-keyword-glow`}
+              >
+                {keyword}
+              </span>
+            );
+          }
+          return <span key={i}>{part}</span>;
+        })}
+      </span>
+    </li>
+  );
+}
+
+function PresentationOverlay({
+  card,
+  currentIndex,
+  total,
+  onClose,
+  onPrev,
+  onNext,
+}: {
+  card: TeleprompterCard;
+  currentIndex: number;
+  total: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        onPrev();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        onNext();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, onPrev, onNext]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col bg-arch-bg1">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-8 py-4 border-b border-arch-border/50">
+        <div className="flex items-center gap-4">
+          <CategoryBadge category={card.category} />
+          <span className="text-[14px] text-arch-text3 tabular-nums">
+            {currentIndex + 1} / {total}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] text-arch-text3 mr-2">
+            ESC to exit
+          </span>
+          <button
+            onClick={onClose}
+            className="p-2.5 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+            title="Exit presentation (Esc)"
+          >
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 flex items-center justify-center overflow-auto px-8 py-10">
+        <div className="w-full max-w-5xl">
+          <h1 className="font-bold text-arch-text text-[32px] md:text-[40px] leading-tight mb-10">
             {card.title}
-          </h3>
-          <ul className="flex flex-col gap-1">
-            {getAllBullets(card).slice(0, 3).map((bullet, j) => {
-              const preview = bullet.text
-                .replace(/\*\*/g, "")
-                .slice(0, 50);
-              return (
-                <li
-                  key={j}
-                  className="flex items-start gap-1.5 text-[11px] text-arch-text3 leading-snug"
-                >
-                  <span
-                    className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${COLOR_BG_CLASSES[bullet.color]} ring-1 ${COLOR_RING_CLASSES[bullet.color]}`}
-                  />
-                  <span className="line-clamp-1">
-                    {preview}
-                    {bullet.text.replace(/\*\*/g, "").length > 50 ? "..." : ""}
-                  </span>
-                </li>
-              );
-            })}
-            {getAllBullets(card).length > 3 && (
-              <li className="text-[10px] text-arch-text3 pl-2.5">
-                +{getAllBullets(card).length - 3} more
-              </li>
-            )}
-          </ul>
+          </h1>
+
+          {card.sections && card.sections.length > 0 ? (
+            <div className="flex flex-col gap-10">
+              {card.sections.map((section) => (
+                <div key={section.id}>
+                  <h2 className="text-[18px] md:text-[20px] font-semibold text-arch-text3 uppercase tracking-wider mb-5">
+                    {section.name}
+                  </h2>
+                  <ul className="flex flex-col gap-5 pl-1">
+                    {section.bullets.map((bullet, i) => (
+                      <PresentationBullet key={i} phrase={bullet} />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-6 pl-1">
+              {card.bullets.map((bullet, i) => (
+                <PresentationBullet key={i} phrase={bullet} />
+              ))}
+            </ul>
+          )}
+
+          {card.fullText && (
+            <div className="border-t border-arch-border mt-10 pt-8">
+              <p className="text-[18px] md:text-[20px] leading-relaxed text-arch-text3 whitespace-pre-wrap">
+                {card.fullText}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom navigation */}
+      <div className="flex items-center justify-between px-8 py-4 border-t border-arch-border/50">
+        <button
+          onClick={onPrev}
+          className="flex items-center gap-2 px-4 py-2 text-[14px] text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+        >
+          <ChevronLeft size={20} /> Previous
         </button>
-      ))}
+        <div className="flex items-center gap-2">
+          {Array.from({ length: total }, (_, i) => (
+            <span
+              key={i}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                i === currentIndex
+                  ? "bg-arch-blue scale-125"
+                  : "bg-arch-bg3"
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          onClick={onNext}
+          className="flex items-center gap-2 px-4 py-2 text-[14px] text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+        >
+          Next <ChevronRight size={20} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -761,13 +1017,42 @@ export default function TeleprompterTab() {
     cloneCard,
     updateCard,
     deleteCard,
+    moveCard,
   } = useTeleprompterCards();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [presenting, setPresenting] = useState(false);
   const addMenuRef = useRef<HTMLDivElement>(null);
+
+  // ── Category filter state ───────────────────────────────────────────────
+  const [activeCategory, setActiveCategory] = useState<CardCategory | null>(null);
+
+  const filteredCards = useMemo(() => {
+    if (!activeCategory) return cards;
+    return cards.filter((card) => card.category === activeCategory);
+  }, [cards, activeCategory]);
+
+  // Map filtered index → real index in the full cards array
+  const filteredIndexMap = useMemo(() => {
+    if (!activeCategory) return null;
+    const map: number[] = [];
+    cards.forEach((card, realIndex) => {
+      if (card.category === activeCategory) {
+        map.push(realIndex);
+      }
+    });
+    return map;
+  }, [cards, activeCategory]);
+
+  // Current card's position in the filtered list (for highlight)
+  const filteredCurrentIndex = useMemo(() => {
+    if (!activeCategory) return currentIndex;
+    if (!currentCard) return -1;
+    return filteredCards.findIndex((c) => c.id === currentCard.id);
+  }, [activeCategory, currentIndex, filteredCards, currentCard]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -933,15 +1218,64 @@ export default function TeleprompterTab() {
       {showOverview ? (
         /* Overview grid */
         <div className="flex-1 overflow-auto p-5">
-          <CardOverview
-            cards={cards}
-            currentIndex={currentIndex}
-            onSelect={(i) => {
-              goTo(i);
-              setShowOverview(false);
-              setIsEditing(false);
-            }}
-          />
+          {/* Category filter bar */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
+                !activeCategory
+                  ? "bg-arch-text/10 text-arch-text border-arch-text/25"
+                  : "bg-transparent border-arch-border text-arch-text3 hover:text-arch-text hover:border-arch-text/25"
+              }`}
+            >
+              All
+            </button>
+            {ALL_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                className={`px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
+                  activeCategory === cat
+                    ? "bg-arch-text/10 text-arch-text border-arch-text/25"
+                    : "bg-transparent border-arch-border text-arch-text3 hover:text-arch-text hover:border-arch-text/25"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+            <span className="text-[11px] text-arch-text3 ml-auto">
+              {filteredCards.length} of {cards.length}
+            </span>
+          </div>
+          {filteredCards.length > 0 ? (
+            <CardOverview
+              cards={filteredCards}
+              currentIndex={filteredCurrentIndex}
+              onSelect={(filteredIdx) => {
+                const realIdx = filteredIndexMap ? filteredIndexMap[filteredIdx] : filteredIdx;
+                goTo(realIdx);
+                setShowOverview(false);
+                setIsEditing(false);
+              }}
+              onReorder={(fromFiltered, toFiltered) => {
+                const realFrom = filteredIndexMap ? filteredIndexMap[fromFiltered] : fromFiltered;
+                const realTo = filteredIndexMap ? filteredIndexMap[toFiltered] : toFiltered;
+                moveCard(realFrom, realTo);
+              }}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-[13px] text-arch-text3">
+                No {activeCategory} cards yet
+              </p>
+              <button
+                onClick={() => setActiveCategory(null)}
+                className="mt-2 text-[12px] text-arch-blue hover:underline"
+              >
+                Show all cards
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -958,8 +1292,11 @@ export default function TeleprompterTab() {
               ) : (
                 <CardView
                   card={currentCard}
+                  cardIndex={currentIndex}
+                  totalCards={cards.length}
                   onEdit={() => setIsEditing(true)}
                   onClone={handleCloneCard}
+                  onPresent={() => setPresenting(true)}
                 />
               )}
             </div>
@@ -987,6 +1324,20 @@ export default function TeleprompterTab() {
         onConfirm={handleDeleteCard}
         onCancel={() => setConfirmDelete(false)}
       />
+
+      {/* Presentation overlay — portaled to body to escape stacking contexts */}
+      {presenting &&
+        createPortal(
+          <PresentationOverlay
+            card={currentCard}
+            currentIndex={currentIndex}
+            total={cards.length}
+            onClose={() => setPresenting(false)}
+            onPrev={goPrev}
+            onNext={goNext}
+          />,
+          document.body
+        )}
 
       {/* Template picker modal */}
       {showTemplatePicker && (

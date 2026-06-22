@@ -52,6 +52,7 @@ export function useTeleprompterCards() {
     updateTeleprompterCard,
     deleteTeleprompterCard,
     deleteAllTeleprompterCards,
+    batchUpdateSortOrders,
   } = useSavedTeleprompterCards();
 
   // Load from Supabase on mount, fall back to localStorage → defaults
@@ -206,6 +207,26 @@ export function useTeleprompterCards() {
     [cards.length, deleteTeleprompterCard]
   );
 
+  const moveCard = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex) return;
+      setCards((prev) => {
+        const next = [...prev];
+        const [moved] = next.splice(fromIndex, 1);
+        next.splice(toIndex, 0, moved);
+
+        // Fire-and-forget DB update
+        const updates = next.map((card, i) => ({ id: card.id, sort_order: i }));
+        batchUpdateSortOrders(updates).catch(() => toast.error("Failed to reorder cards"));
+
+        return next;
+      });
+      // Update currentIndex to follow the active card
+      setCurrentIndex(toIndex);
+    },
+    [batchUpdateSortOrders]
+  );
+
   const resetToDefaults = useCallback(() => {
     setCards(DEFAULT_TELEPROMPTER_CARDS);
     setCurrentIndex(0);
@@ -242,6 +263,7 @@ export function useTeleprompterCards() {
     cloneCard,
     updateCard,
     deleteCard,
+    moveCard,
     resetToDefaults,
   };
 }

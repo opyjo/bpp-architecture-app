@@ -40,11 +40,23 @@ export function useSavedTeleprompterCards() {
     if (error) throw error;
   }, []);
 
+  const batchUpdateSortOrders = useCallback(
+    async (updates: { id: string; sort_order: number }[]) => {
+      await Promise.all(
+        updates.map(({ id, sort_order }) =>
+          supabase.from(TABLE).update({ sort_order }).eq("id", id)
+        )
+      );
+    },
+    []
+  );
+
   return {
     fetchTeleprompterCards,
     saveTeleprompterCard: saveItem,
     updateTeleprompterCard: updateItem,
     deleteTeleprompterCard: deleteItem,
     deleteAllTeleprompterCards,
+    batchUpdateSortOrders,
   };
 }
