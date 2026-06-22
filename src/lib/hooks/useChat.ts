@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { ChatMessage, ToolCallInfo, StreamEvent } from "@/lib/types/chat";
+import { getModel } from "@/lib/ai/models";
+import { logAiUsage } from "@/lib/ai/usage-log";
 
 const DEFAULT_STORAGE_KEY = "ai-chat-history";
 const MAX_STORED = 50;
@@ -34,6 +36,8 @@ export interface UseChatOptions {
   storageKey?: string;
   onMessagesChange?: (msgs: ChatMessage[]) => void;
   systemContext?: string;
+  /** Label recorded in the AI usage dashboard for calls from this chat. */
+  feature?: string;
 }
 
 export function useChat(modelId: string, options?: UseChatOptions) {
@@ -43,6 +47,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
     storageKey = DEFAULT_STORAGE_KEY,
     onMessagesChange,
     systemContext,
+    feature = "AI Chat",
   } = options ?? {};
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -215,6 +220,24 @@ export function useChat(modelId: string, options?: UseChatOptions) {
             }
           }
         }
+
+        // Record approximate usage for the AI usage dashboard (best-effort).
+        try {
+          const promptChars = apiMessages.reduce(
+            (n, m) => n + (m.content?.length ?? 0),
+            0
+          );
+          const model = getModel(modelId);
+          logAiUsage({
+            feature,
+            modelId: model.modelId,
+            provider: model.provider,
+            promptChars,
+            completionChars: accumulatedText.length,
+          });
+        } catch {
+          // telemetry must never break chat
+        }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError(
@@ -226,7 +249,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
         abortRef.current = null;
       }
     },
-    [messages, isStreaming, modelId, systemContext]
+    [messages, isStreaming, modelId, systemContext, feature]
   );
 
   const stopStreaming = useCallback(() => {

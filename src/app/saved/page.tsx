@@ -9,7 +9,7 @@ import { useSavedSequenceDiagrams } from "@/lib/hooks/useSavedSequenceDiagrams";
 import { useSavedAnalyses } from "@/lib/hooks/useSavedAnalyses";
 import { useSavedChats } from "@/lib/hooks/useSavedChats";
 import { useSavedRunbooks } from "@/lib/hooks/useSavedRunbooks";
-import { timeAgo } from "@/lib/utils";
+import { cn, timeAgo, downloadAsMarkdown } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Code2,
@@ -25,6 +25,11 @@ import {
   LayoutGrid,
   GraduationCap,
   Bot,
+  Download,
+  Tag as TagIcon,
+  Plus,
+  X,
+  Check,
 } from "lucide-react";
 
 const BSA_PREFIX = "[BSA Coach]";
@@ -133,6 +138,34 @@ interface SavedItem {
   type: ContentType;
 }
 
+const TAGS_STORAGE_KEY = "saved-tags";
+
+type TagMap = Record<string, string[]>;
+
+const tagKey = (type: ContentType, id: string) => `${type}:${id}`;
+
+function loadTagMap(): TagMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(TAGS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed as TagMap;
+  } catch {
+    return {};
+  }
+}
+
+function persistTagMap(map: TagMap): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // ignore quota / serialization errors
+  }
+}
+
 export default function SavedHubPage() {
   const [activeType, setActiveType] = useState<ContentType>("all");
   const [allItems, setAllItems] = useState<SavedItem[]>([]);
@@ -149,6 +182,12 @@ export default function SavedHubPage() {
     runbooks: 0,
   });
   const [search, setSearch] = useState("");
+  // Lazy initializer is SSR-safe: loadTagMap guards on `typeof window`,
+  // returning {} on the server and reading localStorage on the client.
+  const [tagMap, setTagMap] = useState<TagMap>(() => loadTagMap());
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [tagEditingFor, setTagEditingFor] = useState<string | null>(null);
+  const [tagDraft, setTagDraft] = useState("");
 
   const { fetchReviews, deleteReview } = useSavedReviews();
   const { fetchTestPlans, deleteTestPlan } = useSavedTestPlans();
@@ -319,14 +358,115 @@ export default function SavedHubPage() {
   const getItemTypeConfig = (type: ContentType) =>
     DATA_TYPES.find((t) => t.id === type);
 
+  // --- Tags -----------------------------------------------------------------
+  const getTags = (item: SavedItem): string[] =>
+    tagMap[tagKey(item.type, item.id)] ?? [];
+
+  const updateTags = (item: SavedItem, next: string[]) => {
+    setTagMap((prev) => {
+      const key = tagKey(item.type, item.id);
+      const updated: TagMap = { ...prev };
+      if (next.length === 0) {
+        delete updated[key];
+      } else {
+        updated[key] = next;
+      }
+      persistTagMap(updated);
+      return updated;
+    });
+  };
+
+  const addTag = (item: SavedItem, raw: string) => {
+    const tag = raw.trim();
+    if (!tag) return;
+    const current = getTags(item);
+    if (current.some((t) => t.toLowerCase() === tag.toLowerCase())) return;
+    updateTags(item, [...current, tag]);
+  };
+
+  const removeTag = (item: SavedItem, tag: string) => {
+    const next = getTags(item).filter((t) => t !== tag);
+    updateTags(item, next);
+    if (activeTag === tag && !Object.values(tagMap).some((arr) => arr.includes(tag))) {
+      setActiveTag(null);
+    }
+  };
+
+  const commitTagDraft = (item: SavedItem) => {
+    addTag(item, tagDraft);
+    setTagDraft("");
+    setTagEditingFor(null);
+  };
+
+  // All distinct tags currently in use, for the tag-filter row.
+  const allTags = Array.from(
+    new Set(Object.values(tagMap).flat())
+  ).sort((a, b) => a.localeCompare(b));
+
+  // --- Export ---------------------------------------------------------------
+  const handleExportAll = () => {
+    if (displayItems.length === 0) {
+      toast.error("Nothing to export");
+      return;
+    }
+    const payload = displayItems.map((item) => ({
+      id: item.id,
+      type: item.type,
+      typeLabel: getItemTypeConfig(item.type)?.label ?? item.type,
+      title: item.title,
+      subtitle: item.subtitle ?? "",
+      updated_at: item.updated_at,
+      tags: getTags(item),
+    }));
+    try {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `saved-items-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${payload.length} item${payload.length === 1 ? "" : "s"}`);
+    } catch {
+      toast.error("Failed to export");
+    }
+  };
+
+  const handleExportItem = (item: SavedItem) => {
+    const config = getItemTypeConfig(item.type);
+    const tags = getTags(item);
+    const lines = [
+      `# ${item.title}`,
+      "",
+      `- **Type:** ${config?.label ?? item.type}`,
+      `- **Saved:** ${new Date(item.updated_at).toLocaleString()}`,
+      `- **Tags:** ${tags.length ? tags.join(", ") : "—"}`,
+    ];
+    if (item.subtitle) lines.push(`- **Details:** ${item.subtitle}`);
+    const slug =
+      item.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "item";
+    downloadAsMarkdown(lines.join("\n") + "\n", `${slug}.md`);
+    toast.success("Exported .md");
+  };
+
   const displayItems = allItems
     .filter((item) => activeType === "all" || item.type === activeType)
     .filter(
       (item) =>
         !search ||
         item.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.subtitle?.toLowerCase().includes(search.toLowerCase())
-    );
+        item.subtitle?.toLowerCase().includes(search.toLowerCase()) ||
+        (getItemTypeConfig(item.type)?.label
+          .toLowerCase()
+          .includes(search.toLowerCase()) ??
+          false)
+    )
+    .filter((item) => !activeTag || getTags(item).includes(activeTag));
 
   const activeConfig = TYPES.find((t) => t.id === activeType)!;
 
@@ -337,11 +477,22 @@ export default function SavedHubPage() {
           <h1 className="text-[16px] font-bold text-arch-text">
             All Saved Items
           </h1>
-          {!loading && (
-            <span className="text-[11px] text-arch-text3">
-              {counts.all} total
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {!loading && (
+              <span className="text-[11px] text-arch-text3">
+                {counts.all} total
+              </span>
+            )}
+            {!loading && (
+              <button
+                onClick={handleExportAll}
+                className="flex items-center gap-1.5 text-[11px] font-medium text-arch-text2 hover:text-arch-blue bg-arch-bg2 hover:bg-arch-blue/10 border border-arch-border hover:border-arch-blue/30 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export all (JSON)
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -410,6 +561,40 @@ export default function SavedHubPage() {
                 )}
               </div>
 
+              {/* Tag filter row */}
+              {allTags.length > 0 && (
+                <div className="mb-4 flex items-center gap-1.5 flex-wrap">
+                  <TagIcon className="w-3.5 h-3.5 text-arch-text3 shrink-0" />
+                  {allTags.map((tag) => {
+                    const isActive = activeTag === tag;
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() =>
+                          setActiveTag((prev) => (prev === tag ? null : tag))
+                        }
+                        className={cn(
+                          "text-[10.5px] font-medium px-2 py-0.5 rounded-full border transition-colors cursor-pointer",
+                          isActive
+                            ? "bg-arch-purple/15 text-arch-purple border-arch-purple/40"
+                            : "bg-arch-bg2 text-arch-text2 border-arch-border hover:text-arch-text hover:border-arch-purple/30"
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                  {activeTag && (
+                    <button
+                      onClick={() => setActiveTag(null)}
+                      className="text-[10px] text-arch-text3 hover:text-arch-text px-1.5 py-0.5 rounded hover:bg-white/[0.06] transition-colors cursor-pointer"
+                    >
+                      Clear tag
+                    </button>
+                  )}
+                </div>
+              )}
+
               {displayItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-arch-text3">
                   {React.createElement(activeConfig.icon, {
@@ -427,48 +612,137 @@ export default function SavedHubPage() {
                     const link = getItemLink(item);
                     const typeConfig = getItemTypeConfig(item.type);
                     const TypeIcon = typeConfig?.icon;
+                    const itemTags = getTags(item);
+                    const isEditingTag =
+                      tagEditingFor === tagKey(item.type, item.id);
+                    // Buttons inside a card that is a <Link> must not trigger navigation.
+                    const stop = (e: React.SyntheticEvent) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    };
                     const content = (
-                      <div className="flex items-center gap-3">
-                        {/* Type icon */}
-                        {TypeIcon && (
-                          <div
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeConfig?.bgColor} ${typeConfig?.color}`}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                          {/* Type icon */}
+                          {TypeIcon && (
+                            <div
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeConfig?.bgColor} ${typeConfig?.color}`}
+                            >
+                              <TypeIcon className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-arch-text truncate">
+                              {item.title}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {typeConfig && (
+                                <span
+                                  className={`text-[10px] font-medium ${typeConfig.color}`}
+                                >
+                                  {typeConfig.label}
+                                </span>
+                              )}
+                              {item.subtitle && (
+                                <span className="text-[11px] text-arch-text3 truncate">
+                                  · {item.subtitle}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-[10.5px] text-arch-text3 whitespace-nowrap shrink-0">
+                            {timeAgo(item.updated_at)}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              stop(e);
+                              handleExportItem(item);
+                            }}
+                            title="Export as Markdown"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-arch-text3 hover:text-arch-blue hover:bg-arch-blue/10 rounded transition-all shrink-0 cursor-pointer"
                           >
-                            <TypeIcon className="w-3.5 h-3.5" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-semibold text-arch-text truncate">
-                            {item.title}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {typeConfig && (
-                              <span
-                                className={`text-[10px] font-medium ${typeConfig.color}`}
-                              >
-                                {typeConfig.label}
-                              </span>
-                            )}
-                            {item.subtitle && (
-                              <span className="text-[11px] text-arch-text3 truncate">
-                                · {item.subtitle}
-                              </span>
-                            )}
-                          </div>
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              stop(e);
+                              handleDelete(item);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-arch-text3 hover:text-arch-coral hover:bg-arch-coral/10 rounded transition-all shrink-0 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <span className="text-[10.5px] text-arch-text3 whitespace-nowrap shrink-0">
-                          {timeAgo(item.updated_at)}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDelete(item);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 text-arch-text3 hover:text-arch-coral hover:bg-arch-coral/10 rounded transition-all shrink-0"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                        {/* Tags row */}
+                        <div className="flex items-center gap-1.5 flex-wrap pl-11">
+                          {itemTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center gap-1 text-[10px] font-medium text-arch-purple bg-arch-purple/10 border border-arch-purple/20 rounded-full pl-2 pr-1 py-0.5"
+                            >
+                              {tag}
+                              <button
+                                onClick={(e) => {
+                                  stop(e);
+                                  removeTag(item, tag);
+                                }}
+                                className="text-arch-purple/70 hover:text-arch-coral rounded-full p-0.5 cursor-pointer"
+                                aria-label={`Remove tag ${tag}`}
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          ))}
+
+                          {isEditingTag ? (
+                            <span
+                              className="inline-flex items-center gap-1 bg-arch-bg3 border border-arch-purple/40 rounded-full pl-2 pr-1 py-0.5"
+                              onClick={stop}
+                            >
+                              <input
+                                autoFocus
+                                value={tagDraft}
+                                onClick={stop}
+                                onChange={(e) => setTagDraft(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    stop(e);
+                                    commitTagDraft(item);
+                                  } else if (e.key === "Escape") {
+                                    stop(e);
+                                    setTagDraft("");
+                                    setTagEditingFor(null);
+                                  }
+                                }}
+                                placeholder="tag"
+                                className="w-16 bg-transparent text-[10px] text-arch-text placeholder:text-arch-text3 focus:outline-none"
+                              />
+                              <button
+                                onClick={(e) => {
+                                  stop(e);
+                                  commitTagDraft(item);
+                                }}
+                                className="text-arch-green hover:text-arch-green rounded-full p-0.5 cursor-pointer"
+                                aria-label="Add tag"
+                              >
+                                <Check className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                stop(e);
+                                setTagDraft("");
+                                setTagEditingFor(tagKey(item.type, item.id));
+                              }}
+                              className="inline-flex items-center gap-0.5 text-[10px] font-medium text-arch-text3 hover:text-arch-purple border border-dashed border-arch-border hover:border-arch-purple/40 rounded-full px-1.5 py-0.5 transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                              tag
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
 

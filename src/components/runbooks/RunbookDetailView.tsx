@@ -6,12 +6,20 @@ import { useSavedRunbooks } from "@/lib/hooks/useSavedRunbooks";
 import type { SavedRunbook } from "@/lib/types/saved-runbook";
 import { severityColors } from "@/data/runbooks";
 import Breadcrumbs from "@/components/nav/Breadcrumbs";
-import { AlertTriangle, ArrowUpRight, Clock, Shield } from "lucide-react";
+import RunbookExecution from "@/components/runbooks/RunbookExecution";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Clock,
+  Shield,
+  Activity,
+} from "lucide-react";
 
 export default function RunbookDetailView({ runbookId }: { runbookId: string }) {
   const { getRunbook } = useSavedRunbooks();
   const [runbook, setRunbook] = useState<SavedRunbook | null>(null);
   const [loading, setLoading] = useState(true);
+  const [executing, setExecuting] = useState(false);
 
   useEffect(() => {
     getRunbook(runbookId)
@@ -41,6 +49,15 @@ export default function RunbookDetailView({ runbookId }: { runbookId: string }) 
 
   const rb = runbook.content;
 
+  if (executing) {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 bg-arch-bg">
+        <Breadcrumbs dynamicLabel={runbook.title} />
+        <RunbookExecution runbook={rb} onClose={() => setExecuting(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-arch-bg">
       <Breadcrumbs dynamicLabel={runbook.title} />
@@ -53,6 +70,13 @@ export default function RunbookDetailView({ runbookId }: { runbookId: string }) 
         <span className="text-[13px] font-semibold text-arch-text truncate">
           {runbook.title}
         </span>
+        <button
+          onClick={() => setExecuting(true)}
+          className="ml-auto flex items-center gap-1.5 shrink-0 text-[11px] font-semibold text-white px-3 py-1.5 rounded-lg bg-gradient-to-r from-arch-red to-arch-coral hover:opacity-90 active:translate-y-px transition-all shadow-sm"
+        >
+          <Activity className="w-3.5 h-3.5" />
+          Start incident
+        </button>
       </div>
 
       {/* Content */}

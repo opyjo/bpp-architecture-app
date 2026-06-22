@@ -31,6 +31,7 @@ export const tabGroups: TabGroup[] = [
       { id: "ref", label: "Reference" },
       { id: "flags", label: "Feature Flags" },
       { id: "learnings", label: "Learnings" },
+      { id: "adr", label: "Decision Records" },
     ],
   },
   {
@@ -42,6 +43,7 @@ export const tabGroups: TabGroup[] = [
       { id: "openapi", label: "OpenAPI 3.0" },
       { id: "coach", label: "Interview Coach" },
       { id: "teleprompter", label: "Teleprompter" },
+      { id: "quiz", label: "Quiz / Flashcards" },
     ],
   },
   {
@@ -49,6 +51,8 @@ export const tabGroups: TabGroup[] = [
     tintClass: "tab-group-ops",
     tabs: [
       { id: "impact", label: "Change Impact" },
+      { id: "systemmap", label: "System Map" },
+      { id: "drift", label: "Doc Drift" },
       { id: "runbooks", label: "Incident Runbooks" },
     ],
   },
@@ -57,11 +61,13 @@ export const tabGroups: TabGroup[] = [
     tintClass: "tab-group-ai",
     tabs: [
       { id: "analyze", label: "Ticket Analyzer", href: "/analyze" },
+      { id: "pipeline", label: "Change Package" },
       { id: "contract", label: "API Contract Builder" },
       { id: "review", label: "Code Review" },
       { id: "sequence", label: "Sequence Diagrams" },
       { id: "testplan", label: "Test Plan" },
       { id: "ai", label: "AI Assistant" },
+      { id: "usage", label: "AI Usage" },
     ],
   },
   {

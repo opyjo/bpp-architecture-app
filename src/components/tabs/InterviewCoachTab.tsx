@@ -3,17 +3,21 @@
 import { useRef, useEffect, useState } from "react";
 import { useChat } from "@/lib/hooks/useChat";
 import { useSavedChats } from "@/lib/hooks/useSavedChats";
+import { useSpeech } from "@/lib/hooks/useSpeech";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import MessageBubble from "@/components/ai/MessageBubble";
 import ChatInput from "@/components/ai/ChatInput";
 import ModelSelector from "@/components/ai/ModelSelector";
-import { Save, ExternalLink } from "lucide-react";
+import { Save, ExternalLink, Mic, MicOff, Volume2, VolumeX, X, Send } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { bsaCoachSystemContext } from "@/data/bsa-cheatsheet";
 
+const MOCK_INTERVIEW_PROMPT = "Mock interview — 5 BSA questions";
+
 const COACH_PROMPTS = [
-  "Mock interview — 5 BSA questions",
+  MOCK_INTERVIEW_PROMPT,
   "How do I gather integration requirements?",
   "Explain the saga pattern simply",
   "Bell project examples for behavioral Qs",
@@ -34,10 +38,94 @@ export default function InterviewCoachTab() {
   const [saveFeedback, setSaveFeedback] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // --- Voice mock interview ---
+  const {
+    supported,
+    listening,
+    startListening,
+    stopListening,
+    speaking,
+    speak,
+    cancelSpeak,
+  } = useSpeech();
+  const voiceSupported = supported.recognition || supported.synthesis;
+
+  const [speakResponses, setSpeakResponses] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [interim, setInterim] = useState("");
+
+  // Track streaming transitions so we can speak completed assistant turns.
+  const prevStreamingRef = useRef(isStreaming);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  // Speak the latest assistant message when a stream finishes (true -> false).
+  useEffect(() => {
+    const wasStreaming = prevStreamingRef.current;
+    prevStreamingRef.current = isStreaming;
+
+    // A new stream started -> stop any in-flight narration.
+    if (!wasStreaming && isStreaming) {
+      cancelSpeak();
+      return;
+    }
+
+    if (wasStreaming && !isStreaming && speakResponses && supported.synthesis) {
+      const last = messages[messages.length - 1];
+      if (last?.role === "assistant" && last.content.trim()) {
+        speak(last.content);
+      }
+    }
+  }, [isStreaming, messages, speakResponses, supported.synthesis, speak, cancelSpeak]);
+
+  // Toggling Speak-responses OFF stops narration immediately.
+  const toggleSpeakResponses = () => {
+    setSpeakResponses((on) => {
+      if (on) cancelSpeak();
+      return !on;
+    });
+  };
+
+  const toggleMic = () => {
+    if (listening) {
+      stopListening();
+      return;
+    }
+    setInterim("");
+    startListening(
+      (finalText) => {
+        setInterim("");
+        setTranscript((prev) => (prev ? `${prev} ${finalText}`.trim() : finalText));
+      },
+      (interimText) => setInterim(interimText)
+    );
+  };
+
+  const sendTranscript = () => {
+    const text = transcript.trim();
+    if (!text || isStreaming) return;
+    if (listening) stopListening();
+    sendMessage(text);
+    setTranscript("");
+    setInterim("");
+  };
+
+  const clearTranscript = () => {
+    if (listening) stopListening();
+    setTranscript("");
+    setInterim("");
+  };
+
+  const startMockInterview = () => {
+    if (isStreaming) return;
+    if (supported.synthesis) setSpeakResponses(true);
+    sendMessage(MOCK_INTERVIEW_PROMPT);
+  };
+
+  const showTranscriptBar = listening || transcript.length > 0 || interim.length > 0;
 
   const isEmpty = messages.length === 0;
 
@@ -90,6 +178,45 @@ export default function InterviewCoachTab() {
           />
         </div>
         <div className="flex items-center gap-1">
+          {voiceSupported ? (
+            <>
+              {supported.recognition && (
+                <button
+                  onClick={toggleMic}
+                  title={listening ? "Stop voice input" : "Answer by voice"}
+                  className={cn(
+                    "flex items-center gap-1 text-[11px] px-2 py-1 rounded transition-colors cursor-pointer",
+                    listening
+                      ? "text-arch-coral bg-arch-coral/10 hover:bg-arch-coral/20"
+                      : "text-arch-text3 hover:text-arch-teal hover:bg-white/5"
+                  )}
+                >
+                  {listening ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
+                  {listening ? "Listening" : "Voice"}
+                </button>
+              )}
+              {supported.synthesis && (
+                <button
+                  onClick={toggleSpeakResponses}
+                  title={speakResponses ? "Mute spoken responses" : "Speak responses aloud"}
+                  className={cn(
+                    "flex items-center gap-1 text-[11px] px-2 py-1 rounded transition-colors cursor-pointer",
+                    speakResponses
+                      ? "text-arch-purple bg-arch-purple/10 hover:bg-arch-purple/20"
+                      : "text-arch-text3 hover:text-arch-purple hover:bg-white/5"
+                  )}
+                >
+                  {speakResponses ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                  {speaking ? "Speaking" : "Speak"}
+                </button>
+              )}
+              <div className="w-px h-4 bg-arch-border mx-0.5" />
+            </>
+          ) : (
+            <span className="text-[10.5px] text-arch-text3 px-2 py-1 italic">
+              Voice unavailable in this browser
+            </span>
+          )}
           <Link
             href="/chats"
             className="text-[11px] text-arch-text3 hover:text-arch-teal transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
@@ -155,6 +282,48 @@ export default function InterviewCoachTab() {
         </div>
       )}
 
+      {/* Live voice transcript bar */}
+      {supported.recognition && showTranscriptBar && (
+        <div className="mx-4 mt-2 px-3 py-2.5 rounded-lg bg-arch-bg2 border border-arch-coral/30 flex items-center gap-2.5">
+          {listening && (
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-arch-coral opacity-60 animate-ping" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-arch-coral" />
+            </span>
+          )}
+          <div className="flex-1 min-w-0 text-[12px] leading-snug">
+            {transcript || interim ? (
+              <span className="text-arch-text">
+                {transcript}
+                {interim && (
+                  <span className="text-arch-text3 italic">
+                    {transcript ? " " : ""}
+                    {interim}
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span className="text-arch-text3 italic">Listening… speak your answer</span>
+            )}
+          </div>
+          <button
+            onClick={sendTranscript}
+            disabled={!transcript.trim() || isStreaming}
+            title="Send answer"
+            className="flex items-center gap-1 text-[11px] text-arch-green hover:bg-arch-green/10 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+          >
+            <Send className="w-3 h-3" /> Send
+          </button>
+          <button
+            onClick={clearTranscript}
+            title="Discard transcript"
+            className="text-arch-text3 hover:text-arch-red hover:bg-white/5 p-1 rounded transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Messages area */}
       <div
         ref={scrollRef}
@@ -162,6 +331,17 @@ export default function InterviewCoachTab() {
       >
         {isEmpty ? (
           <div className="w-full max-w-xl mx-auto flex flex-col gap-3">
+            {voiceSupported && (
+              <button
+                onClick={startMockInterview}
+                disabled={isStreaming}
+                title="Start a spoken mock interview"
+                className="self-center flex items-center gap-2 px-3.5 py-2 rounded-full text-[12px] font-medium text-white bg-gradient-to-r from-arch-purple to-arch-blue hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-40 shadow-sm"
+              >
+                <Mic className="w-3.5 h-3.5" />
+                Start voice mock interview
+              </button>
+            )}
             <div className="flex flex-wrap items-center justify-center gap-1.5">
               {COACH_PROMPTS.map((prompt) => (
                 <button

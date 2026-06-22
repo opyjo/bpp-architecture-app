@@ -45,7 +45,7 @@ function renderInlineMarkdown(text: string): ReactNode[] {
       result.push(
         <code
           key={key++}
-          className="bg-arch-bg3 text-arch-coral px-1.5 py-0.5 rounded text-[11.5px] font-mono"
+          className="bg-arch-bg3 text-arch-coral px-1.5 py-0.5 rounded text-[11.5px] font-mono break-words [overflow-wrap:anywhere]"
         >
           {match[1].slice(1, -1)}
         </code>
@@ -160,23 +160,29 @@ function formatMarkdown(text: string) {
         tableLines[0].includes("|") &&
         /^[\s|:-]+$/.test(tableLines[1])
       ) {
-        const parseRow = (row: string) =>
-          row
-            .split("|")
-            .map((c) => c.trim())
-            .filter((c) => c !== "");
+        // Keep interior empty cells so columns stay aligned — only drop the
+        // empty strings produced by the leading/trailing pipe.
+        const parseRow = (row: string) => {
+          const cells = row.split("|").map((c) => c.trim());
+          if (cells.length && cells[0] === "") cells.shift();
+          if (cells.length && cells[cells.length - 1] === "") cells.pop();
+          return cells;
+        };
         const headers = parseRow(tableLines[0]);
         const rows = tableLines.slice(2).map(parseRow);
 
         return (
-          <div key={`${i}-${pi}`} className="my-2 overflow-x-auto">
+          <div
+            key={`${i}-${pi}`}
+            className="my-3 overflow-x-auto rounded-lg border border-arch-border"
+          >
             <table className="w-full text-[12px] border-collapse">
               <thead>
                 <tr>
                   {headers.map((h, hi) => (
                     <th
                       key={hi}
-                      className="text-left px-2.5 py-1.5 border-b border-arch-border text-arch-text font-semibold bg-arch-bg3/50"
+                      className="text-left align-top px-3 py-2 border-b border-arch-border text-arch-text font-semibold bg-arch-bg3/60"
                     >
                       {renderInlineMarkdown(h)}
                     </th>
@@ -185,9 +191,12 @@ function formatMarkdown(text: string) {
               </thead>
               <tbody>
                 {rows.map((row, ri) => (
-                  <tr key={ri} className="border-b border-arch-border/50 last:border-b-0">
+                  <tr key={ri} className="border-b border-arch-border/50 last:border-b-0 align-top">
                     {row.map((cell, ci) => (
-                      <td key={ci} className="px-2.5 py-1.5 text-arch-text2">
+                      <td
+                        key={ci}
+                        className="px-3 py-2 text-arch-text2 align-top break-words [overflow-wrap:anywhere]"
+                      >
                         {renderInlineMarkdown(cell)}
                       </td>
                     ))}
@@ -219,7 +228,7 @@ function formatMarkdown(text: string) {
       const bulletLines = trimmed.split("\n").filter((l) => /^\s*[-*]\s/.test(l));
       if (bulletLines.length > 0 && bulletLines.length === trimmed.split("\n").length) {
         return (
-          <ul key={`${i}-${pi}`} className="my-1.5 flex flex-col gap-1">
+          <ul key={`${i}-${pi}`} className="my-2 flex flex-col gap-1.5">
             {bulletLines.map((line, li) => (
               <li key={li} className="flex items-start gap-2 text-[13px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-arch-purple/60 mt-[7px] shrink-0" />
@@ -235,7 +244,7 @@ function formatMarkdown(text: string) {
       const numberedLines = allLines.filter((l) => /^\s*\d+\.\s/.test(l));
       if (numberedLines.length >= 2 && numberedLines.length === allLines.length) {
         return (
-          <ol key={`${i}-${pi}`} className="my-1.5 flex flex-col gap-1">
+          <ol key={`${i}-${pi}`} className="my-2 flex flex-col gap-1.5">
             {numberedLines.map((line, li) => {
               const num = line.match(/^\s*(\d+)\./)?.[1];
               return (
@@ -254,7 +263,7 @@ function formatMarkdown(text: string) {
       // Regular paragraph — handle single newlines as <br />
       const lines = trimmed.split("\n");
       return (
-        <p key={`${i}-${pi}`} className="my-1">
+        <p key={`${i}-${pi}`} className="my-2 first:mt-0 last:mb-0">
           {lines.map((line, li) => (
             <span key={li}>
               {li > 0 && <br />}
@@ -283,10 +292,10 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
         </div>
       )}
       <div
-        className={`max-w-[80%] min-w-0 px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm ${
+        className={`min-w-0 px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm ${
           isUser
-            ? "bg-arch-blue/10 text-arch-text border border-arch-blue/20 rounded-2xl rounded-br-md"
-            : "bg-arch-bg2 text-arch-text border border-arch-border rounded-2xl rounded-bl-md"
+            ? "max-w-[85%] bg-arch-blue/10 text-arch-text border border-arch-blue/20 rounded-2xl rounded-br-md"
+            : "max-w-[92%] bg-arch-bg2 text-arch-text border border-arch-border rounded-2xl rounded-bl-md"
         }`}
       >
         <div className="whitespace-pre-wrap break-words overflow-hidden">

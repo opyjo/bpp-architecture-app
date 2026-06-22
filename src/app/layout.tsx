@@ -6,6 +6,8 @@ import ThemeProvider from "@/components/ThemeProvider";
 import Header from "@/components/Header";
 import GlobalNav from "@/components/nav/GlobalNav";
 import Breadcrumbs from "@/components/nav/Breadcrumbs";
+import CommandPalette from "@/components/CommandPalette";
+import AssistantSidebar from "@/components/ai/AssistantSidebar";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -31,6 +33,8 @@ export default function RootLayout({
           <GlobalNav />
           <Breadcrumbs />
           {children}
+          <CommandPalette />
+          <AssistantSidebar />
           <Toaster position="bottom-right" richColors theme="system" />
         </ThemeProvider>
       </body>

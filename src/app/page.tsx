@@ -28,6 +28,12 @@ const CodeReviewTab = dynamic(() => import("@/components/tabs/CodeReviewTab"), {
 const SequenceDiagramTab = dynamic(() => import("@/components/tabs/SequenceDiagramTab"), { ssr: false });
 const TestPlanTab = dynamic(() => import("@/components/tabs/TestPlanTab"), { ssr: false });
 const TeleprompterTab = dynamic(() => import("@/components/tabs/TeleprompterTab"), { ssr: false });
+const ChangePackageTab = dynamic(() => import("@/components/tabs/ChangePackageTab"), { ssr: false });
+const DriftTab = dynamic(() => import("@/components/tabs/DriftTab"), { ssr: false });
+const SystemMapTab = dynamic(() => import("@/components/tabs/SystemMapTab"), { ssr: false });
+const QuizTab = dynamic(() => import("@/components/tabs/QuizTab"), { ssr: false });
+const AdrTab = dynamic(() => import("@/components/tabs/AdrTab"), { ssr: false });
+const UsageTab = dynamic(() => import("@/components/tabs/UsageTab"), { ssr: false });
 
 // Tab component mapping
 const TAB_COMPONENTS: Record<string, React.ComponentType> = {
@@ -53,6 +59,12 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   impact: ChangeImpactTab,
   runbooks: RunbookManagerTab,
   ai: AiChatTab,
+  pipeline: ChangePackageTab,
+  drift: DriftTab,
+  systemmap: SystemMapTab,
+  quiz: QuizTab,
+  adr: AdrTab,
+  usage: UsageTab,
 };
 
 function HomeContent() {
