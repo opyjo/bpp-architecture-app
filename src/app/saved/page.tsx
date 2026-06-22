@@ -71,6 +71,7 @@ const TYPES: TypeConfig[] = [
     icon: ClipboardCheck,
     color: "text-arch-green",
     bgColor: "bg-arch-green/10",
+    detailLink: (id) => `/test-plans/${id}`,
   },
   {
     id: "reviews",
@@ -78,6 +79,7 @@ const TYPES: TypeConfig[] = [
     icon: Code2,
     color: "text-arch-purple",
     bgColor: "bg-arch-purple/10",
+    detailLink: (id) => `/reviews/${id}`,
   },
   {
     id: "specs",
@@ -117,6 +119,7 @@ const TYPES: TypeConfig[] = [
     icon: BookOpen,
     color: "text-arch-coral",
     bgColor: "bg-arch-coral/10",
+    detailLink: (id) => `/runbooks/${id}`,
   },
 ];
 

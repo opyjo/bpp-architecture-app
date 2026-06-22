@@ -31,6 +31,15 @@ export function buildBreadcrumbs(
   } else if (pathname.startsWith("/sequence-diagrams/")) {
     crumbs.push({ label: "All Saved", href: "/saved" });
     crumbs.push({ label: dynamicLabel || "Sequence Diagram" });
+  } else if (pathname.startsWith("/test-plans/")) {
+    crumbs.push({ label: "All Saved", href: "/saved" });
+    crumbs.push({ label: dynamicLabel || "Test Plan" });
+  } else if (pathname.startsWith("/reviews/")) {
+    crumbs.push({ label: "All Saved", href: "/saved" });
+    crumbs.push({ label: dynamicLabel || "Code Review" });
+  } else if (pathname.startsWith("/runbooks/")) {
+    crumbs.push({ label: "All Saved", href: "/saved" });
+    crumbs.push({ label: dynamicLabel || "Runbook" });
   }
 
   return crumbs;
