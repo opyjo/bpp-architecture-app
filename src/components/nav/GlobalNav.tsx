@@ -162,7 +162,7 @@ function GlobalNavInner() {
   );
 
   return (
-    <div className="flex overflow-x-auto [&>*]:shrink-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-arch-bg3 border-b border-arch-border tab-bar-enter">
+    <div className="flex flex-wrap bg-arch-bg3 border-b border-arch-border tab-bar-enter">
       {tabGroups.map((group, i) => {
         // Single href-only tab → render as direct link, no dropdown
         if (group.tabs.length === 1 && group.tabs[0].href) {
@@ -195,7 +195,7 @@ function GlobalNavInner() {
           />
         );
       })}
-      <div className="ml-auto flex items-center pr-3">
+      <div className="ml-auto hidden sm:flex items-center pr-3">
         <a
           href="https://go.dev/tour"
           target="_blank"
