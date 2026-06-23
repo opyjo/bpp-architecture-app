@@ -3,7 +3,17 @@
 import { useState } from "react";
 import SectionLayout from "@/components/ui/SectionLayout";
 import { routes, quickRefRows } from "@/data/routes";
-import { flows, customerVsAgent, mermaidSequenceDiagram } from "@/data/flows";
+import {
+  flows,
+  customerVsAgent,
+  mermaidSequenceDiagram,
+  mermaidOrderSequenceDiagram,
+  orderEndpoints,
+  orderErrorRows,
+  orderFeatureFlags,
+  orderDataStores,
+  orderEventTopics,
+} from "@/data/flows";
 import { flowDiagramMap, flowNodeOverrides } from "@/data/flow-diagrams";
 import {
   componentTreeMap,
@@ -24,14 +34,26 @@ const sidebarItems = [
   { id: "flow-agent", label: "Agent-assisted" },
   { id: "flow-undo", label: "Undo flows" },
   { id: "flow-appsync", label: "AppSync lifecycle" },
+  { id: "flow-order", label: "End-to-end order" },
+  { id: "flow-renewal", label: "Renewal" },
+  { id: "flow-grace", label: "Grace period" },
+  { id: "flow-recovery", label: "Account recovery" },
+  { id: "flow-fallout", label: "Fallout & self-healing" },
+  { id: "flow-membership", label: "Membership / loyalty" },
+  { id: "flow-promo", label: "Promo codes" },
+  { id: "flow-notifications", label: "Notifications" },
   { id: "cmp", label: "Customer vs Agent" },
   { id: "seq", label: "Sequence diagram" },
+  { id: "order-seq", label: "Order sequence" },
+  { id: "order-ref", label: "Order endpoints & errors" },
   { id: "quickref", label: "Quick reference" },
 ];
 
 function AudienceBadge({ audience }: { audience: string }) {
   const color = audience === "Agent"
     ? "bg-[rgba(232,112,90,0.12)] text-arch-coral border-[rgba(232,112,90,0.22)]"
+    : audience === "System"
+    ? "bg-[rgba(62,184,154,0.12)] text-arch-teal border-[rgba(62,184,154,0.22)]"
     : "bg-[rgba(124,111,205,0.14)] text-arch-purple border-[rgba(124,111,205,0.22)]";
   return <span className={`text-[10.5px] px-1.5 py-0.5 rounded border font-medium ${color}`}>{audience}</span>;
 }
@@ -234,6 +256,146 @@ export default function UiPagesTab() {
               <div className="text-sm font-semibold text-arch-text mb-1">Sequence diagram — Add subscription (happy path)</div>
               <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">Full request chain from actor click to provider redirect.</div>
               <MermaidDiagram chart={mermaidSequenceDiagram} />
+            </div>
+          );
+        }
+
+        if (activeId === "order-seq") {
+          return (
+            <div>
+              <div className="text-sm font-semibold text-arch-text mb-1">Sequence diagram — End-to-end order</div>
+              <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">
+                The full lifecycle across all three phases: Configurator session/cart, the Order API (one synchronous gate then an async fan-out), and the Billing Process Lambda. The <code className="font-mono text-[10.5px] bg-arch-bg3 border border-arch-border rounded px-1 py-px text-arch-coral">par</code> block shows the work that runs concurrently in the background.
+              </div>
+              <MermaidDiagram chart={mermaidOrderSequenceDiagram} />
+            </div>
+          );
+        }
+
+        if (activeId === "order-ref") {
+          const methodColor: Record<string, string> = {
+            POST: "bg-[rgba(62,184,154,0.1)] border-[rgba(62,184,154,0.2)] text-arch-teal",
+            PATCH: "bg-[rgba(232,168,58,0.1)] border-[rgba(232,168,58,0.2)] text-arch-amber",
+            GET: "bg-[rgba(74,143,232,0.1)] border-[rgba(74,143,232,0.2)] text-arch-blue",
+          };
+          const severityStyle: Record<string, { color: string; label: string }> = {
+            block: { color: "bg-[rgba(232,112,90,0.12)] text-arch-coral border-[rgba(232,112,90,0.22)]", label: "Blocks" },
+            partial: { color: "bg-[rgba(232,168,58,0.12)] text-arch-amber border-[rgba(232,168,58,0.22)]", label: "Partial" },
+            continue: { color: "bg-[rgba(62,184,154,0.12)] text-arch-teal border-[rgba(62,184,154,0.22)]", label: "Continues" },
+          };
+          const th = "text-left px-2.5 py-1.5 text-[9.5px] font-semibold tracking-[0.08em] uppercase text-arch-text3 bg-white/[0.02] border-b border-arch-border";
+          const sectionHeading = "text-[10px] font-semibold tracking-[0.1em] uppercase text-arch-text3 mb-2 mt-5";
+          return (
+            <div>
+              <div className="text-sm font-semibold text-arch-text mb-1">Order endpoints & error handling</div>
+              <div className="text-[11.5px] text-arch-text2 leading-[1.65] mb-3.5">
+                Every call made during order creation and billing, in order, plus how each step fails and the flags that change its behaviour.
+              </div>
+
+              {/* Endpoints */}
+              <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-arch-text3 mb-2">Endpoints called (in order)</div>
+              <table className="w-full border-collapse text-[11px]">
+                <thead>
+                  <tr>
+                    <th className={`${th} w-10`}>#</th>
+                    <th className={`${th} w-16`}>Method</th>
+                    <th className={th}>Path</th>
+                    <th className={th}>Service</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orderEndpoints.map((e) => (
+                    <tr key={e.step}>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text3 font-mono text-[10px] align-top">{e.step}</td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top">
+                        <span className={`inline-block rounded px-1.5 py-px font-mono text-[10px] border ${methodColor[e.method]}`}>{e.method}</span>
+                      </td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10.5px] align-top leading-[1.6]">{e.path}</td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{e.service}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Error handling */}
+              <div className={sectionHeading}>Error handling</div>
+              <table className="w-full border-collapse text-[11px]">
+                <thead>
+                  <tr>
+                    <th className={th}>Step</th>
+                    <th className={`${th} w-24`}>Severity</th>
+                    <th className={th}>Failure behaviour</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orderErrorRows.map((r) => (
+                    <tr key={r.step}>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text font-medium align-top leading-[1.6]">{r.step}</td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] align-top">
+                        <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded border font-medium ${severityStyle[r.severity].color}`}>{severityStyle[r.severity].label}</span>
+                      </td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{r.behavior}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Feature flags + data stores side by side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-5">
+                <div>
+                  <div className={sectionHeading}>Feature flags</div>
+                  <div className="space-y-2">
+                    {orderFeatureFlags.map((f) => (
+                      <div key={f.flag} className="bg-arch-bg2 border border-arch-border rounded-lg px-3 py-2">
+                        <div className="font-mono text-[10.5px] text-arch-amber mb-0.5">{f.flag}</div>
+                        <div className="text-[11px] text-arch-text2 leading-[1.6]">{f.effect}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className={sectionHeading}>Data stores</div>
+                  <table className="w-full border-collapse text-[11px]">
+                    <thead>
+                      <tr>
+                        <th className={th}>Store</th>
+                        <th className={`${th} w-20`}>Type</th>
+                        <th className={th}>What&apos;s stored</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orderDataStores.map((d) => (
+                        <tr key={d.store}>
+                          <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-purple font-mono text-[10.5px] align-top leading-[1.6]">{d.store}</td>
+                          <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-teal font-mono text-[10px] align-top leading-[1.6]">{d.type}</td>
+                          <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{d.stored}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Event hub topics */}
+              <div className={sectionHeading}>Event Hub topics</div>
+              <table className="w-full border-collapse text-[11px]">
+                <thead>
+                  <tr>
+                    <th className={th}>Event</th>
+                    <th className={th}>When published</th>
+                    <th className={th}>Topic</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orderEventTopics.map((t) => (
+                    <tr key={t.event}>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text font-medium align-top leading-[1.6]">{t.event}</td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{t.when}</td>
+                      <td className="px-2.5 py-1.5 border-b border-white/[0.04] text-arch-text2 align-top leading-[1.6]">{t.topic}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           );
         }
