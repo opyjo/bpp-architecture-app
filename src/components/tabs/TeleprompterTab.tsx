@@ -19,6 +19,7 @@ import {
   FileText,
   FileStack,
   GripVertical,
+  Search,
 } from "lucide-react";
 import {
   DndContext,
@@ -860,7 +861,7 @@ function PresentationBullet({ phrase }: { phrase: HighlightedPhrase }) {
             return (
               <span
                 key={i}
-                className={`font-bold ${COLOR_TEXT_CLASSES[phrase.color]} ${COLOR_BG_CLASSES[phrase.color]} px-1.5 py-0.5 rounded animate-keyword-glow`}
+                className={`font-bold text-[1.1em] ${COLOR_TEXT_CLASSES[phrase.color]} animate-keyword-glow`}
               >
                 {keyword}
               </span>
@@ -1027,32 +1028,45 @@ export default function TeleprompterTab() {
   const [presenting, setPresenting] = useState(false);
   const addMenuRef = useRef<HTMLDivElement>(null);
 
-  // ── Category filter state ───────────────────────────────────────────────
+  // ── Category + search filter state ──────────────────────────────────────
   const [activeCategory, setActiveCategory] = useState<CardCategory | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredCards = useMemo(() => {
-    if (!activeCategory) return cards;
-    return cards.filter((card) => card.category === activeCategory);
-  }, [cards, activeCategory]);
-
-  // Map filtered index → real index in the full cards array
+  // Map filtered index → real index in the full cards array. Returns null when
+  // no filter is active (filtered index === real index). Built first so that
+  // filteredCards is always derived from — and consistent with — the map.
   const filteredIndexMap = useMemo(() => {
-    if (!activeCategory) return null;
+    const q = searchQuery.trim().toLowerCase();
+    const hasFilter = !!activeCategory || q.length > 0;
+    if (!hasFilter) return null;
+
+    const matches = (card: TeleprompterCard) => {
+      if (activeCategory && card.category !== activeCategory) return false;
+      if (!q) return true;
+      if (card.title.toLowerCase().includes(q)) return true;
+      if (card.fullText?.toLowerCase().includes(q)) return true;
+      if (card.sections?.some((s) => s.name.toLowerCase().includes(q))) return true;
+      return getAllBullets(card).some((b) => b.text.toLowerCase().includes(q));
+    };
+
     const map: number[] = [];
     cards.forEach((card, realIndex) => {
-      if (card.category === activeCategory) {
-        map.push(realIndex);
-      }
+      if (matches(card)) map.push(realIndex);
     });
     return map;
-  }, [cards, activeCategory]);
+  }, [cards, activeCategory, searchQuery]);
+
+  const filteredCards = useMemo(
+    () => (filteredIndexMap ? filteredIndexMap.map((i) => cards[i]) : cards),
+    [cards, filteredIndexMap]
+  );
 
   // Current card's position in the filtered list (for highlight)
   const filteredCurrentIndex = useMemo(() => {
-    if (!activeCategory) return currentIndex;
+    if (!filteredIndexMap) return currentIndex;
     if (!currentCard) return -1;
     return filteredCards.findIndex((c) => c.id === currentCard.id);
-  }, [activeCategory, currentIndex, filteredCards, currentCard]);
+  }, [filteredIndexMap, currentIndex, filteredCards, currentCard]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -1215,11 +1229,108 @@ export default function TeleprompterTab() {
         </div>
       </div>
 
+      {/* Breadcrumbs — reflects the tab's internal navigation state */}
+      <nav
+        key={
+          showOverview
+            ? `ov-${activeCategory ?? "all"}-${searchQuery.trim()}`
+            : `card-${currentCard?.id ?? "none"}`
+        }
+        className="flex items-center gap-1.5 px-3 sm:px-5 py-2 border-b border-arch-border text-[11px] animate-breadcrumb-in"
+      >
+        <button
+          onClick={() => setShowOverview(true)}
+          className="flex items-center gap-1 font-semibold text-arch-purple hover:text-arch-purple/70 hover:-translate-y-0.5 transition-all duration-200"
+        >
+          <Monitor className="w-3 h-3" />
+          Teleprompter
+        </button>
+        {showOverview ? (
+          <>
+            <ChevronRight className="w-3 h-3 text-arch-text3/50" />
+            {activeCategory || searchQuery.trim() ? (
+              <button
+                onClick={() => {
+                  setActiveCategory(null);
+                  setSearchQuery("");
+                }}
+                className="font-medium text-arch-blue hover:text-arch-blue/70 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                Overview
+              </button>
+            ) : (
+              <span className="font-medium text-arch-text2">Overview</span>
+            )}
+            {activeCategory && (
+              <>
+                <ChevronRight className="w-3 h-3 text-arch-text3/50" />
+                <CategoryBadge category={activeCategory} size="sm" />
+              </>
+            )}
+            {searchQuery.trim() && (
+              <>
+                <ChevronRight className="w-3 h-3 text-arch-text3/50" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-arch-blue/10 text-arch-blue border border-arch-blue/30 px-2.5 py-0.5 font-medium">
+                  <Search className="w-3 h-3" />
+                  &ldquo;{searchQuery.trim()}&rdquo;
+                </span>
+              </>
+            )}
+          </>
+        ) : (
+          currentCard && (
+            <>
+              <ChevronRight className="w-3 h-3 text-arch-text3/50" />
+              <button
+                onClick={() => setShowOverview(true)}
+                className="font-medium text-arch-blue hover:text-arch-blue/70 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                Overview
+              </button>
+              <ChevronRight className="w-3 h-3 text-arch-text3/50" />
+              <button
+                onClick={() => {
+                  setActiveCategory(currentCard.category);
+                  setSearchQuery("");
+                  setShowOverview(true);
+                }}
+                className="hover:-translate-y-0.5 hover:opacity-80 transition-all duration-200"
+                title={`Show all ${currentCard.category} cards`}
+              >
+                <CategoryBadge category={currentCard.category} size="sm" />
+              </button>
+              <ChevronRight className="w-3 h-3 text-arch-text3/50" />
+              <span className="font-semibold text-arch-text truncate max-w-[220px]">
+                {currentCard.title}
+              </span>
+            </>
+          )
+        )}
+      </nav>
+
       {showOverview ? (
         /* Overview grid */
         <div className="flex-1 overflow-auto p-3 sm:p-5">
-          {/* Category filter bar */}
+          {/* Search + category filter bar */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="flex items-center gap-1.5 border border-arch-border rounded-lg px-2.5 py-1.5 bg-arch-bg3 w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-arch-text3 shrink-0" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search cards…"
+                className="flex-1 min-w-0 bg-transparent text-[12px] text-arch-text placeholder:text-arch-text3 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  title="Clear search"
+                  className="text-arch-text3 hover:text-arch-text shrink-0"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setActiveCategory(null)}
               className={`px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
@@ -1266,10 +1377,15 @@ export default function TeleprompterTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <p className="text-[13px] text-arch-text3">
-                No {activeCategory} cards yet
+                {searchQuery.trim()
+                  ? `No cards match "${searchQuery.trim()}"`
+                  : `No ${activeCategory} cards yet`}
               </p>
               <button
-                onClick={() => setActiveCategory(null)}
+                onClick={() => {
+                  setActiveCategory(null);
+                  setSearchQuery("");
+                }}
                 className="mt-2 text-[12px] text-arch-blue hover:underline"
               >
                 Show all cards

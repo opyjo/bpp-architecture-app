@@ -64,11 +64,17 @@
   --color-arch-gray: var(--arch-gray);
   --color-arch-red: var(--arch-red);
   --animate-keyword-glow: keyword-glow 3s ease-in-out infinite;
+  --animate-breadcrumb-in: breadcrumb-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes keyword-glow {
   0%, 100% { opacity: 1; filter: brightness(1); }
   50% { opacity: 0.8; filter: brightness(1.2); }
+}
+
+@keyframes breadcrumb-in {
+  0% { opacity: 0; transform: translateX(-6px); }
+  100% { opacity: 1; transform: translateX(0); }
 }
 
 /* Light mode (default) */

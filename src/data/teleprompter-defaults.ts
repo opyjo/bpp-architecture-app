@@ -446,6 +446,159 @@ export const TEMPLATE_CARDS: Omit<TeleprompterCard, "id">[] = [
       { text: "**OpenAPI specs** as living API documentation — auto-generated and always in sync with the codebase", color: "green" },
     ],
   },
+
+  // ── Past Roles: CRA — The Digital Filing Migration ──────────────────────
+  {
+    title: "CRA — Overview & Pitch",
+    category: "Past Roles",
+    bullets: [
+      { text: "Came in around a **system migration** — moving audit file management from **paper-and-spreadsheet** to a new **digital system**", color: "blue" },
+      { text: "My job: document how each team actually worked, **standardise it**, and give the migration a **clean baseline** to build on", color: "teal" },
+      { text: "The arc: **messy current state** → I standardised it → the migration had a **clean foundation**", color: "green" },
+      { text: "Regulated context — where I got comfortable with **Protected B data** and documentation standards", color: "purple" },
+    ],
+  },
+  {
+    title: "CRA — Situation & Task",
+    category: "Past Roles",
+    bullets: [
+      { text: "**Situation**: every audit team worked **slightly differently** — no single agreed way to build the new system around", color: "blue" },
+      { text: "**Task**: document the **actual current-state** process for each team and find where they **diverged**", color: "purple" },
+      { text: "Also asked to run an **audit-readiness review** across active files", color: "teal" },
+    ],
+  },
+  {
+    title: "CRA — Action",
+    category: "Past Roles",
+    bullets: [
+      { text: "Documented each team's real workflow — mapped where processes **diverged** and where **manual steps were redundant**", color: "teal" },
+      { text: "Produced a **standardised template set** — the baseline the new system was configured against", color: "blue" },
+      { text: "Ran a **gap analysis** ranked by **severity**, with a **remediation plan**", color: "purple" },
+    ],
+  },
+  {
+    title: "CRA — Result & Takeaway",
+    category: "Past Roles",
+    bullets: [
+      { text: "A **clean, agreed baseline** for the migration to build on", color: "green" },
+      { text: "**Two redundant** processing steps eliminated", color: "coral" },
+      { text: "Where I got comfortable with **Protected B data** and **regulated documentation** standards", color: "blue" },
+    ],
+  },
+
+  // ── Past Roles: Genpact / GE — Finance Process Standardisation ───────────
+  {
+    title: "Genpact / GE — Overview & Pitch",
+    category: "Past Roles",
+    bullets: [
+      { text: "Worked on **GE's finance shared-services** account at Genpact", color: "blue" },
+      { text: "Headline project: a **process standardisation** effort across multiple **GE business units**", color: "teal" },
+      { text: "The arc: **fragmented processes** → I unified them → unlocked an **automation roadmap** I pitched to leadership", color: "green" },
+      { text: "Moved it from \"here's how things work\" to \"**here's what we should automate and why**\"", color: "purple" },
+    ],
+  },
+  {
+    title: "Genpact / GE — Situation & Task",
+    category: "Past Roles",
+    bullets: [
+      { text: "**Situation**: each business unit ran finance processes **differently** — inconsistent **automation and reporting**", color: "blue" },
+      { text: "**Task**: document the current-state workflows and identify the **variations**", color: "purple" },
+    ],
+  },
+  {
+    title: "Genpact / GE — Action",
+    category: "Past Roles",
+    bullets: [
+      { text: "Mapped the current-state workflows and pinpointed the **variations** across units", color: "teal" },
+      { text: "Proposed a single **unified process model** — which got **adopted** across the account", color: "blue" },
+      { text: "Led into an **accounts-payable automation assessment** — mapped the **end-to-end AP workflow**", color: "purple" },
+    ],
+  },
+  {
+    title: "Genpact / GE — Result & Pitch",
+    category: "Past Roles",
+    bullets: [
+      { text: "Unified process model **adopted** across the account", color: "green" },
+      { text: "Presented an **AP automation investment proposal** to **finance leadership** — with **effort and value** estimates", color: "teal" },
+      { text: "Turned process mapping into an **automation roadmap** the business could act on", color: "blue" },
+    ],
+  },
+
+  // ── Past Roles: CIBC — Regulatory Reporting Data-Quality ─────────────────
+  {
+    title: "CIBC — Overview & Pitch",
+    category: "Past Roles",
+    bullets: [
+      { text: "Project tackled **recurring errors** in the **monthly regulatory reports**", color: "blue" },
+      { text: "The errors traced back to **data-quality issues** in client account records", color: "teal" },
+      { text: "The arc: **reports kept breaking** → I found why and fixed it **at source** → faster, cleaner reporting", color: "green" },
+      { text: "A **data-quality and controls** project in a **regulated reporting** context", color: "purple" },
+    ],
+  },
+  {
+    title: "CIBC — Situation & Task",
+    category: "Past Roles",
+    bullets: [
+      { text: "**Situation**: monthly regulatory reports had **recurring errors** rooted in bad **account data**", color: "blue" },
+      { text: "**Task**: find the **root cause** and stop the errors **at source**", color: "purple" },
+    ],
+  },
+  {
+    title: "CIBC — Action",
+    category: "Past Roles",
+    bullets: [
+      { text: "Ran a **root-cause analysis** on the error types", color: "teal" },
+      { text: "Proposed a **validation rule set** built into the **CRM** to catch problems **at source**", color: "blue" },
+      { text: "Built a **semi-automated reconciliation tool** cross-checking reports against **source data**", color: "purple" },
+    ],
+  },
+  {
+    title: "CIBC — Result & Title Note",
+    category: "Past Roles",
+    bullets: [
+      { text: "Cut the reconciliation cycle from **two days to half a day**", color: "coral" },
+      { text: "Removed an entire **class of manual error**", color: "green" },
+      { text: "If asked about the title: \"It was **Fraud Analyst**, but the work was **data and process analysis** — finding why the data was wrong and building the **controls** to fix it\"", color: "blue" },
+    ],
+  },
+
+  // ── Past Roles: Skye Bank — Dispute Resolution Redesign ──────────────────
+  {
+    title: "Skye Bank — Overview & Pitch",
+    category: "Past Roles",
+    bullets: [
+      { text: "Where I did my **first real BSA work**", color: "blue" },
+      { text: "Headline: **credit card dispute resolution** times had crept **past regulatory guidance**", color: "teal" },
+      { text: "The arc: **disputes were too slow** → I found the bottlenecks → **redesigned the routing** to fix them", color: "green" },
+      { text: "**Process redesign** and **operational-readiness** work in a regulated banking environment", color: "purple" },
+    ],
+  },
+  {
+    title: "Skye Bank — Situation & Task",
+    category: "Past Roles",
+    bullets: [
+      { text: "**Situation**: dispute resolution times had crept **past regulatory guidance**", color: "blue" },
+      { text: "**Task**: map the **end-to-end process** and find what was causing the **delays**", color: "purple" },
+    ],
+  },
+  {
+    title: "Skye Bank — Action",
+    category: "Past Roles",
+    bullets: [
+      { text: "Mapped the **end-to-end** dispute process", color: "teal" },
+      { text: "Found **three handoff points** that were causing the delays", color: "coral" },
+      { text: "Proposed **revised routing logic** to fix them", color: "blue" },
+    ],
+  },
+  {
+    title: "Skye Bank — Co-Brand Launch & Readiness",
+    category: "Past Roles",
+    bullets: [
+      { text: "Supported a **co-branded card launch** in parallel", color: "teal" },
+      { text: "Documented the **operational procedures** for the new product", color: "blue" },
+      { text: "Flagged **gaps** between what the **product design assumed** and what **operations** could actually execute", color: "purple" },
+    ],
+  },
 ];
 
 export const DEFAULT_TELEPROMPTER_CARDS: TeleprompterCard[] = [
