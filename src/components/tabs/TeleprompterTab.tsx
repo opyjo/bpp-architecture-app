@@ -83,7 +83,7 @@ const ALL_CATEGORIES: CardCategory[] = [
   "Technical",
   "Behavioral",
   "Closing",
-  "Scenario",
+  "Past Roles",
 ];
 
 const ALL_COLORS: HighlightColor[] = [
@@ -1021,7 +1021,7 @@ export default function TeleprompterTab() {
   } = useTeleprompterCards();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showOverview, setShowOverview] = useState(false);
+  const [showOverview, setShowOverview] = useState(true);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [presenting, setPresenting] = useState(false);

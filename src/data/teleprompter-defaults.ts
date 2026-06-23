@@ -4,7 +4,7 @@ export type CardCategory =
   | "Technical"
   | "Behavioral"
   | "Closing"
-  | "Scenario";
+  | "Past Roles";
 
 export type HighlightColor =
   | "blue"
@@ -47,7 +47,7 @@ export const CATEGORY_COLORS: Record<CardCategory, string> = {
   Technical: "bg-arch-teal/15 text-arch-teal border-arch-teal/30",
   Behavioral: "bg-amber-500/15 text-amber-500 border-amber-500/30",
   Closing: "bg-arch-green/15 text-arch-green border-arch-green/30",
-  Scenario: "bg-arch-coral/15 text-arch-coral border-arch-coral/30",
+  "Past Roles": "bg-arch-coral/15 text-arch-coral border-arch-coral/30",
 };
 
 export const TEMPLATE_CARDS: Omit<TeleprompterCard, "id">[] = [
@@ -237,7 +237,7 @@ export const TEMPLATE_CARDS: Omit<TeleprompterCard, "id">[] = [
   },
   {
     title: "Scenario: Disagreeing with Your Manager",
-    category: "Scenario",
+    category: "Behavioral",
     bullets: [
       { text: "Listen first — understand their **reasoning and constraints** before pushing back", color: "coral" },
       { text: "Present your case with **data and examples**, not opinions — make it easy to say yes", color: "blue" },
@@ -247,7 +247,7 @@ export const TEMPLATE_CARDS: Omit<TeleprompterCard, "id">[] = [
   },
   {
     title: "Scenario: Joining a New Team",
-    category: "Scenario",
+    category: "Behavioral",
     bullets: [
       { text: "First 2 weeks: **listen and learn** — read docs, attend meetings, ask questions without judging", color: "coral" },
       { text: "Map the **people, processes, and pain points** — who owns what, where are the bottlenecks", color: "blue" },
@@ -298,7 +298,7 @@ export const TEMPLATE_CARDS: Omit<TeleprompterCard, "id">[] = [
   },
   {
     title: "Scenario: Legacy System Migration",
-    category: "Scenario",
+    category: "Behavioral",
     bullets: [
       { text: "Assess **current state** — document dependencies, data flows, and integration points before touching anything", color: "coral" },
       { text: "Use the **strangler fig pattern** — incrementally replace pieces rather than big-bang rewrite", color: "blue" },
