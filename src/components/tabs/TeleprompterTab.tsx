@@ -125,6 +125,32 @@ function HighlightedBullet({ phrase }: { phrase: HighlightedPhrase }) {
   );
 }
 
+function CompactHighlightedBullet({ phrase }: { phrase: HighlightedPhrase }) {
+  const parts = phrase.text.split(/(\*\*.*?\*\*)/g);
+  return (
+    <li className="flex items-start gap-1.5 text-[11px] text-arch-text2 leading-snug">
+      <span
+        className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${COLOR_BG_CLASSES[phrase.color]} ring-1 ${COLOR_RING_CLASSES[phrase.color]}`}
+      />
+      <span>
+        {parts.map((part, i) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <span
+                key={i}
+                className={`font-semibold ${COLOR_TEXT_CLASSES[phrase.color]}`}
+              >
+                {part.slice(2, -2)}
+              </span>
+            );
+          }
+          return <span key={i}>{part}</span>;
+        })}
+      </span>
+    </li>
+  );
+}
+
 function SectionedBullets({ sections }: { sections: CardSection[] }) {
   return (
     <div className="flex flex-col gap-6">
@@ -718,6 +744,7 @@ function SortableCardItem({
   isCurrent: boolean;
   onSelect: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const {
     attributes,
     listeners,
@@ -726,6 +753,9 @@ function SortableCardItem({
     transition,
     isDragging,
   } = useSortable({ id: card.id });
+
+  const allBullets = getAllBullets(card);
+  const hasMore = allBullets.length > 3;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -762,33 +792,51 @@ function SortableCardItem({
         <h3 className="text-[13px] font-semibold text-arch-text leading-snug mb-2">
           {card.title}
         </h3>
-        <ul className="flex flex-col gap-1">
-          {getAllBullets(card).slice(0, 3).map((bullet, j) => {
-            const preview = bullet.text
-              .replace(/\*\*/g, "")
-              .slice(0, 50);
-            return (
-              <li
-                key={j}
-                className="flex items-start gap-1.5 text-[11px] text-arch-text3 leading-snug"
-              >
-                <span
-                  className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${COLOR_BG_CLASSES[bullet.color]} ring-1 ${COLOR_RING_CLASSES[bullet.color]}`}
-                />
-                <span className="line-clamp-1">
-                  {preview}
-                  {bullet.text.replace(/\*\*/g, "").length > 50 ? "..." : ""}
-                </span>
-              </li>
-            );
-          })}
-          {getAllBullets(card).length > 3 && (
-            <li className="text-[10px] text-arch-text3 pl-2.5">
-              +{getAllBullets(card).length - 3} more
-            </li>
-          )}
-        </ul>
+        {expanded ? (
+          <ul className="flex flex-col gap-1.5">
+            {allBullets.map((bullet, j) => (
+              <CompactHighlightedBullet key={j} phrase={bullet} />
+            ))}
+          </ul>
+        ) : (
+          <ul className="flex flex-col gap-1">
+            {allBullets.slice(0, 3).map((bullet, j) => {
+              const preview = bullet.text
+                .replace(/\*\*/g, "")
+                .slice(0, 50);
+              return (
+                <li
+                  key={j}
+                  className="flex items-start gap-1.5 text-[11px] text-arch-text3 leading-snug"
+                >
+                  <span
+                    className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${COLOR_BG_CLASSES[bullet.color]} ring-1 ${COLOR_RING_CLASSES[bullet.color]}`}
+                  />
+                  <span className="line-clamp-1">
+                    {preview}
+                    {bullet.text.replace(/\*\*/g, "").length > 50 ? "..." : ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </button>
+      {hasMore && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          className="mt-2 flex items-center gap-1 text-[11px] font-medium text-arch-text3 hover:text-arch-text transition-colors"
+        >
+          <ChevronDown
+            size={12}
+            className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+          {expanded ? "Show less" : `Show ${allBullets.length - 3} more`}
+        </button>
+      )}
     </div>
   );
 }
