@@ -67,7 +67,6 @@ export const tabGroups: TabGroup[] = [
       { id: "sequence", label: "Sequence Diagrams" },
       { id: "testplan", label: "Test Plan" },
       { id: "ai", label: "AI Assistant" },
-      { id: "usage", label: "AI Usage" },
     ],
   },
   {
