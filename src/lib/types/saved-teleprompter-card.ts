@@ -7,6 +7,7 @@ export interface SavedTeleprompterCard {
   bullets: HighlightedPhrase[];
   sections: CardSection[] | null;
   full_text: string | null;
+  role: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;

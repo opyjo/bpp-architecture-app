@@ -108,10 +108,13 @@ create table if not exists public.teleprompter_cards (
   bullets    jsonb not null default '[]',
   sections   jsonb,
   full_text  text,
+  role       text,                              -- null = shared across all roles
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- Migration for an existing database (safe to run repeatedly):
+--   alter table public.teleprompter_cards add column if not exists role text;
 
 -- ============================ adrs (NEW) ====================================
 -- Architecture Decision Records — used by the Decision Records tab.

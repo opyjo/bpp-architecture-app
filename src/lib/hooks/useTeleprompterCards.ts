@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import {
   TeleprompterCard,
   DEFAULT_TELEPROMPTER_CARDS,
+  DEFAULT_ROLE,
+  makeStarterCardsForRole,
 } from "@/data/teleprompter-defaults";
 import { useSavedTeleprompterCards } from "./useSavedTeleprompterCards";
 import type { SavedTeleprompterCard } from "@/lib/types/saved-teleprompter-card";
 import type { CardCategory } from "@/data/teleprompter-defaults";
 
 const STORAGE_KEY = "teleprompter-cards";
+const ROLE_KEY = "teleprompter-active-role";
 
 // ── Converters ──────────────────────────────────────────────────────
 
@@ -22,6 +25,7 @@ function toDbRow(card: TeleprompterCard, sortOrder: number) {
     bullets: card.bullets,
     sections: card.sections ?? null,
     full_text: card.fullText ?? null,
+    role: card.role ?? null,
     sort_order: sortOrder,
   };
 }
@@ -34,13 +38,27 @@ function fromDbRow(row: SavedTeleprompterCard): TeleprompterCard {
     bullets: row.bullets,
     ...(row.sections ? { sections: row.sections } : {}),
     ...(row.full_text ? { fullText: row.full_text } : {}),
+    ...(row.role ? { role: row.role } : {}),
   };
+}
+
+function isVisibleForRole(card: TeleprompterCard, role: string): boolean {
+  return !card.role || card.role === role;
 }
 
 // ── Hook ────────────────────────────────────────────────────────────
 
 export function useTeleprompterCards() {
-  const [cards, setCards] = useState<TeleprompterCard[]>([]);
+  // Full, persisted list (all roles). The navigable `cards` below is the
+  // role-filtered view derived from this.
+  const [allCards, setAllCards] = useState<TeleprompterCard[]>([]);
+  const [activeRole, setActiveRoleState] = useState<string>(() => {
+    try {
+      return localStorage.getItem(ROLE_KEY) || DEFAULT_ROLE;
+    } catch {
+      return DEFAULT_ROLE;
+    }
+  });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,8 +83,7 @@ export function useTeleprompterCards() {
         const rows = await fetchTeleprompterCards();
         if (rows.length > 0) {
           const loaded = rows.map(fromDbRow);
-          setCards(loaded);
-          // Update localStorage cache
+          setAllCards(loaded);
           try { localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded)); } catch { /* */ }
           setIsLoading(false);
           return;
@@ -75,32 +92,53 @@ export function useTeleprompterCards() {
         // DB unavailable — fall through to localStorage
       }
 
-      // Fall back to localStorage
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored) as TeleprompterCard[];
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setCards(parsed);
+            setAllCards(parsed);
             setIsLoading(false);
             return;
           }
         }
       } catch { /* */ }
 
-      // Final fallback: defaults
-      setCards(DEFAULT_TELEPROMPTER_CARDS);
+      setAllCards(DEFAULT_TELEPROMPTER_CARDS);
       setIsLoading(false);
     })();
   }, [fetchTeleprompterCards]);
 
-  // Persist to localStorage on change (fast cache)
+  // Persist full list to localStorage on change (fast cache)
   useEffect(() => {
-    if (!initialized.current || cards.length === 0) return;
+    if (!initialized.current || allCards.length === 0) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
     } catch { /* */ }
-  }, [cards]);
+  }, [allCards]);
+
+  // The navigable deck for the active role = shared cards + this role's cards.
+  const cards = useMemo(
+    () => allCards.filter((c) => isVisibleForRole(c, activeRole)),
+    [allCards, activeRole]
+  );
+
+  // Available roles = default role + any role present on a card.
+  const roles = useMemo(() => {
+    const set = new Set<string>([DEFAULT_ROLE]);
+    for (const c of allCards) if (c.role) set.add(c.role);
+    return Array.from(set);
+  }, [allCards]);
+
+  // Reset position when switching roles.
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [activeRole]);
+
+  // Keep currentIndex within the (possibly shrunken) deck.
+  useEffect(() => {
+    setCurrentIndex((i) => (i > cards.length - 1 ? Math.max(0, cards.length - 1) : i));
+  }, [cards.length]);
 
   const currentCard = cards[currentIndex] ?? cards[0];
 
@@ -121,26 +159,27 @@ export function useTeleprompterCards() {
 
   const addCard = useCallback(
     (card: Omit<TeleprompterCard, "id">) => {
-      const newCard: TeleprompterCard = {
-        ...card,
-        id: crypto.randomUUID(),
-      };
-      const sortOrder = cards.length;
-      setCards((prev) => [...prev, newCard]);
-      setCurrentIndex(cards.length);
+      const newCard: TeleprompterCard = { ...card, id: crypto.randomUUID() };
+      const sortOrder = allCards.length;
+      setAllCards((prev) => [...prev, newCard]);
 
-      // Fire-and-forget DB insert
+      // Focus the new card if it's visible in the current role deck.
+      if (isVisibleForRole(newCard, activeRole)) {
+        const visibleLen = allCards.filter((c) => isVisibleForRole(c, activeRole)).length;
+        setCurrentIndex(visibleLen);
+      }
+
       const { id: _, ...payload } = toDbRow(newCard, sortOrder);
       saveTeleprompterCard(payload)
         .then(() => toast.success("Card added"))
         .catch(() => toast.error("Failed to save card"));
     },
-    [cards.length, saveTeleprompterCard]
+    [allCards, activeRole, saveTeleprompterCard]
   );
 
   const cloneCard = useCallback(
     (id: string) => {
-      const source = cards.find((c) => c.id === id);
+      const source = allCards.find((c) => c.id === id);
       if (!source) return;
 
       const cloned: TeleprompterCard = {
@@ -148,41 +187,37 @@ export function useTeleprompterCards() {
         id: crypto.randomUUID(),
         title: `${source.title} (Copy)`,
       };
-
-      // Regenerate section IDs so they're unique
       if (cloned.sections) {
-        cloned.sections = cloned.sections.map((s) => ({
-          ...s,
-          id: crypto.randomUUID(),
-        }));
+        cloned.sections = cloned.sections.map((s) => ({ ...s, id: crypto.randomUUID() }));
       }
 
-      const sortOrder = cards.length;
-      setCards((prev) => [...prev, cloned]);
-      setCurrentIndex(cards.length);
+      const sortOrder = allCards.length;
+      setAllCards((prev) => [...prev, cloned]);
+      if (isVisibleForRole(cloned, activeRole)) {
+        const visibleLen = allCards.filter((c) => isVisibleForRole(c, activeRole)).length;
+        setCurrentIndex(visibleLen);
+      }
 
-      // Fire-and-forget DB insert
       const { id: _id, ...payload } = toDbRow(cloned, sortOrder);
       saveTeleprompterCard(payload)
         .then(() => toast.success("Card cloned"))
         .catch(() => toast.error("Failed to clone card"));
     },
-    [cards, saveTeleprompterCard]
+    [allCards, activeRole, saveTeleprompterCard]
   );
 
   const updateCard = useCallback(
     (id: string, updates: Partial<Omit<TeleprompterCard, "id">>) => {
-      setCards((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
-      );
+      setAllCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
 
-      // Fire-and-forget DB update
       const dbUpdates: Record<string, unknown> = {};
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.category !== undefined) dbUpdates.category = updates.category;
       if (updates.bullets !== undefined) dbUpdates.bullets = updates.bullets;
       if (updates.sections !== undefined) dbUpdates.sections = updates.sections ?? null;
       if (updates.fullText !== undefined) dbUpdates.full_text = updates.fullText ?? null;
+      // Persist role whenever the key is present, so "→ Shared" (undefined) saves too.
+      if ("role" in updates) dbUpdates.role = updates.role ?? null;
 
       if (Object.keys(dbUpdates).length > 0) {
         updateTeleprompterCard(id, dbUpdates).catch(() => toast.error("Failed to update card"));
@@ -193,46 +228,47 @@ export function useTeleprompterCards() {
 
   const deleteCard = useCallback(
     (id: string) => {
-      setCards((prev) => {
+      setAllCards((prev) => {
         const filtered = prev.filter((c) => c.id !== id);
         return filtered.length > 0 ? filtered : DEFAULT_TELEPROMPTER_CARDS;
       });
-      setCurrentIndex((i) => Math.min(i, cards.length - 2));
 
-      // Fire-and-forget DB delete
       deleteTeleprompterCard(id)
         .then(() => toast.success("Card deleted"))
         .catch(() => toast.error("Failed to delete card"));
     },
-    [cards.length, deleteTeleprompterCard]
+    [deleteTeleprompterCard]
   );
 
+  // fromIndex / toIndex are positions within the active role's visible deck.
   const moveCard = useCallback(
     (fromIndex: number, toIndex: number) => {
       if (fromIndex === toIndex) return;
-      setCards((prev) => {
-        const next = [...prev];
-        const [moved] = next.splice(fromIndex, 1);
-        next.splice(toIndex, 0, moved);
+      setAllCards((prev) => {
+        const visible = prev.filter((c) => isVisibleForRole(c, activeRole));
+        const newVisible = [...visible];
+        const [moved] = newVisible.splice(fromIndex, 1);
+        if (!moved) return prev;
+        newVisible.splice(toIndex, 0, moved);
 
-        // Fire-and-forget DB update
+        // Re-thread the reordered visible cards back into their slots.
+        let vi = 0;
+        const next = prev.map((c) => (isVisibleForRole(c, activeRole) ? newVisible[vi++] : c));
+
         const updates = next.map((card, i) => ({ id: card.id, sort_order: i }));
         batchUpdateSortOrders(updates).catch(() => toast.error("Failed to reorder cards"));
-
         return next;
       });
-      // Update currentIndex to follow the active card
       setCurrentIndex(toIndex);
     },
-    [batchUpdateSortOrders]
+    [activeRole, batchUpdateSortOrders]
   );
 
   const resetToDefaults = useCallback(() => {
-    setCards(DEFAULT_TELEPROMPTER_CARDS);
+    setAllCards(DEFAULT_TELEPROMPTER_CARDS);
     setCurrentIndex(0);
     setIsEditing(false);
 
-    // Fire-and-forget: delete all rows, then insert defaults
     (async () => {
       try {
         await deleteAllTeleprompterCards();
@@ -248,6 +284,63 @@ export function useTeleprompterCards() {
       }
     })();
   }, [deleteAllTeleprompterCards, saveTeleprompterCard]);
+
+  // ── Roles ─────────────────────────────────────────────────────────
+
+  const setActiveRole = useCallback((name: string) => {
+    setActiveRoleState(name);
+    try { localStorage.setItem(ROLE_KEY, name); } catch { /* */ }
+    setCurrentIndex(0);
+  }, []);
+
+  const addRole = useCallback(
+    (name: string) => {
+      const role = name.trim();
+      if (!role) return;
+      if (roles.includes(role)) {
+        setActiveRole(role);
+        return;
+      }
+
+      const starters = makeStarterCardsForRole(role).map((c) => ({
+        ...c,
+        id: crypto.randomUUID(),
+      }));
+      const base = allCards.length;
+      setAllCards((prev) => [...prev, ...starters]);
+      starters.forEach((card, idx) => {
+        const { id: _id, ...payload } = toDbRow(card, base + idx);
+        saveTeleprompterCard(payload).catch(() => { /* surfaced once below */ });
+      });
+
+      setActiveRoleState(role);
+      try { localStorage.setItem(ROLE_KEY, role); } catch { /* */ }
+      setCurrentIndex(0);
+      toast.success(`Added role "${role}" with starter cards`);
+    },
+    [roles, allCards.length, saveTeleprompterCard, setActiveRole]
+  );
+
+  const deleteRole = useCallback(
+    (name: string) => {
+      if (name === DEFAULT_ROLE) {
+        toast.error("The default role can't be deleted");
+        return;
+      }
+      const removed = allCards.filter((c) => c.role === name);
+      setAllCards((prev) => {
+        const next = prev.filter((c) => c.role !== name);
+        return next.length > 0 ? next : DEFAULT_TELEPROMPTER_CARDS;
+      });
+      removed.forEach((c) => deleteTeleprompterCard(c.id).catch(() => { /* */ }));
+
+      setActiveRoleState(DEFAULT_ROLE);
+      try { localStorage.setItem(ROLE_KEY, DEFAULT_ROLE); } catch { /* */ }
+      setCurrentIndex(0);
+      toast.success(`Deleted role "${name}"`);
+    },
+    [allCards, deleteTeleprompterCard]
+  );
 
   return {
     cards,
@@ -265,5 +358,11 @@ export function useTeleprompterCards() {
     deleteCard,
     moveCard,
     resetToDefaults,
+    // roles
+    activeRole,
+    roles,
+    setActiveRole,
+    addRole,
+    deleteRole,
   };
 }

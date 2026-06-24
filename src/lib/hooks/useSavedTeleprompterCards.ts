@@ -12,6 +12,7 @@ type InsertPayload = {
   bullets: HighlightedPhrase[];
   sections?: CardSection[] | null;
   full_text?: string | null;
+  role?: string | null;
   sort_order: number;
 };
 

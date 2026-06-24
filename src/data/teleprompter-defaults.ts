@@ -32,7 +32,15 @@ export interface TeleprompterCard {
   bullets: HighlightedPhrase[];
   sections?: CardSection[];
   fullText?: string;
+  /**
+   * Role this card belongs to. `undefined` (or null in the DB) = shared across
+   * ALL roles. A string = only shown when that role is the active role.
+   */
+  role?: string;
 }
+
+/** The default role the teleprompter ships with. */
+export const DEFAULT_ROLE = "Business System Analyst";
 
 export function getAllBullets(card: TeleprompterCard): HighlightedPhrase[] {
   if (card.sections && card.sections.length > 0) {
@@ -606,6 +614,7 @@ export const DEFAULT_TELEPROMPTER_CARDS: TeleprompterCard[] = [
     id: "default-1",
     title: "Tell Me About Yourself",
     category: "Opening",
+    role: DEFAULT_ROLE,
     bullets: [
       {
         text: "**10+ years** in enterprise software — Java, TypeScript, cloud-native",
@@ -1086,3 +1095,36 @@ export const DEFAULT_TELEPROMPTER_CARDS: TeleprompterCard[] = [
     ],
   },
 ];
+
+/**
+ * Draft role-specific starter cards seeded when a new role is added.
+ * Content is a first-pass scaffold (role woven in, `[bracketed]` placeholders)
+ * the user then refines. These are the cards that typically differ per role.
+ */
+export function makeStarterCardsForRole(
+  role: string
+): Omit<TeleprompterCard, "id">[] {
+  return [
+    {
+      title: "Tell Me About Yourself",
+      category: "Opening",
+      role,
+      bullets: [
+        { text: "**[X]+ years** in software — [your core stack & strengths]", color: "blue" },
+        { text: `Targeting a **${role}** role — [what draws you to it]`, color: "purple" },
+        { text: "Recent highlight: **[a flagship project or measurable impact]**", color: "teal" },
+        { text: "What I bring: **[skill 1]**, **[skill 2]**, **[skill 3]**", color: "green" },
+      ],
+    },
+    {
+      title: "Why This Role / Why Me",
+      category: "Closing",
+      role,
+      bullets: [
+        { text: `Why **${role}**: [the problem space / mission that excites you]`, color: "blue" },
+        { text: "Why me: **[your differentiator]** backed by **[evidence]**", color: "amber" },
+        { text: "What I want next: **[the growth or impact you're seeking]**", color: "green" },
+      ],
+    },
+  ];
+}

@@ -20,6 +20,7 @@ import {
   FileStack,
   GripVertical,
   Search,
+  Briefcase,
 } from "lucide-react";
 import {
   DndContext,
@@ -46,6 +47,7 @@ import {
   CATEGORY_COLORS,
   getAllBullets,
   TEMPLATE_CARDS,
+  DEFAULT_ROLE,
 } from "@/data/teleprompter-defaults";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
@@ -474,17 +476,21 @@ function SectionEditor({
 
 function CardEditor({
   card,
+  roles,
   onSave,
   onCancel,
   onDelete,
 }: {
   card: TeleprompterCard;
+  roles: string[];
   onSave: (updates: Partial<Omit<TeleprompterCard, "id">>) => void;
   onCancel: () => void;
   onDelete: () => void;
 }) {
   const [title, setTitle] = useState(card.title);
   const [category, setCategory] = useState<CardCategory>(card.category);
+  // "" = shared across all roles.
+  const [role, setRole] = useState<string>(card.role ?? "");
   const [bullets, setBullets] = useState<HighlightedPhrase[]>([
     ...card.bullets,
   ]);
@@ -552,6 +558,7 @@ function CardEditor({
       onSave({
         title: title.trim(),
         category,
+        role: role || undefined,
         bullets: [],
         sections: filteredSections,
         fullText: fullText.trim() || undefined,
@@ -562,6 +569,7 @@ function CardEditor({
       onSave({
         title: title.trim(),
         category,
+        role: role || undefined,
         bullets: trimmedBullets,
         sections: undefined,
         fullText: fullText.trim() || undefined,
@@ -579,6 +587,24 @@ function CardEditor({
           className="bg-arch-bg1 border border-arch-border rounded-lg px-3 py-2 text-[14px] font-semibold text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
           placeholder="Card title"
         />
+        <div className="flex items-center gap-2">
+          <Briefcase size={13} className="text-arch-purple shrink-0" />
+          <span className="text-[11px] font-medium text-arch-text3 uppercase tracking-wider">
+            Role
+          </span>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="bg-arch-bg1 border border-arch-border rounded-lg px-2 py-1.5 text-[12px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+          >
+            <option value="">Shared (all roles)</option>
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -1049,6 +1075,145 @@ function PresentationOverlay({
   );
 }
 
+// ── Role switcher ──────────────────────────────────────────────────────────
+
+function RoleSwitcher({
+  activeRole,
+  roles,
+  defaultRole,
+  onSelect,
+  onAdd,
+  onDelete,
+}: {
+  activeRole: string;
+  roles: string[];
+  defaultRole: string;
+  onSelect: (role: string) => void;
+  onAdd: (name: string) => void;
+  onDelete: (role: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setAdding(false);
+        setNewName("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const submitAdd = () => {
+    const name = newName.trim();
+    if (!name) return;
+    onAdd(name);
+    setNewName("");
+    setAdding(false);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text2 hover:text-arch-text bg-arch-bg3 border border-arch-border rounded-lg transition-colors max-w-[180px]"
+        title="Switch interview role"
+      >
+        <Briefcase size={12} className="text-arch-purple shrink-0" />
+        <span className="truncate">{activeRole}</span>
+        <ChevronDown size={10} className="shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-60 bg-arch-bg2 border border-arch-border rounded-xl shadow-lg shadow-black/15 py-1 z-50">
+          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-arch-text3">
+            Role
+          </div>
+          {roles.map((role) => (
+            <div
+              key={role}
+              className={`group flex items-center gap-2 px-3 py-2 text-[12px] transition-colors ${
+                role === activeRole
+                  ? "text-arch-purple bg-arch-purple/10"
+                  : "text-arch-text hover:bg-arch-bg3"
+              }`}
+            >
+              <button
+                onClick={() => {
+                  onSelect(role);
+                  setOpen(false);
+                }}
+                className="flex-1 flex items-center gap-2 text-left min-w-0"
+              >
+                {role === activeRole ? (
+                  <Check size={12} className="shrink-0" />
+                ) : (
+                  <span className="w-3 shrink-0" />
+                )}
+                <span className="truncate">{role}</span>
+              </button>
+              {role !== defaultRole && (
+                <button
+                  onClick={() => onDelete(role)}
+                  title={`Delete role "${role}"`}
+                  className="opacity-0 group-hover:opacity-100 text-arch-text3 hover:text-arch-coral transition-all shrink-0"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+          ))}
+
+          <div className="border-t border-arch-border mt-1 pt-1">
+            {adding ? (
+              <div className="flex items-center gap-1.5 px-2 py-1.5">
+                <input
+                  autoFocus
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitAdd();
+                    if (e.key === "Escape") { setAdding(false); setNewName(""); }
+                  }}
+                  placeholder="Role name…"
+                  className="flex-1 min-w-0 bg-arch-bg1 border border-arch-border rounded-md px-2 py-1 text-[12px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+                />
+                <button
+                  onClick={submitAdd}
+                  className="p-1 text-arch-green hover:bg-arch-green/10 rounded transition-colors"
+                  title="Add role"
+                >
+                  <Check size={14} />
+                </button>
+                <button
+                  onClick={() => { setAdding(false); setNewName(""); }}
+                  className="p-1 text-arch-text3 hover:text-arch-text transition-colors"
+                  title="Cancel"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setAdding(true)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium text-arch-blue hover:bg-arch-bg3 transition-colors"
+              >
+                <Plus size={14} /> Add role…
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function TeleprompterTab() {
@@ -1067,6 +1232,11 @@ export default function TeleprompterTab() {
     updateCard,
     deleteCard,
     moveCard,
+    activeRole,
+    roles,
+    setActiveRole,
+    addRole,
+    deleteRole,
   } = useTeleprompterCards();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -1223,6 +1393,22 @@ export default function TeleprompterTab() {
           </span>
         </div>
         <div className="flex items-center gap-1.5">
+          <RoleSwitcher
+            activeRole={activeRole}
+            roles={roles}
+            defaultRole={DEFAULT_ROLE}
+            onSelect={setActiveRole}
+            onAdd={addRole}
+            onDelete={(role) => {
+              if (
+                window.confirm(
+                  `Delete the "${role}" role and its role-specific cards? Shared cards are not affected.`
+                )
+              ) {
+                deleteRole(role);
+              }
+            }}
+          />
           <button
             onClick={() => setShowOverview(!showOverview)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors ${
@@ -1441,6 +1627,20 @@ export default function TeleprompterTab() {
             </div>
           )}
         </div>
+      ) : !currentCard ? (
+        /* Empty deck for this role */
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <Briefcase size={28} className="text-arch-purple/50" />
+          <p className="mt-3 text-[13px] text-arch-text3">
+            No cards for the <span className="font-semibold text-arch-text">{activeRole}</span> role yet.
+          </p>
+          <button
+            onClick={handleAddCard}
+            className="mt-3 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-white bg-arch-blue hover:bg-arch-blue/90 rounded-lg transition-colors"
+          >
+            <Plus size={12} /> Add a card
+          </button>
+        </div>
       ) : (
         <>
           {/* Card area */}
@@ -1449,6 +1649,7 @@ export default function TeleprompterTab() {
               {isEditing ? (
                 <CardEditor
                   card={currentCard}
+                  roles={roles}
                   onSave={handleSaveEdit}
                   onCancel={() => setIsEditing(false)}
                   onDelete={() => setConfirmDelete(true)}
@@ -1483,7 +1684,7 @@ export default function TeleprompterTab() {
       <ConfirmDialog
         open={confirmDelete}
         title="Delete Card"
-        message={`Are you sure you want to delete "${currentCard.title}"? This cannot be undone.`}
+        message={`Are you sure you want to delete "${currentCard?.title ?? "this card"}"? This cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDeleteCard}
         onCancel={() => setConfirmDelete(false)}
