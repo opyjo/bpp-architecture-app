@@ -10,6 +10,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   arch: "System architecture diagram & overview",
   pages: "UI page inventory and user flows",
   events: "Kafka topics, producers & consumers",
+  storming: "Interactive domain event-storming board",
   lambdas: "AWS Lambda function catalog",
   services: "Backend microservice directory",
   mfe: "Microfrontend modules & ownership",
