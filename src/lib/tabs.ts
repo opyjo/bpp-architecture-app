@@ -60,6 +60,7 @@ export const tabGroups: TabGroup[] = [
     label: "AI Tools",
     tintClass: "tab-group-ai",
     tabs: [
+      { id: "insights", label: "Repo Insights" },
       { id: "analyze", label: "Ticket Analyzer", href: "/analyze" },
       { id: "pipeline", label: "Change Package" },
       { id: "contract", label: "API Contract Builder" },

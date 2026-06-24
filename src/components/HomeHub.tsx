@@ -28,6 +28,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   systemmap: "Interactive dependency map",
   drift: "Detect docs vs. code drift",
   runbooks: "Incident response runbooks",
+  insights: "Business, Go & SaaS lenses on your repo",
   analyze: "AI ticket analyzer",
   pipeline: "Generate change packages",
   contract: "Build API contracts from code",
