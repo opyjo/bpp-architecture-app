@@ -148,7 +148,8 @@ function GlobalNavInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const activeTab = searchParams.get("tab") || "arch";
+  // Default to "home" so no group is highlighted on the hub.
+  const activeTab = searchParams.get("tab") || "home";
 
   const handleTabClick = useCallback(
     (id: string) => {

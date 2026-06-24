@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import LogoutButton from "./LogoutButton";
 
 const badges = [
   { label: "MFE", color: "bg-[rgba(124,111,205,0.14)] text-arch-purple border-[rgba(124,111,205,0.22)]" },
@@ -16,12 +18,21 @@ const badges = [
 export default function Header() {
   return (
     <header className="bg-arch-bg2 border-b border-arch-border px-6 py-3.5 flex items-center justify-between gap-2.5 flex-wrap">
-      <div>
-        <div className="text-sm font-semibold tracking-tight">Subscription Manager — Architecture</div>
-        <div className="hidden sm:block text-[11px] text-arch-text3 mt-0.5 font-mono">
-          Bell Canada · go-repo-new · Next.js 14 BFF → AppSync → Go microservices
+      <Link
+        href="/"
+        className="group flex items-center gap-2.5"
+        aria-label="conduit-architecture — home"
+      >
+        <Logo />
+        <div className="flex flex-col leading-none">
+          <span className="brand-gradient-text text-[15px] font-bold tracking-tight">
+            conduit-architecture
+          </span>
+          <span className="hidden sm:block mt-1 text-[10px] font-mono uppercase tracking-[0.18em] text-arch-text3">
+            architecture workspace
+          </span>
         </div>
-      </div>
+      </Link>
       <div className="flex items-center gap-2">
         <div className="hidden md:flex gap-1 flex-wrap">
           {badges.map((b) => (
@@ -34,6 +45,7 @@ export default function Header() {
           ))}
         </div>
         <ThemeToggle />
+        <LogoutButton />
       </div>
     </header>
   );

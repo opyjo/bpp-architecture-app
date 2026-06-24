@@ -3,11 +3,7 @@ import { Inter } from "next/font/google";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
-import Header from "@/components/Header";
-import GlobalNav from "@/components/nav/GlobalNav";
-import Breadcrumbs from "@/components/nav/Breadcrumbs";
-import CommandPalette from "@/components/CommandPalette";
-import AssistantSidebar from "@/components/ai/AssistantSidebar";
+import AppChrome from "@/components/AppChrome";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -16,12 +12,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Subscription Manager — Architecture",
-  description: "Bell Canada · go-repo-new · Next.js 16 BFF → AppSync → Go microservices",
-  applicationName: "SM Teleprompter",
+  title: "conduit-architecture",
+  description: "Architecture workspace · go-repo-new · BFF → AppSync → Go microservices",
+  applicationName: "conduit-architecture",
   appleWebApp: {
     capable: true,
-    title: "Teleprompter",
+    title: "conduit",
     statusBarStyle: "black-translucent",
   },
   formatDetection: { telephone: false },
@@ -46,12 +42,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen flex flex-col bg-arch-bg text-arch-text font-sans antialiased">
         <ThemeProvider>
-          <Header />
-          <GlobalNav />
-          <Breadcrumbs />
-          {children}
-          <CommandPalette />
-          <AssistantSidebar />
+          <AppChrome>{children}</AppChrome>
           <Toaster position="bottom-right" richColors theme="system" />
         </ThemeProvider>
       </body>

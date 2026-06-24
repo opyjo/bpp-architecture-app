@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import ArchitectureTab from "@/components/tabs/ArchitectureTab";
+import HomeHub from "@/components/HomeHub";
 import { ALL_TAB_IDS } from "@/lib/tabs";
 
 // Dynamic imports for all tabs except ArchitectureTab (default tab, loaded eagerly)
@@ -68,21 +69,24 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
 function HomeContent() {
   const searchParams = useSearchParams();
 
-  const initialTab = searchParams.get("tab") || "arch";
-  const activeTab = ALL_TAB_IDS.includes(initialTab) ? initialTab : "arch";
+  // No (or unknown) ?tab= → show the home hub. A valid tab id → show that tab.
+  const tabParam = searchParams.get("tab");
+  const activeTab =
+    tabParam && ALL_TAB_IDS.includes(tabParam) ? tabParam : "home";
 
   // Track visited tabs — once visited, stay mounted (preserves state)
-  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(
-    () => new Set([activeTab])
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() =>
+    activeTab === "home" ? new Set() : new Set([activeTab])
   );
 
   // Keep visitedTabs in sync when URL changes
-  if (!visitedTabs.has(activeTab)) {
+  if (activeTab !== "home" && !visitedTabs.has(activeTab)) {
     setVisitedTabs((prev) => new Set(prev).add(activeTab));
   }
 
   return (
     <div className="flex-1 overflow-hidden">
+      {activeTab === "home" && <HomeHub />}
       {ALL_TAB_IDS.map((tabId) => {
         if (!visitedTabs.has(tabId)) return null;
         const Component = TAB_COMPONENTS[tabId];
