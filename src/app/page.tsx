@@ -35,7 +35,6 @@ const SystemMapTab = dynamic(() => import("@/components/tabs/SystemMapTab"), { s
 const QuizTab = dynamic(() => import("@/components/tabs/QuizTab"), { ssr: false });
 const AdrTab = dynamic(() => import("@/components/tabs/AdrTab"), { ssr: false });
 const RepoInsightsTab = dynamic(() => import("@/components/tabs/RepoInsightsTab"), { ssr: false });
-const EventStormingTab = dynamic(() => import("@/components/tabs/EventStormingTab"), { ssr: false });
 
 // Tab component mapping
 const TAB_COMPONENTS: Record<string, React.ComponentType> = {
@@ -67,7 +66,6 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   quiz: QuizTab,
   adr: AdrTab,
   insights: RepoInsightsTab,
-  storming: EventStormingTab,
 };
 
 function HomeContent() {

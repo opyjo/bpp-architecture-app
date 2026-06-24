@@ -18,7 +18,6 @@ export const tabGroups: TabGroup[] = [
       { id: "arch", label: "Architecture" },
       { id: "pages", label: "UI pages & flows" },
       { id: "events", label: "Kafka events" },
-      { id: "storming", label: "Event Storming" },
       { id: "lambdas", label: "Lambda functions" },
       { id: "services", label: "Services" },
       { id: "mfe", label: "Microfrontends" },
