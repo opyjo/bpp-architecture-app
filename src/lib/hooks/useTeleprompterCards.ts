@@ -6,17 +6,26 @@ import {
   TeleprompterCard,
   DEFAULT_TELEPROMPTER_CARDS,
   DEFAULT_ROLE,
+  DEFAULT_CATEGORIES,
+  CATEGORY_COLOR_OPTIONS,
   makeStarterCardsForRole,
 } from "@/data/teleprompter-defaults";
 import { useSavedTeleprompterCards } from "./useSavedTeleprompterCards";
 import type { SavedTeleprompterCard } from "@/lib/types/saved-teleprompter-card";
-import type { CardCategory } from "@/data/teleprompter-defaults";
+import type {
+  CardCategory,
+  CategoryColor,
+  CategoryDef,
+} from "@/data/teleprompter-defaults";
 
 const STORAGE_KEY = "teleprompter-cards";
 const ROLE_KEY = "teleprompter-active-role";
 // The base role's name is hardcoded as DEFAULT_ROLE, but the user can rename it;
 // the override lives here so the new name survives reloads.
 const DEFAULT_ROLE_KEY = "teleprompter-default-role";
+// User-editable category list (name + color). Categories are stored on cards as
+// plain strings; this list controls which pills show and how they're tinted.
+const CATEGORIES_KEY = "teleprompter-categories";
 
 // ── Converters ──────────────────────────────────────────────────────
 
@@ -49,6 +58,27 @@ function isVisibleForRole(card: TeleprompterCard, role: string): boolean {
   return !card.role || card.role === role;
 }
 
+// Append any category present on a card but missing from the list (legacy data
+// or imported cards), giving each the next palette color.
+function mergeMissingCategories(
+  existing: CategoryDef[],
+  cards: TeleprompterCard[]
+): CategoryDef[] {
+  const known = new Set(existing.map((c) => c.name));
+  const missing: CategoryDef[] = [];
+  for (const card of cards) {
+    if (card.category && !known.has(card.category)) {
+      known.add(card.category);
+      const color =
+        CATEGORY_COLOR_OPTIONS[
+          (existing.length + missing.length) % CATEGORY_COLOR_OPTIONS.length
+        ];
+      missing.push({ name: card.category, color });
+    }
+  }
+  return missing.length > 0 ? [...existing, ...missing] : existing;
+}
+
 // ── Hook ────────────────────────────────────────────────────────────
 
 export function useTeleprompterCards() {
@@ -73,6 +103,21 @@ export function useTeleprompterCards() {
     } catch {
       return DEFAULT_ROLE;
     }
+  });
+  // User-editable categories. Seeded from defaults, then merged with any
+  // category names found on loaded cards (see effect below) so nothing
+  // silently loses its pill.
+  const [categories, setCategories] = useState<CategoryDef[]>(() => {
+    try {
+      const stored = localStorage.getItem(CATEGORIES_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as CategoryDef[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      /* */
+    }
+    return DEFAULT_CATEGORIES;
   });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -103,6 +148,7 @@ export function useTeleprompterCards() {
         if (rows.length > 0) {
           const loaded = rows.map(fromDbRow);
           setAllCards(loaded);
+          setCategories((prev) => mergeMissingCategories(prev, loaded));
           try { localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded)); } catch { /* */ }
           setIsLoading(false);
           return;
@@ -117,6 +163,7 @@ export function useTeleprompterCards() {
           const parsed = JSON.parse(stored) as TeleprompterCard[];
           if (Array.isArray(parsed) && parsed.length > 0) {
             setAllCards(parsed);
+            setCategories((prev) => mergeMissingCategories(prev, parsed));
             setIsLoading(false);
             return;
           }
@@ -135,6 +182,13 @@ export function useTeleprompterCards() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
     } catch { /* */ }
   }, [allCards]);
+
+  // Persist the category list whenever it changes.
+  useEffect(() => {
+    try {
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+    } catch { /* */ }
+  }, [categories]);
 
   // The navigable deck for the active role = shared cards + this role's cards.
   const cards = useMemo(
@@ -448,6 +502,95 @@ export function useTeleprompterCards() {
     [allCards, defaultRole, deleteTeleprompterCard]
   );
 
+  // ── Categories ────────────────────────────────────────────────────
+
+  const addCategory = useCallback((name: string, color: CategoryColor) => {
+    const n = name.trim();
+    if (!n) return;
+    setCategories((prev) => {
+      if (prev.some((c) => c.name.toLowerCase() === n.toLowerCase())) {
+        toast.error(`Category "${n}" already exists`);
+        return prev;
+      }
+      toast.success(`Added category "${n}"`);
+      return [...prev, { name: n, color }];
+    });
+  }, []);
+
+  const setCategoryColor = useCallback((name: string, color: CategoryColor) => {
+    setCategories((prev) =>
+      prev.map((c) => (c.name === name ? { ...c, color } : c))
+    );
+  }, []);
+
+  const renameCategory = useCallback(
+    (oldName: string, rawNext: string) => {
+      const next = rawNext.trim();
+      if (!next || next === oldName) return;
+      if (
+        categories.some(
+          (c) => c.name !== oldName && c.name.toLowerCase() === next.toLowerCase()
+        )
+      ) {
+        toast.error(`Category "${next}" already exists`);
+        return;
+      }
+
+      setCategories((prev) =>
+        prev.map((c) => (c.name === oldName ? { ...c, name: next } : c))
+      );
+
+      // Re-tag every card sitting in the renamed category.
+      const affected = allCards.filter((c) => c.category === oldName);
+      if (affected.length > 0) {
+        setAllCards((prev) =>
+          prev.map((c) => (c.category === oldName ? { ...c, category: next } : c))
+        );
+        Promise.all(
+          affected.map((c) => updateTeleprompterCard(c.id, { category: next }))
+        )
+          .then(() => toast.success(`Renamed category to "${next}"`))
+          .catch(() => toast.error("Failed to rename category"));
+      } else {
+        toast.success(`Renamed category to "${next}"`);
+      }
+    },
+    [categories, allCards, updateTeleprompterCard]
+  );
+
+  const deleteCategory = useCallback(
+    (name: string) => {
+      if (categories.length <= 1) {
+        toast.error("Keep at least one category");
+        return;
+      }
+      const fallback = categories.find((c) => c.name !== name)?.name ?? name;
+
+      setCategories((prev) => prev.filter((c) => c.name !== name));
+
+      // Move any cards in the deleted category to the fallback category.
+      const affected = allCards.filter((c) => c.category === name);
+      if (affected.length > 0) {
+        setAllCards((prev) =>
+          prev.map((c) =>
+            c.category === name ? { ...c, category: fallback } : c
+          )
+        );
+        Promise.all(
+          affected.map((c) => updateTeleprompterCard(c.id, { category: fallback }))
+        ).catch(() => toast.error("Failed to update cards"));
+        toast.success(
+          `Deleted "${name}" — ${affected.length} card${
+            affected.length === 1 ? "" : "s"
+          } moved to "${fallback}"`
+        );
+      } else {
+        toast.success(`Deleted category "${name}"`);
+      }
+    },
+    [categories, allCards, updateTeleprompterCard]
+  );
+
   return {
     cards,
     currentIndex,
@@ -474,5 +617,11 @@ export function useTeleprompterCards() {
     addRole,
     renameRole,
     deleteRole,
+    // categories
+    categories,
+    addCategory,
+    renameCategory,
+    deleteCategory,
+    setCategoryColor,
   };
 }

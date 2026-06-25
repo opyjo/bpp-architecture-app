@@ -1,10 +1,16 @@
-export type CardCategory =
-  | "Opening"
-  | "STAR"
-  | "Technical"
-  | "Behavioral"
-  | "Closing"
-  | "Past Roles";
+/**
+ * Categories are user-editable (add / rename / delete / recolor), so this is an
+ * open string rather than a fixed union. Built-ins live in DEFAULT_CATEGORIES.
+ */
+export type CardCategory = string;
+
+/** Palette a category badge can be tinted with — mirrors HighlightColor. */
+export type CategoryColor = HighlightColor;
+
+export interface CategoryDef {
+  name: string;
+  color: CategoryColor;
+}
 
 export type HighlightColor =
   | "blue"
@@ -49,14 +55,58 @@ export function getAllBullets(card: TeleprompterCard): HighlightedPhrase[] {
   return card.bullets;
 }
 
-export const CATEGORY_COLORS: Record<CardCategory, string> = {
-  Opening: "bg-arch-blue/15 text-arch-blue border-arch-blue/30",
-  STAR: "bg-arch-purple/15 text-arch-purple border-arch-purple/30",
-  Technical: "bg-arch-teal/15 text-arch-teal border-arch-teal/30",
-  Behavioral: "bg-amber-500/15 text-amber-500 border-amber-500/30",
-  Closing: "bg-arch-green/15 text-arch-green border-arch-green/30",
-  "Past Roles": "bg-arch-coral/15 text-arch-coral border-arch-coral/30",
+/** Built-in categories the teleprompter ships with, in display order. */
+export const DEFAULT_CATEGORIES: CategoryDef[] = [
+  { name: "Opening", color: "blue" },
+  { name: "STAR", color: "purple" },
+  { name: "Technical", color: "teal" },
+  { name: "Behavioral", color: "amber" },
+  { name: "Closing", color: "green" },
+  { name: "Past Roles", color: "coral" },
+];
+
+/** Colors a category can be assigned, used by the category manager UI. */
+export const CATEGORY_COLOR_OPTIONS: CategoryColor[] = [
+  "blue",
+  "purple",
+  "teal",
+  "amber",
+  "green",
+  "coral",
+];
+
+/** Pill (badge) classes — border + translucent bg + text — per color. */
+export const CATEGORY_PILL_CLASSES: Record<CategoryColor, string> = {
+  blue: "bg-arch-blue/15 text-arch-blue border-arch-blue/30",
+  purple: "bg-arch-purple/15 text-arch-purple border-arch-purple/30",
+  teal: "bg-arch-teal/15 text-arch-teal border-arch-teal/30",
+  amber: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+  green: "bg-arch-green/15 text-arch-green border-arch-green/30",
+  coral: "bg-arch-coral/15 text-arch-coral border-arch-coral/30",
 };
+
+/** Solid dot classes per color — for the small swatch on filter pills. */
+export const CATEGORY_DOT_CLASSES: Record<CategoryColor, string> = {
+  blue: "bg-arch-blue",
+  purple: "bg-arch-purple",
+  teal: "bg-arch-teal",
+  amber: "bg-amber-500",
+  green: "bg-arch-green",
+  coral: "bg-arch-coral",
+};
+
+/** Badge classes for a category not found in the active set (e.g. legacy). */
+export const FALLBACK_CATEGORY_CLASS =
+  "bg-arch-text/8 text-arch-text2 border-arch-text/20";
+
+/** Resolve the badge classes for a category name against the active set. */
+export function resolveCategoryClass(
+  name: string,
+  categories: CategoryDef[]
+): string {
+  const def = categories.find((c) => c.name === name);
+  return def ? CATEGORY_PILL_CLASSES[def.color] : FALLBACK_CATEGORY_CLASS;
+}
 
 export const TEMPLATE_CARDS: Omit<TeleprompterCard, "id">[] = [
   {

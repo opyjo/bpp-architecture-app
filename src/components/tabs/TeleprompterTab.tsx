@@ -22,6 +22,8 @@ import {
   Search,
   Briefcase,
   Users,
+  Tag,
+  Settings2,
 } from "lucide-react";
 import {
   DndContext,
@@ -45,7 +47,11 @@ import {
   type CardCategory,
   type CardSection,
   type HighlightColor,
-  CATEGORY_COLORS,
+  type CategoryColor,
+  type CategoryDef,
+  CATEGORY_COLOR_OPTIONS,
+  CATEGORY_DOT_CLASSES,
+  resolveCategoryClass,
   getAllBullets,
   TEMPLATE_CARDS,
 } from "@/data/teleprompter-defaults";
@@ -79,15 +85,6 @@ const COLOR_RING_CLASSES: Record<HighlightColor, string> = {
   green: "ring-arch-green",
   coral: "ring-arch-coral",
 };
-
-const ALL_CATEGORIES: CardCategory[] = [
-  "Opening",
-  "STAR",
-  "Technical",
-  "Behavioral",
-  "Closing",
-  "Past Roles",
-];
 
 const ALL_COLORS: HighlightColor[] = [
   "blue",
@@ -172,10 +169,18 @@ function SectionedBullets({ sections }: { sections: CardSection[] }) {
   );
 }
 
-function CategoryBadge({ category, size = "lg" }: { category: CardCategory; size?: "sm" | "lg" }) {
+function CategoryBadge({
+  category,
+  colorClass,
+  size = "lg",
+}: {
+  category: CardCategory;
+  colorClass: string;
+  size?: "sm" | "lg";
+}) {
   return (
     <span
-      className={`inline-flex items-center rounded-full font-medium border ${CATEGORY_COLORS[category]} ${
+      className={`inline-flex items-center rounded-full font-medium border ${colorClass} ${
         size === "sm"
           ? "px-2.5 py-0.5 text-[11px]"
           : "px-3.5 py-1 text-[14px]"
@@ -548,12 +553,14 @@ function SectionEditor({
 function CardEditor({
   card,
   roles,
+  categories,
   onSave,
   onCancel,
   onDelete,
 }: {
   card: TeleprompterCard;
   roles: string[];
+  categories: CategoryDef[];
   onSave: (updates: Partial<Omit<TeleprompterCard, "id">>) => void;
   onCancel: () => void;
   onDelete: () => void;
@@ -658,23 +665,45 @@ function CardEditor({
           className="bg-arch-bg1 border border-arch-border rounded-lg px-3 py-2 text-[14px] font-semibold text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
           placeholder="Card title"
         />
-        <div className="flex items-center gap-2">
-          <Briefcase size={13} className="text-arch-purple shrink-0" />
-          <span className="text-[11px] font-medium text-arch-text3 uppercase tracking-wider">
-            Role
-          </span>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="bg-arch-bg1 border border-arch-border rounded-lg px-2 py-1.5 text-[12px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
-          >
-            <option value="">Shared (all roles)</option>
-            {roles.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center gap-2">
+            <Briefcase size={13} className="text-arch-purple shrink-0" />
+            <span className="text-[11px] font-medium text-arch-text3 uppercase tracking-wider">
+              Role
+            </span>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="bg-arch-bg1 border border-arch-border rounded-lg px-2 py-1.5 text-[12px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+            >
+              <option value="">Shared (all roles)</option>
+              {roles.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tag size={13} className="text-arch-blue shrink-0" />
+            <span className="text-[11px] font-medium text-arch-text3 uppercase tracking-wider">
+              Category
+            </span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="bg-arch-bg1 border border-arch-border rounded-lg px-2 py-1.5 text-[12px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+            >
+              {categories.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+              {!categories.some((c) => c.name === category) && (
+                <option value={category}>{category}</option>
+              )}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -834,11 +863,13 @@ function SortableCardItem({
   card,
   index,
   isCurrent,
+  colorClass,
   onSelect,
 }: {
   card: TeleprompterCard;
   index: number;
   isCurrent: boolean;
+  colorClass: string;
   onSelect: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -885,7 +916,7 @@ function SortableCardItem({
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {!card.role && <SharedBadge />}
-          <CategoryBadge category={card.category} size="sm" />
+          <CategoryBadge category={card.category} colorClass={colorClass} size="sm" />
         </div>
       </div>
       <button onClick={onSelect} className="text-left w-full">
@@ -944,11 +975,13 @@ function SortableCardItem({
 function CardOverview({
   cards,
   currentIndex,
+  categoryClass,
   onSelect,
   onReorder,
 }: {
   cards: TeleprompterCard[];
   currentIndex: number;
+  categoryClass: (name: string) => string;
   onSelect: (index: number) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
 }) {
@@ -984,6 +1017,7 @@ function CardOverview({
               card={card}
               index={i}
               isCurrent={i === currentIndex}
+              colorClass={categoryClass(card.category)}
               onSelect={() => onSelect(i)}
             />
           ))}
@@ -1026,6 +1060,7 @@ function PresentationOverlay({
   card,
   currentIndex,
   total,
+  colorClass,
   onClose,
   onPrev,
   onNext,
@@ -1033,6 +1068,7 @@ function PresentationOverlay({
   card: TeleprompterCard;
   currentIndex: number;
   total: number;
+  colorClass: string;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -1059,7 +1095,7 @@ function PresentationOverlay({
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-arch-border/50">
         <div className="flex items-center gap-3 sm:gap-4">
-          <CategoryBadge category={card.category} />
+          <CategoryBadge category={card.category} colorClass={colorClass} />
           <span className="text-[14px] text-arch-text3 tabular-nums">
             {currentIndex + 1} / {total}
           </span>
@@ -1337,6 +1373,174 @@ function RolePicker({
   );
 }
 
+// ── Category manager (modal) ───────────────────────────────────────────────
+
+function ColorDots({
+  selected,
+  onPick,
+  ringOffset,
+}: {
+  selected: CategoryColor;
+  onPick: (color: CategoryColor) => void;
+  ringOffset: string;
+}) {
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      {CATEGORY_COLOR_OPTIONS.map((color) => (
+        <button
+          key={color}
+          type="button"
+          onClick={() => onPick(color)}
+          title={color}
+          className={`w-3.5 h-3.5 rounded-full ${CATEGORY_DOT_CLASSES[color]} transition-transform hover:scale-110 ${
+            selected === color
+              ? `ring-2 ring-offset-1 ${ringOffset} ring-arch-text/40`
+              : "opacity-50 hover:opacity-100"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CategoryManager({
+  categories,
+  onAdd,
+  onRename,
+  onDelete,
+  onRecolor,
+  onClose,
+}: {
+  categories: CategoryDef[];
+  onAdd: (name: string, color: CategoryColor) => void;
+  onRename: (oldName: string, next: string) => void;
+  onDelete: (name: string) => void;
+  onRecolor: (name: string, color: CategoryColor) => void;
+  onClose: () => void;
+}) {
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState<CategoryColor>("blue");
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const submitAdd = () => {
+    const n = newName.trim();
+    if (!n) return;
+    onAdd(n, newColor);
+    setNewName("");
+  };
+
+  const submitRename = () => {
+    if (editingName == null) return;
+    const n = editValue.trim();
+    if (n && n !== editingName) onRename(editingName, n);
+    setEditingName(null);
+    setEditValue("");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-md mx-4 bg-arch-bg2 border border-arch-border rounded-2xl shadow-xl shadow-black/20 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-arch-border">
+          <div className="flex items-center gap-2">
+            <Tag size={15} className="text-arch-blue" />
+            <div>
+              <h2 className="text-[15px] font-semibold text-arch-text">Manage Categories</h2>
+              <p className="text-[11px] text-arch-text3 mt-0.5">
+                Add, rename, recolor or remove. Deleting moves its cards to another category.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-4 max-h-[50vh] overflow-auto flex flex-col gap-2">
+          {categories.map((cat) => {
+            const isEditing = editingName === cat.name;
+            return (
+              <div
+                key={cat.name}
+                className="flex items-center gap-2 rounded-lg border border-arch-border bg-arch-bg1 px-3 py-2"
+              >
+                <ColorDots
+                  selected={cat.color}
+                  onPick={(color) => onRecolor(cat.name, color)}
+                  ringOffset="ring-offset-arch-bg1"
+                />
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitRename();
+                      if (e.key === "Escape") {
+                        setEditingName(null);
+                        setEditValue("");
+                      }
+                    }}
+                    onBlur={submitRename}
+                    className="flex-1 min-w-0 bg-arch-bg2 border border-arch-border rounded-md px-2 py-1 text-[13px] text-arch-text focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+                  />
+                ) : (
+                  <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-arch-text">
+                    {cat.name}
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    setEditingName(cat.name);
+                    setEditValue(cat.name);
+                  }}
+                  title={`Rename "${cat.name}"`}
+                  className="p-1.5 text-arch-text3 hover:text-arch-blue transition-colors shrink-0"
+                >
+                  <Pencil size={13} />
+                </button>
+                <button
+                  onClick={() => onDelete(cat.name)}
+                  disabled={categories.length <= 1}
+                  title={`Delete "${cat.name}"`}
+                  className="p-1.5 text-arch-text3 hover:text-arch-coral transition-colors shrink-0 disabled:opacity-30 disabled:hover:text-arch-text3"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="border-t border-arch-border p-4">
+          <div className="flex items-center gap-2">
+            <ColorDots selected={newColor} onPick={setNewColor} ringOffset="ring-offset-arch-bg2" />
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submitAdd();
+              }}
+              placeholder="New category…"
+              className="flex-1 min-w-0 bg-arch-bg1 border border-arch-border rounded-lg px-2.5 py-1.5 text-[13px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+            />
+            <button
+              onClick={submitAdd}
+              disabled={!newName.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-white bg-arch-blue hover:bg-arch-blue/90 rounded-lg transition-colors disabled:opacity-40 shrink-0"
+            >
+              <Plus size={13} /> Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function TeleprompterTab() {
@@ -1364,9 +1568,21 @@ export default function TeleprompterTab() {
     addRole,
     renameRole,
     deleteRole,
+    categories,
+    addCategory,
+    renameCategory,
+    deleteCategory,
+    setCategoryColor,
   } = useTeleprompterCards();
 
+  // Resolve a category name → badge classes against the current category set.
+  const catClass = useCallback(
+    (name: string) => resolveCategoryClass(name, categories),
+    [categories]
+  );
+
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
   // false → role picker (landing). true → drilled into the active role's deck.
   const [viewingRole, setViewingRole] = useState(false);
   const [showOverview, setShowOverview] = useState(true);
@@ -1469,7 +1685,7 @@ export default function TeleprompterTab() {
   const handleAddCard = () => {
     addCard({
       title: "New Card",
-      category: "Opening",
+      category: categories[0]?.name ?? "Opening",
       bullets: [{ text: "**Key point** — add your content here", color: "blue" }],
     });
     setIsEditing(true);
@@ -1499,6 +1715,18 @@ export default function TeleprompterTab() {
     setConfirmDelete(false);
     deleteCard(currentCard.id);
     setIsEditing(false);
+  };
+
+  // Keep the active category filter in sync when a category is renamed/removed.
+  const handleRenameCategory = (oldName: string, next: string) => {
+    renameCategory(oldName, next);
+    const trimmed = next.trim();
+    if (trimmed && activeCategory === oldName) setActiveCategory(trimmed);
+  };
+
+  const handleDeleteCategory = (name: string) => {
+    if (activeCategory === name) setActiveCategory(null);
+    deleteCategory(name);
   };
 
   if (isLoading) {
@@ -1665,7 +1893,11 @@ export default function TeleprompterTab() {
             {activeCategory && (
               <>
                 <ChevronRight className="w-3 h-3 text-arch-text3/50" />
-                <CategoryBadge category={activeCategory} size="sm" />
+                <CategoryBadge
+                  category={activeCategory}
+                  colorClass={catClass(activeCategory)}
+                  size="sm"
+                />
               </>
             )}
             {searchQuery.trim() && (
@@ -1698,7 +1930,11 @@ export default function TeleprompterTab() {
                 className="hover:-translate-y-0.5 hover:opacity-80 transition-all duration-200"
                 title={`Show all ${currentCard.category} cards`}
               >
-                <CategoryBadge category={currentCard.category} size="sm" />
+                <CategoryBadge
+                  category={currentCard.category}
+                  colorClass={catClass(currentCard.category)}
+                  size="sm"
+                />
               </button>
               <ChevronRight className="w-3 h-3 text-arch-text3/50" />
               <span className="font-semibold text-arch-text truncate max-w-[220px]">
@@ -1760,19 +1996,27 @@ export default function TeleprompterTab() {
             >
               All
             </button>
-            {ALL_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                className={`px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
-                  activeCategory === cat
+                key={cat.name}
+                onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
+                  activeCategory === cat.name
                     ? "bg-arch-text/10 text-arch-text border-arch-text/25"
                     : "bg-transparent border-arch-border text-arch-text3 hover:text-arch-text hover:border-arch-text/25"
                 }`}
               >
-                {cat}
+                <span className={`w-2 h-2 rounded-full shrink-0 ${CATEGORY_DOT_CLASSES[cat.color]}`} />
+                {cat.name}
               </button>
             ))}
+            <button
+              onClick={() => setShowCategoryManager(true)}
+              title="Manage categories"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-full border border-dashed border-arch-border text-arch-text3 hover:text-arch-blue hover:border-arch-blue/40 transition-colors"
+            >
+              <Settings2 size={12} /> Edit
+            </button>
             <span className="text-[11px] text-arch-text3 ml-auto">
               {filteredCards.length} of {cards.length}
             </span>
@@ -1781,6 +2025,7 @@ export default function TeleprompterTab() {
             <CardOverview
               cards={filteredCards}
               currentIndex={filteredCurrentIndex}
+              categoryClass={catClass}
               onSelect={(filteredIdx) => {
                 const realIdx = filteredIndexMap ? filteredIndexMap[filteredIdx] : filteredIdx;
                 goTo(realIdx);
@@ -1836,6 +2081,7 @@ export default function TeleprompterTab() {
                   key={currentCard.id}
                   card={currentCard}
                   roles={roles}
+                  categories={categories}
                   onSave={handleSaveEdit}
                   onCancel={() => setIsEditing(false)}
                   onDelete={() => setConfirmDelete(true)}
@@ -1884,12 +2130,25 @@ export default function TeleprompterTab() {
             card={currentCard}
             currentIndex={currentIndex}
             total={cards.length}
+            colorClass={catClass(currentCard.category)}
             onClose={() => setPresenting(false)}
             onPrev={goPrev}
             onNext={goNext}
           />,
           document.body
         )}
+
+      {/* Category manager modal */}
+      {showCategoryManager && (
+        <CategoryManager
+          categories={categories}
+          onAdd={addCategory}
+          onRename={handleRenameCategory}
+          onDelete={handleDeleteCategory}
+          onRecolor={setCategoryColor}
+          onClose={() => setShowCategoryManager(false)}
+        />
+      )}
 
       {/* Template picker modal */}
       {showTemplatePicker && (
@@ -1916,7 +2175,11 @@ export default function TeleprompterTab() {
                     className="text-left p-4 rounded-xl border border-arch-border bg-arch-bg1 hover:border-arch-text3/30 hover:shadow-md hover:scale-[1.02] transition-all"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <CategoryBadge category={template.category} size="sm" />
+                      <CategoryBadge
+                        category={template.category}
+                        colorClass={catClass(template.category)}
+                        size="sm"
+                      />
                     </div>
                     <h3 className="text-[13px] font-semibold text-arch-text leading-snug mb-2">
                       {template.title}
