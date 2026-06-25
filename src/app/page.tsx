@@ -32,9 +32,9 @@ const TeleprompterTab = dynamic(() => import("@/components/tabs/TeleprompterTab"
 const ChangePackageTab = dynamic(() => import("@/components/tabs/ChangePackageTab"), { ssr: false });
 const DriftTab = dynamic(() => import("@/components/tabs/DriftTab"), { ssr: false });
 const SystemMapTab = dynamic(() => import("@/components/tabs/SystemMapTab"), { ssr: false });
-const QuizTab = dynamic(() => import("@/components/tabs/QuizTab"), { ssr: false });
-const AdrTab = dynamic(() => import("@/components/tabs/AdrTab"), { ssr: false });
 const RepoInsightsTab = dynamic(() => import("@/components/tabs/RepoInsightsTab"), { ssr: false });
+const ApoartStoriesTab = dynamic(() => import("@/components/tabs/ApoartStoriesTab"), { ssr: false });
+const SubscriptionFlowTab = dynamic(() => import("@/components/tabs/SubscriptionFlowTab"), { ssr: false });
 
 // Tab component mapping
 const TAB_COMPONENTS: Record<string, React.ComponentType> = {
@@ -63,9 +63,9 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   pipeline: ChangePackageTab,
   drift: DriftTab,
   systemmap: SystemMapTab,
-  quiz: QuizTab,
-  adr: AdrTab,
   insights: RepoInsightsTab,
+  apoart: ApoartStoriesTab,
+  subflow: SubscriptionFlowTab,
 };
 
 function HomeContent() {

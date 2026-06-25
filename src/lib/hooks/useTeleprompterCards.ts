@@ -14,6 +14,9 @@ import type { CardCategory } from "@/data/teleprompter-defaults";
 
 const STORAGE_KEY = "teleprompter-cards";
 const ROLE_KEY = "teleprompter-active-role";
+// The base role's name is hardcoded as DEFAULT_ROLE, but the user can rename it;
+// the override lives here so the new name survives reloads.
+const DEFAULT_ROLE_KEY = "teleprompter-default-role";
 
 // ── Converters ──────────────────────────────────────────────────────
 
@@ -52,9 +55,21 @@ export function useTeleprompterCards() {
   // Full, persisted list (all roles). The navigable `cards` below is the
   // role-filtered view derived from this.
   const [allCards, setAllCards] = useState<TeleprompterCard[]>([]);
+  // The base role's display name — DEFAULT_ROLE unless the user renamed it.
+  const [defaultRole, setDefaultRole] = useState<string>(() => {
+    try {
+      return localStorage.getItem(DEFAULT_ROLE_KEY) || DEFAULT_ROLE;
+    } catch {
+      return DEFAULT_ROLE;
+    }
+  });
   const [activeRole, setActiveRoleState] = useState<string>(() => {
     try {
-      return localStorage.getItem(ROLE_KEY) || DEFAULT_ROLE;
+      return (
+        localStorage.getItem(ROLE_KEY) ||
+        localStorage.getItem(DEFAULT_ROLE_KEY) ||
+        DEFAULT_ROLE
+      );
     } catch {
       return DEFAULT_ROLE;
     }
@@ -63,6 +78,10 @@ export function useTeleprompterCards() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const initialized = useRef(false);
+  // When a card is created/cloned (possibly into another role), we stash its id
+  // here so the focus effect below can select it once it lands in the visible
+  // deck — after any role switch has re-derived `cards`.
+  const pendingFocusId = useRef<string | null>(null);
 
   const {
     fetchTeleprompterCards,
@@ -125,10 +144,25 @@ export function useTeleprompterCards() {
 
   // Available roles = default role + any role present on a card.
   const roles = useMemo(() => {
-    const set = new Set<string>([DEFAULT_ROLE]);
+    const set = new Set<string>([defaultRole]);
     for (const c of allCards) if (c.role) set.add(c.role);
     return Array.from(set);
-  }, [allCards]);
+  }, [allCards, defaultRole]);
+
+  // Card count per role (shared cards counted in every role) — for the picker.
+  const roleCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const role of roles) {
+      counts[role] = allCards.filter((c) => isVisibleForRole(c, role)).length;
+    }
+    return counts;
+  }, [roles, allCards]);
+
+  // How many cards are shared across all roles.
+  const sharedCount = useMemo(
+    () => allCards.filter((c) => !c.role).length,
+    [allCards]
+  );
 
   // Reset position when switching roles.
   useEffect(() => {
@@ -139,6 +173,18 @@ export function useTeleprompterCards() {
   useEffect(() => {
     setCurrentIndex((i) => (i > cards.length - 1 ? Math.max(0, cards.length - 1) : i));
   }, [cards.length]);
+
+  // Focus a freshly created/cloned card once it appears in the active deck.
+  // Declared last so it wins over the role-switch reset above on the same tick.
+  useEffect(() => {
+    const id = pendingFocusId.current;
+    if (!id) return;
+    const idx = cards.findIndex((c) => c.id === id);
+    if (idx >= 0) {
+      setCurrentIndex(idx);
+      pendingFocusId.current = null;
+    }
+  }, [cards]);
 
   const currentCard = cards[currentIndex] ?? cards[0];
 
@@ -156,6 +202,12 @@ export function useTeleprompterCards() {
     },
     [cards.length]
   );
+
+  const setActiveRole = useCallback((name: string) => {
+    setActiveRoleState(name);
+    try { localStorage.setItem(ROLE_KEY, name); } catch { /* */ }
+    setCurrentIndex(0);
+  }, []);
 
   const addCard = useCallback(
     (card: Omit<TeleprompterCard, "id">) => {
@@ -177,33 +229,53 @@ export function useTeleprompterCards() {
     [allCards, activeRole, saveTeleprompterCard]
   );
 
+  // targetRole controls what role the copy gets:
+  //   undefined → keep the source card's role (plain duplicate)
+  //   ""        → Shared (visible under every role)
+  //   "<role>"  → that specific role
+  // When the copy lands in a different role, we switch to it so the user can
+  // edit the duplicate right away.
   const cloneCard = useCallback(
-    (id: string) => {
+    (id: string, targetRole?: string) => {
       const source = allCards.find((c) => c.id === id);
       if (!source) return;
+
+      const roleForClone =
+        targetRole === undefined ? source.role : targetRole || undefined;
 
       const cloned: TeleprompterCard = {
         ...structuredClone(source),
         id: crypto.randomUUID(),
         title: `${source.title} (Copy)`,
       };
+      if (roleForClone) cloned.role = roleForClone;
+      else delete cloned.role;
       if (cloned.sections) {
         cloned.sections = cloned.sections.map((s) => ({ ...s, id: crypto.randomUUID() }));
       }
 
       const sortOrder = allCards.length;
       setAllCards((prev) => [...prev, cloned]);
-      if (isVisibleForRole(cloned, activeRole)) {
-        const visibleLen = allCards.filter((c) => isVisibleForRole(c, activeRole)).length;
-        setCurrentIndex(visibleLen);
+
+      // Focus the copy once it shows up — switching roles first if needed.
+      pendingFocusId.current = cloned.id;
+      if (roleForClone && roleForClone !== activeRole) {
+        setActiveRole(roleForClone);
       }
 
+      const movedRoles = targetRole !== undefined && roleForClone !== source.role;
       const { id: _id, ...payload } = toDbRow(cloned, sortOrder);
       saveTeleprompterCard(payload)
-        .then(() => toast.success("Card cloned"))
-        .catch(() => toast.error("Failed to clone card"));
+        .then(() =>
+          toast.success(
+            movedRoles
+              ? `Duplicated into "${roleForClone ?? "Shared"}"`
+              : "Card duplicated"
+          )
+        )
+        .catch(() => toast.error("Failed to duplicate card"));
     },
-    [allCards, activeRole, saveTeleprompterCard]
+    [allCards, activeRole, saveTeleprompterCard, setActiveRole]
   );
 
   const updateCard = useCallback(
@@ -269,6 +341,14 @@ export function useTeleprompterCards() {
     setCurrentIndex(0);
     setIsEditing(false);
 
+    // Defaults are tagged with the hardcoded base role — drop any rename override.
+    setDefaultRole(DEFAULT_ROLE);
+    setActiveRoleState(DEFAULT_ROLE);
+    try {
+      localStorage.removeItem(DEFAULT_ROLE_KEY);
+      localStorage.setItem(ROLE_KEY, DEFAULT_ROLE);
+    } catch { /* */ }
+
     (async () => {
       try {
         await deleteAllTeleprompterCards();
@@ -286,12 +366,6 @@ export function useTeleprompterCards() {
   }, [deleteAllTeleprompterCards, saveTeleprompterCard]);
 
   // ── Roles ─────────────────────────────────────────────────────────
-
-  const setActiveRole = useCallback((name: string) => {
-    setActiveRoleState(name);
-    try { localStorage.setItem(ROLE_KEY, name); } catch { /* */ }
-    setCurrentIndex(0);
-  }, []);
 
   const addRole = useCallback(
     (name: string) => {
@@ -321,9 +395,41 @@ export function useTeleprompterCards() {
     [roles, allCards.length, saveTeleprompterCard, setActiveRole]
   );
 
+  const renameRole = useCallback(
+    (oldName: string, rawNext: string) => {
+      const next = rawNext.trim();
+      if (!next || next === oldName) return;
+      if (roles.some((r) => r !== oldName && r.toLowerCase() === next.toLowerCase())) {
+        toast.error(`Role "${next}" already exists`);
+        return;
+      }
+
+      const affected = allCards.filter((c) => c.role === oldName);
+      if (affected.length > 0) {
+        setAllCards((prev) =>
+          prev.map((c) => (c.role === oldName ? { ...c, role: next } : c))
+        );
+        Promise.all(affected.map((c) => updateTeleprompterCard(c.id, { role: next })))
+          .then(() => toast.success(`Renamed "${oldName}" to "${next}"`))
+          .catch(() => toast.error("Failed to rename role"));
+      } else {
+        // The base role can have zero tagged cards (its deck is just shared cards).
+        toast.success(`Renamed "${oldName}" to "${next}"`);
+      }
+
+      // Renaming the base role persists a new display name.
+      if (oldName === defaultRole) {
+        setDefaultRole(next);
+        try { localStorage.setItem(DEFAULT_ROLE_KEY, next); } catch { /* */ }
+      }
+      if (activeRole === oldName) setActiveRole(next);
+    },
+    [roles, allCards, activeRole, defaultRole, updateTeleprompterCard, setActiveRole]
+  );
+
   const deleteRole = useCallback(
     (name: string) => {
-      if (name === DEFAULT_ROLE) {
+      if (name === defaultRole) {
         toast.error("The default role can't be deleted");
         return;
       }
@@ -334,12 +440,12 @@ export function useTeleprompterCards() {
       });
       removed.forEach((c) => deleteTeleprompterCard(c.id).catch(() => { /* */ }));
 
-      setActiveRoleState(DEFAULT_ROLE);
-      try { localStorage.setItem(ROLE_KEY, DEFAULT_ROLE); } catch { /* */ }
+      setActiveRoleState(defaultRole);
+      try { localStorage.setItem(ROLE_KEY, defaultRole); } catch { /* */ }
       setCurrentIndex(0);
       toast.success(`Deleted role "${name}"`);
     },
-    [allCards, deleteTeleprompterCard]
+    [allCards, defaultRole, deleteTeleprompterCard]
   );
 
   return {
@@ -361,8 +467,12 @@ export function useTeleprompterCards() {
     // roles
     activeRole,
     roles,
+    roleCounts,
+    sharedCount,
+    defaultRole,
     setActiveRole,
     addRole,
+    renameRole,
     deleteRole,
   };
 }

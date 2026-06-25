@@ -29,9 +29,10 @@ export const tabGroups: TabGroup[] = [
     tabs: [
       { id: "repo", label: "Repo" },
       { id: "ref", label: "Reference" },
+      { id: "subflow", label: "Subscription Flow" },
+      { id: "apoart", label: "APOART Stories" },
       { id: "flags", label: "Feature Flags" },
       { id: "learnings", label: "Learnings" },
-      { id: "adr", label: "Decision Records" },
     ],
   },
   {
@@ -43,7 +44,6 @@ export const tabGroups: TabGroup[] = [
       { id: "openapi", label: "OpenAPI 3.0" },
       { id: "coach", label: "Interview Coach" },
       { id: "teleprompter", label: "Teleprompter" },
-      { id: "quiz", label: "Quiz / Flashcards" },
     ],
   },
   {

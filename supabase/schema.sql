@@ -2,8 +2,7 @@
 -- Subscription Manager — Architecture App · Supabase schema
 -- ----------------------------------------------------------------------------
 -- Idempotent bootstrap for a fresh Supabase project. Run in the SQL editor.
--- Covers every "saved items" table the app persists to, plus the new `adrs`
--- table used by the Decision Records module.
+-- Covers every "saved items" table the app persists to.
 --
 -- Row Level Security is ENABLED on every table. By default the policies are
 -- PERMISSIVE for the `anon` role, because the app ships with only the public
@@ -116,28 +115,13 @@ create table if not exists public.teleprompter_cards (
 -- Migration for an existing database (safe to run repeatedly):
 --   alter table public.teleprompter_cards add column if not exists role text;
 
--- ============================ adrs (NEW) ====================================
--- Architecture Decision Records — used by the Decision Records tab.
-create table if not exists public.adrs (
-  id           uuid primary key default gen_random_uuid(),
-  title        text not null,
-  status       text not null default 'proposed',
-  context      text not null default '',
-  decision     text not null default '',
-  consequences text not null default '',
-  alternatives text not null default '',
-  tags         text[] not null default '{}',
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
-);
-
 -- ---- triggers + RLS for every table ----------------------------------------
 do $$
 declare
   t text;
   tables text[] := array[
     'reviews','test_plans','specs','sequence_diagrams',
-    'analyses','chats','runbooks','teleprompter_cards','adrs'
+    'analyses','chats','runbooks','teleprompter_cards'
   ];
 begin
   foreach t in array tables loop
@@ -162,9 +146,9 @@ end $$;
 -- HARDENING (optional) — when you enable Supabase Auth, drop the "anon_all"
 -- policies above and add an owner column + per-user policies instead, e.g.:
 --
---   alter table public.adrs add column owner uuid default auth.uid();
---   drop policy "anon_all" on public.adrs;
---   create policy "owner_rw" on public.adrs for all to authenticated
+--   alter table public.runbooks add column owner uuid default auth.uid();
+--   drop policy "anon_all" on public.runbooks;
+--   create policy "owner_rw" on public.runbooks for all to authenticated
 --     using (owner = auth.uid()) with check (owner = auth.uid());
 --
 -- Repeat per table. See docs/auth-and-rls.md for the full walkthrough.

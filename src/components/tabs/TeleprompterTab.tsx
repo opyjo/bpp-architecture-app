@@ -21,6 +21,7 @@ import {
   GripVertical,
   Search,
   Briefcase,
+  Users,
 } from "lucide-react";
 import {
   DndContext,
@@ -47,7 +48,6 @@ import {
   CATEGORY_COLORS,
   getAllBullets,
   TEMPLATE_CARDS,
-  DEFAULT_ROLE,
 } from "@/data/teleprompter-defaults";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
@@ -186,10 +186,24 @@ function CategoryBadge({ category, size = "lg" }: { category: CardCategory; size
   );
 }
 
+// Marks a card that isn't role-specific — it shows up in every role's deck.
+function SharedBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full font-medium border bg-arch-text/8 text-arch-text3 border-arch-text/15 px-2.5 py-0.5 text-[11px]"
+      title="Shared — shows for every role"
+    >
+      <Users size={10} className="shrink-0" />
+      Shared
+    </span>
+  );
+}
+
 function CardView({
   card,
   cardIndex,
   totalCards,
+  roles,
   onEdit,
   onClone,
   onPresent,
@@ -197,11 +211,33 @@ function CardView({
   card: TeleprompterCard;
   cardIndex: number;
   totalCards: number;
+  roles: string[];
+  // undefined → keep this card's role; "" → Shared; otherwise that role.
+  onClone: (targetRole?: string) => void;
   onEdit: () => void;
-  onClone: () => void;
   onPresent: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [cloneOpen, setCloneOpen] = useState(false);
+  const cloneRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cloneOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (cloneRef.current && !cloneRef.current.contains(e.target as Node)) {
+        setCloneOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [cloneOpen]);
+
+  // Roles you can copy into, minus this card's current placement.
+  const currentPlacement = card.role ?? "";
+  const copyTargets = [
+    { value: "", label: "Shared (all roles)" },
+    ...roles.map((r) => ({ value: r, label: r })),
+  ].filter((t) => t.value !== currentPlacement);
 
   return (
     <div className="flex flex-col gap-6">
@@ -210,15 +246,50 @@ function CardView({
           <h2 className="font-bold text-arch-text leading-tight text-[20px]">
             {card.title}
           </h2>
+          <div className="flex items-center gap-1.5 text-[11px] text-arch-text3">
+            <Briefcase size={11} className="text-arch-purple shrink-0" />
+            <span className="truncate">{card.role ?? "Shared — shows for every role"}</span>
+          </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={onClone}
-            className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
-            title="Clone card"
-          >
-            <Copy size={16} />
-          </button>
+          <div className="relative" ref={cloneRef}>
+            <button
+              onClick={() => setCloneOpen((o) => !o)}
+              className="flex items-center gap-0.5 p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+              title="Duplicate card"
+            >
+              <Copy size={16} />
+              <ChevronDown size={11} className="-mr-0.5" />
+            </button>
+            {cloneOpen && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-arch-bg2 border border-arch-border rounded-xl shadow-lg shadow-black/15 py-1 z-50">
+                <button
+                  onClick={() => { onClone(undefined); setCloneOpen(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-arch-text hover:bg-arch-bg3 transition-colors text-left"
+                >
+                  <Copy size={13} className="shrink-0 text-arch-text3" />
+                  Duplicate here
+                </button>
+                {copyTargets.length > 0 && (
+                  <>
+                    <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-arch-text3">
+                      Duplicate into
+                    </div>
+                    {copyTargets.map((t) => (
+                      <button
+                        key={t.value || "__shared__"}
+                        onClick={() => { onClone(t.value); setCloneOpen(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-arch-text hover:bg-arch-bg3 transition-colors text-left"
+                      >
+                        <Briefcase size={13} className="shrink-0 text-arch-purple" />
+                        <span className="truncate">{t.label}</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={onEdit}
             className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
@@ -812,7 +883,10 @@ function SortableCardItem({
             {index + 1}
           </span>
         </div>
-        <CategoryBadge category={card.category} size="sm" />
+        <div className="flex items-center gap-1 shrink-0">
+          {!card.role && <SharedBadge />}
+          <CategoryBadge category={card.category} size="sm" />
+        </div>
       </div>
       <button onClick={onSelect} className="text-left w-full">
         <h3 className="text-[13px] font-semibold text-arch-text leading-snug mb-2">
@@ -1075,40 +1149,33 @@ function PresentationOverlay({
   );
 }
 
-// ── Role switcher ──────────────────────────────────────────────────────────
+// ── Role picker (landing screen) ───────────────────────────────────────────
 
-function RoleSwitcher({
-  activeRole,
+function RolePicker({
   roles,
+  roleCounts,
+  sharedCount,
+  activeRole,
   defaultRole,
   onSelect,
   onAdd,
+  onRename,
   onDelete,
 }: {
-  activeRole: string;
   roles: string[];
+  roleCounts: Record<string, number>;
+  sharedCount: number;
+  activeRole: string;
   defaultRole: string;
   onSelect: (role: string) => void;
   onAdd: (name: string) => void;
+  onRename: (oldName: string, newName: string) => void;
   onDelete: (role: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-        setAdding(false);
-        setNewName("");
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+  const [editingRole, setEditingRole] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   const submitAdd = () => {
     const name = newName.trim();
@@ -1116,100 +1183,156 @@ function RoleSwitcher({
     onAdd(name);
     setNewName("");
     setAdding(false);
-    setOpen(false);
+  };
+
+  const submitRename = () => {
+    if (editingRole == null) return;
+    const name = editName.trim();
+    if (name && name !== editingRole) onRename(editingRole, name);
+    setEditingRole(null);
+    setEditName("");
   };
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-text2 hover:text-arch-text bg-arch-bg3 border border-arch-border rounded-lg transition-colors max-w-[180px]"
-        title="Switch interview role"
-      >
-        <Briefcase size={12} className="text-arch-purple shrink-0" />
-        <span className="truncate">{activeRole}</span>
-        <ChevronDown size={10} className="shrink-0" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-60 bg-arch-bg2 border border-arch-border rounded-xl shadow-lg shadow-black/15 py-1 z-50">
-          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-arch-text3">
-            Role
-          </div>
-          {roles.map((role) => (
+    <div className="flex-1 overflow-auto p-4 sm:p-8">
+      <div className="mb-6">
+        <h2 className="text-[18px] font-semibold text-arch-text">Choose a role</h2>
+        <p className="mt-1 text-[12px] text-arch-text3">
+          Pick a role to see only its interview cards.
+          {sharedCount > 0 && (
+            <> {sharedCount} shared card{sharedCount === 1 ? "" : "s"} appear in every role.</>
+          )}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {roles.map((role) => {
+          const isActive = role === activeRole;
+          const count = roleCounts[role] ?? 0;
+          const isEditing = editingRole === role;
+          return (
             <div
               key={role}
-              className={`group flex items-center gap-2 px-3 py-2 text-[12px] transition-colors ${
-                role === activeRole
-                  ? "text-arch-purple bg-arch-purple/10"
-                  : "text-arch-text hover:bg-arch-bg3"
+              className={`group relative rounded-xl border p-4 transition-all ${
+                isActive
+                  ? "bg-arch-purple/5 border-arch-purple/40 ring-1 ring-arch-purple/20"
+                  : "bg-arch-bg2 border-arch-border hover:border-arch-text3/40 hover:shadow-md"
               }`}
             >
-              <button
-                onClick={() => {
-                  onSelect(role);
-                  setOpen(false);
-                }}
-                className="flex-1 flex items-center gap-2 text-left min-w-0"
-              >
-                {role === activeRole ? (
-                  <Check size={12} className="shrink-0" />
-                ) : (
-                  <span className="w-3 shrink-0" />
-                )}
-                <span className="truncate">{role}</span>
-              </button>
-              {role !== defaultRole && (
-                <button
-                  onClick={() => onDelete(role)}
-                  title={`Delete role "${role}"`}
-                  className="opacity-0 group-hover:opacity-100 text-arch-text3 hover:text-arch-coral transition-all shrink-0"
-                >
-                  <Trash2 size={12} />
-                </button>
+              {isEditing ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    autoFocus
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitRename();
+                      if (e.key === "Escape") { setEditingRole(null); setEditName(""); }
+                    }}
+                    className="flex-1 min-w-0 bg-arch-bg1 border border-arch-border rounded-md px-2 py-1 text-[13px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+                  />
+                  <button
+                    onClick={submitRename}
+                    className="p-1 text-arch-green hover:bg-arch-green/10 rounded transition-colors shrink-0"
+                    title="Save name"
+                  >
+                    <Check size={15} />
+                  </button>
+                  <button
+                    onClick={() => { setEditingRole(null); setEditName(""); }}
+                    className="p-1 text-arch-text3 hover:text-arch-text transition-colors shrink-0"
+                    title="Cancel"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => onSelect(role)}
+                    className="flex items-start gap-3 text-left w-full"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-arch-purple/15 flex items-center justify-center shrink-0">
+                      <Briefcase size={16} className="text-arch-purple" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[14px] font-semibold text-arch-text truncate">
+                          {role}
+                        </span>
+                        {isActive && (
+                          <Check size={13} className="text-arch-purple shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-[11px] text-arch-text3">
+                        {count} card{count === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                  </button>
+                  <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5">
+                    <button
+                      onClick={() => { setEditingRole(role); setEditName(role); }}
+                      title={`Rename role "${role}"`}
+                      className="p-1 opacity-0 group-hover:opacity-100 text-arch-text3 hover:text-arch-blue transition-all"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    {role !== defaultRole && (
+                      <button
+                        onClick={() => onDelete(role)}
+                        title={`Delete role "${role}"`}
+                        className="p-1 opacity-0 group-hover:opacity-100 text-arch-text3 hover:text-arch-coral transition-all"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </div>
-          ))}
+          );
+        })}
 
-          <div className="border-t border-arch-border mt-1 pt-1">
-            {adding ? (
-              <div className="flex items-center gap-1.5 px-2 py-1.5">
-                <input
-                  autoFocus
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") submitAdd();
-                    if (e.key === "Escape") { setAdding(false); setNewName(""); }
-                  }}
-                  placeholder="Role name…"
-                  className="flex-1 min-w-0 bg-arch-bg1 border border-arch-border rounded-md px-2 py-1 text-[12px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
-                />
-                <button
-                  onClick={submitAdd}
-                  className="p-1 text-arch-green hover:bg-arch-green/10 rounded transition-colors"
-                  title="Add role"
-                >
-                  <Check size={14} />
-                </button>
-                <button
-                  onClick={() => { setAdding(false); setNewName(""); }}
-                  className="p-1 text-arch-text3 hover:text-arch-text transition-colors"
-                  title="Cancel"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
+        {/* Add-role tile */}
+        {adding ? (
+          <div className="rounded-xl border border-dashed border-arch-border p-4 bg-arch-bg2">
+            <div className="flex items-center gap-1.5">
+              <input
+                autoFocus
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitAdd();
+                  if (e.key === "Escape") { setAdding(false); setNewName(""); }
+                }}
+                placeholder="Role name…"
+                className="flex-1 min-w-0 bg-arch-bg1 border border-arch-border rounded-md px-2 py-1 text-[13px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+              />
               <button
-                onClick={() => setAdding(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium text-arch-blue hover:bg-arch-bg3 transition-colors"
+                onClick={submitAdd}
+                className="p-1 text-arch-green hover:bg-arch-green/10 rounded transition-colors shrink-0"
+                title="Add role"
               >
-                <Plus size={14} /> Add role…
+                <Check size={15} />
               </button>
-            )}
+              <button
+                onClick={() => { setAdding(false); setNewName(""); }}
+                className="p-1 text-arch-text3 hover:text-arch-text transition-colors shrink-0"
+                title="Cancel"
+              >
+                <X size={15} />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <button
+            onClick={() => setAdding(true)}
+            className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-arch-border p-4 text-[13px] font-medium text-arch-text3 hover:text-arch-blue hover:border-arch-blue/40 hover:bg-arch-blue/5 transition-colors min-h-[68px]"
+          >
+            <Plus size={15} /> Add role
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -1234,12 +1357,18 @@ export default function TeleprompterTab() {
     moveCard,
     activeRole,
     roles,
+    roleCounts,
+    sharedCount,
+    defaultRole,
     setActiveRole,
     addRole,
+    renameRole,
     deleteRole,
   } = useTeleprompterCards();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // false → role picker (landing). true → drilled into the active role's deck.
+  const [viewingRole, setViewingRole] = useState(false);
   const [showOverview, setShowOverview] = useState(true);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -1286,9 +1415,9 @@ export default function TeleprompterTab() {
     return filteredCards.findIndex((c) => c.id === currentCard.id);
   }, [filteredIndexMap, currentIndex, filteredCards, currentCard]);
 
-  // Keyboard navigation
+  // Keyboard navigation — only inside a role's deck, not on the picker.
   useEffect(() => {
-    if (isEditing) return;
+    if (isEditing || !viewingRole) return;
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "ArrowLeft") {
@@ -1302,7 +1431,7 @@ export default function TeleprompterTab() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isEditing, goNext, goPrev]);
+  }, [isEditing, viewingRole, goNext, goPrev]);
 
   // Close add menu on outside click
   useEffect(() => {
@@ -1315,6 +1444,27 @@ export default function TeleprompterTab() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showAddMenu]);
+
+  // ── Role navigation ─────────────────────────────────────────────────────
+  const enterRole = (role: string) => {
+    setActiveRole(role); // persists + resets the deck position
+    setShowOverview(true);
+    setIsEditing(false);
+    setViewingRole(true);
+  };
+  const backToRoles = () => {
+    setViewingRole(false);
+    setIsEditing(false);
+  };
+  const handleDeleteRole = (role: string) => {
+    if (
+      window.confirm(
+        `Delete the "${role}" role and its role-specific cards? Shared cards are not affected.`
+      )
+    ) {
+      deleteRole(role);
+    }
+  };
 
   const handleAddCard = () => {
     addCard({
@@ -1333,8 +1483,8 @@ export default function TeleprompterTab() {
     setShowAddMenu(false);
   };
 
-  const handleCloneCard = () => {
-    cloneCard(currentCard.id);
+  const handleCloneCard = (targetRole?: string) => {
+    cloneCard(currentCard.id, targetRole);
     setIsEditing(true);
   };
 
@@ -1393,22 +1543,27 @@ export default function TeleprompterTab() {
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <RoleSwitcher
-            activeRole={activeRole}
-            roles={roles}
-            defaultRole={DEFAULT_ROLE}
-            onSelect={setActiveRole}
-            onAdd={addRole}
-            onDelete={(role) => {
-              if (
-                window.confirm(
-                  `Delete the "${role}" role and its role-specific cards? Shared cards are not affected.`
-                )
-              ) {
-                deleteRole(role);
-              }
-            }}
-          />
+          {viewingRole && (
+            <>
+              <button
+                onClick={backToRoles}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-arch-text2 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+                title="Back to all roles"
+              >
+                <ChevronLeft size={13} /> Roles
+              </button>
+              <button
+                onClick={backToRoles}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-purple bg-arch-purple/10 border border-arch-purple/25 rounded-lg transition-colors max-w-[180px]"
+                title="Switch role"
+              >
+                <Briefcase size={12} className="shrink-0" />
+                <span className="truncate">{activeRole}</span>
+              </button>
+            </>
+          )}
+          {viewingRole && (
+          <>
           <button
             onClick={() => setShowOverview(!showOverview)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors ${
@@ -1460,10 +1615,13 @@ export default function TeleprompterTab() {
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
       </div>
 
       {/* Breadcrumbs — reflects the tab's internal navigation state */}
+      {viewingRole && (
       <nav
         key={
           showOverview
@@ -1473,11 +1631,20 @@ export default function TeleprompterTab() {
         className="flex items-center gap-1.5 px-3 sm:px-5 py-2 border-b border-arch-border text-[11px] animate-breadcrumb-in"
       >
         <button
-          onClick={() => setShowOverview(true)}
+          onClick={backToRoles}
           className="flex items-center gap-1 font-semibold text-arch-purple hover:text-arch-purple/70 hover:-translate-y-0.5 transition-all duration-200"
         >
           <Monitor className="w-3 h-3" />
           Teleprompter
+        </button>
+        <ChevronRight className="w-3 h-3 text-arch-text3/50" />
+        <button
+          onClick={backToRoles}
+          className="inline-flex items-center gap-1 font-medium text-arch-purple hover:text-arch-purple/70 hover:-translate-y-0.5 transition-all duration-200"
+          title="Back to all roles"
+        >
+          <Briefcase className="w-3 h-3" />
+          <span className="truncate max-w-[160px]">{activeRole}</span>
         </button>
         {showOverview ? (
           <>
@@ -1541,8 +1708,26 @@ export default function TeleprompterTab() {
           )
         )}
       </nav>
+      )}
 
-      {showOverview ? (
+      {!viewingRole ? (
+        <RolePicker
+          roles={roles}
+          roleCounts={roleCounts}
+          sharedCount={sharedCount}
+          activeRole={activeRole}
+          defaultRole={defaultRole}
+          onSelect={enterRole}
+          onAdd={(name) => {
+            addRole(name); // creates + switches to the new role with starter cards
+            setShowOverview(true);
+            setIsEditing(false);
+            setViewingRole(true);
+          }}
+          onRename={renameRole}
+          onDelete={handleDeleteRole}
+        />
+      ) : showOverview ? (
         /* Overview grid */
         <div className="flex-1 overflow-auto p-3 sm:p-5">
           {/* Search + category filter bar */}
@@ -1648,6 +1833,7 @@ export default function TeleprompterTab() {
             <div className="w-full max-w-4xl bg-arch-bg2 border border-arch-border rounded-2xl shadow-lg shadow-black/10 p-5 sm:p-8 md:p-10">
               {isEditing ? (
                 <CardEditor
+                  key={currentCard.id}
                   card={currentCard}
                   roles={roles}
                   onSave={handleSaveEdit}
@@ -1659,6 +1845,7 @@ export default function TeleprompterTab() {
                   card={currentCard}
                   cardIndex={currentIndex}
                   totalCards={cards.length}
+                  roles={roles}
                   onEdit={() => setIsEditing(true)}
                   onClone={handleCloneCard}
                   onPresent={() => setPresenting(true)}
