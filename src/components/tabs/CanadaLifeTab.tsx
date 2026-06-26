@@ -628,23 +628,25 @@ export default function CanadaLifeTab() {
                 &ldquo;Lead the analysis of business problems and develop requirements, API Product specifications, and contribute to
                 product design.&rdquo; Every responsibility below maps to something you&apos;ve actually built.
               </Desc>
-              <Sub>What you&apos;ll do (9 responsibilities)</Sub>
-              <div className="space-y-1.5">
+              <Sub>What you&apos;ll do (9 responsibilities) — in plain terms</Sub>
+              <div className="space-y-2">
                 {[
-                  ["Document all Q&A to understand integration requirements", "Integration Q&A log"],
-                  ["Review understood requirements before solution design", "Requirements review gate"],
-                  ["Create data-mapping docs (API ↔ front-end / back-end)", "UI → API → Go → DB"],
-                  ["Contribute to OpenAPI specs and JDL files", "Contract-first + JDL"],
-                  ["Create southbound orchestration specs", "flow-runner saga"],
-                  ["Document acceptance criteria for each story", "Given / When / Then"],
-                  ["Create development stories and tasks", "As-a / I-want / so-that"],
-                  ["Lead story grooming and story pointing", "You run the room"],
-                  ["Review completed work vs requirements", "Post-delivery review"],
+                  ["Document all Q&A to understand integration requirements", "List every open question about how the systems should connect, and chase each one to a signed-off answer before design starts."],
+                  ["Review understood requirements before solution design", "Get stakeholders to agree what we&apos;re building — before any code starts."],
+                  ["Create data-mapping docs (API ↔ front-end / back-end)", "Trace every field from the screen down to the exact database column, so both sides agree what it means."],
+                  ["Contribute to OpenAPI specs and JDL files", "Write the API contract and the data shapes first, as the single source of truth the code is built from."],
+                  ["Create southbound orchestration specs", "Define each step of a multi-system flow — and what to undo if a later step fails."],
+                  ["Document acceptance criteria for each story", "Write clear pass/fail rules, including timeouts and errors, so &ldquo;done&rdquo; is unambiguous."],
+                  ["Create development stories and tasks", "Turn requirements into &ldquo;As a… I want… so that…&rdquo; stories the team can build straight from."],
+                  ["Lead story grooming and story pointing", "Run the session: walk the stories, surface hidden assumptions, and size the work with the engineers."],
+                  ["Review completed work vs requirements", "Test the finished build back against the same acceptance criteria, line by line."],
                 ].map(([d, e], i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span style={{ color: "var(--arch-green)" }}>✓</span>
-                    <span className="text-[12px] text-arch-text2 flex-1">{d}</span>
-                    <Badge color="green">{e}</Badge>
+                  <div key={i} className="flex items-start gap-2.5">
+                    <span className="mt-0.5 shrink-0" style={{ color: "var(--arch-green)" }}>✓</span>
+                    <div>
+                      <div className="text-[12px] font-medium text-arch-text leading-snug">{d}</div>
+                      <div className="text-[11px] text-arch-text3 mt-0.5 leading-relaxed">{e}</div>
+                    </div>
                   </div>
                 ))}
               </div>
