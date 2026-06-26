@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Prism as PrismHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
@@ -86,7 +87,7 @@ export function detectLanguage(code: string, comment?: string): string {
   return "go"; // Default for this architecture app
 }
 
-export default function SyntaxHighlighter({
+function SyntaxHighlighter({
   code,
   language = "text",
   showLineNumbers = false,
@@ -123,5 +124,8 @@ export default function SyntaxHighlighter({
     </PrismHighlighter>
   );
 }
+
+// Prism tokenization is expensive; re-highlight only when code/language change.
+export default memo(SyntaxHighlighter);
 
 export { normalizeLanguage };

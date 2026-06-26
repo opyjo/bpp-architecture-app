@@ -47,7 +47,12 @@ Any observations about how this code fits (or doesn't fit) the platform architec
 If a section has no items, omit it entirely. Be specific with line references when possible.`;
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: { code?: string; focus?: string[]; language?: string; modelId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const code: string = body.code ?? "";
   const focus: string[] = body.focus ?? [];
   const language: string = body.language ?? "go";
@@ -68,5 +73,6 @@ export async function POST(request: Request) {
     modelId,
     systemPrompt: SYSTEM_PROMPT,
     userContent,
+    signal: request.signal,
   });
 }

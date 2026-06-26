@@ -91,7 +91,12 @@ Take required approvals and reviews from the product owners or BA for final sign
 - Be specific and grounded in the requirement — never fabricate ticket IDs, repository URLs, or environments that contradict the requirement; use the template placeholders when the information is not provided.`;
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: { requirement?: string; testTypes?: string[]; modelId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const requirement: string = body.requirement ?? "";
   const testTypes: string[] = body.testTypes ?? [];
   const modelId: string = body.modelId || DEFAULT_MODEL_ID;
@@ -111,5 +116,6 @@ export async function POST(request: Request) {
     modelId,
     systemPrompt: SYSTEM_PROMPT,
     userContent,
+    signal: request.signal,
   });
 }

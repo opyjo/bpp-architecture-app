@@ -1,6 +1,7 @@
 import { GITHUB_REPOS } from "@/lib/ai/tools";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const REPO_FULL_NAME = GITHUB_REPOS["go-repo-new"] ?? "opyjo/mygorepo";
 const [REPO_OWNER, REPO_NAME] = REPO_FULL_NAME.split("/");
@@ -53,6 +54,8 @@ export async function GET() {
           "X-GitHub-Api-Version": "2022-11-28",
         },
         next: { revalidate: 300 },
+        // Cap a slow/hung GitHub response so the request can't hang indefinitely.
+        signal: AbortSignal.timeout(20_000),
       }
     );
 
@@ -100,7 +103,11 @@ export async function GET() {
     return Response.json({ handlers });
   } catch (err) {
     const message =
-      err instanceof Error ? err.message : "Failed to list handlers";
+      err instanceof Error && err.name === "TimeoutError"
+        ? "GitHub request timed out. Please try again."
+        : err instanceof Error
+          ? err.message
+          : "Failed to list handlers";
     return Response.json({ error: message }, { status: 500 });
   }
 }

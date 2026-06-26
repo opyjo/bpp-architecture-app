@@ -56,7 +56,8 @@ async function streamAnthropic(
   modelId: string,
   incomingMessages: { role: "user" | "assistant"; content: string }[],
   controller: ReadableStreamDefaultController,
-  systemPrompt: string = SYSTEM_PROMPT
+  systemPrompt: string = SYSTEM_PROMPT,
+  signal?: AbortSignal
 ) {
   const client = new Anthropic({ apiKey });
 
@@ -101,14 +102,17 @@ async function streamAnthropic(
       break;
     }
 
-    const response = await client.messages.create({
-      model: modelId,
-      max_tokens: 8192,
-      system: systemPrompt,
-      messages,
-      tools,
-      stream: true,
-    });
+    const response = await client.messages.create(
+      {
+        model: modelId,
+        max_tokens: 8192,
+        system: systemPrompt,
+        messages,
+        tools,
+        stream: true,
+      },
+      { signal }
+    );
 
     const contentBlocks: Anthropic.ContentBlock[] = [];
     // Cache tool results so we execute each tool only once
@@ -178,7 +182,7 @@ async function streamAnthropic(
 
             // Execute tool ONCE and cache the result
             const startTime = Date.now();
-            const output = await executeTool(currentToolName as ToolName, parsedInput);
+            const output = await executeTool(currentToolName as ToolName, parsedInput, signal);
             const durationMs = Date.now() - startTime;
             toolResultsCache.set(blockIndex, output);
             totalToolCalls++;
@@ -261,16 +265,19 @@ async function streamAnthropic(
     });
 
     try {
-      const finalResponse = await client.messages.create({
-        model: modelId,
-        max_tokens: 8192,
-        system:
-          systemPrompt +
-          "\n\nIMPORTANT: You have already gathered information using tools. Now you MUST synthesize everything you have learned into a clear, comprehensive response. Do NOT request any more tools. Provide your answer directly based on the file contents you have already read.",
-        messages,
-        tools: [],          // no tools available — forces text response
-        stream: true,
-      });
+      const finalResponse = await client.messages.create(
+        {
+          model: modelId,
+          max_tokens: 8192,
+          system:
+            systemPrompt +
+            "\n\nIMPORTANT: You have already gathered information using tools. Now you MUST synthesize everything you have learned into a clear, comprehensive response. Do NOT request any more tools. Provide your answer directly based on the file contents you have already read.",
+          messages,
+          tools: [],          // no tools available — forces text response
+          stream: true,
+        },
+        { signal }
+      );
 
       for await (const event of finalResponse) {
         if (
@@ -298,7 +305,8 @@ async function streamOpenAICompatible(
   provider: ModelProvider,
   incomingMessages: { role: "user" | "assistant"; content: string }[],
   controller: ReadableStreamDefaultController,
-  systemPrompt: string = SYSTEM_PROMPT
+  systemPrompt: string = SYSTEM_PROMPT,
+  signal?: AbortSignal
 ) {
   const baseURLs: Record<string, string> = {
     google: "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -345,13 +353,16 @@ async function streamOpenAICompatible(
       break;
     }
 
-    const stream = await client.chat.completions.create({
-      model: modelId,
-      max_tokens: 8192,
-      messages,
-      tools: OPENAI_TOOLS,
-      stream: true,
-    });
+    const stream = await client.chat.completions.create(
+      {
+        model: modelId,
+        max_tokens: 8192,
+        messages,
+        tools: OPENAI_TOOLS,
+        stream: true,
+      },
+      { signal }
+    );
 
     let assistantText = "";
     let finishReason: string | null = null;
@@ -426,7 +437,7 @@ async function streamOpenAICompatible(
       });
 
       const startTime = Date.now();
-      const output = await executeTool(tc.name as ToolName, parsedInput);
+      const output = await executeTool(tc.name as ToolName, parsedInput, signal);
       const durationMs = Date.now() - startTime;
       totalToolCalls++;
 
@@ -496,12 +507,15 @@ async function streamOpenAICompatible(
     });
 
     try {
-      const finalStream = await client.chat.completions.create({
-        model: modelId,
-        max_tokens: 8192,
-        messages: synthesisMessages,
-        stream: true,
-      });
+      const finalStream = await client.chat.completions.create(
+        {
+          model: modelId,
+          max_tokens: 8192,
+          messages: synthesisMessages,
+          stream: true,
+        },
+        { signal }
+      );
 
       for await (const chunk of finalStream) {
         const choice = chunk.choices[0];
@@ -525,7 +539,16 @@ async function streamOpenAICompatible(
 // ---------- Main handler ----------
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: {
+    messages?: { role: "user" | "assistant"; content: string }[];
+    modelId?: string;
+    context?: string;
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const incomingMessages: { role: "user" | "assistant"; content: string }[] =
     body.messages ?? [];
   const selectedModelId: string = body.modelId ?? "claude-sonnet-4.6";
@@ -556,6 +579,12 @@ export async function POST(request: Request) {
     ? SYSTEM_PROMPT + "\n\n" + context
     : SYSTEM_PROMPT;
 
+  // Abort the upstream AI call + GitHub tool fetches when the client disconnects
+  // or cancels the response stream, so they don't keep running to completion.
+  const abortController = new AbortController();
+  const onClientAbort = () => abortController.abort();
+  request.signal.addEventListener("abort", onClientAbort);
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
@@ -565,7 +594,8 @@ export async function POST(request: Request) {
             model.modelId,
             incomingMessages,
             controller,
-            effectiveSystemPrompt
+            effectiveSystemPrompt,
+            abortController.signal
           );
         } else {
           await streamOpenAICompatible(
@@ -574,17 +604,29 @@ export async function POST(request: Request) {
             model.provider,
             incomingMessages,
             controller,
-            effectiveSystemPrompt
+            effectiveSystemPrompt,
+            abortController.signal
           );
         }
         sendEvent(controller, { type: "done" });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        sendEvent(controller, { type: "error", message });
+        // Client gone — nothing to report back to.
+        if (!abortController.signal.aborted) {
+          const message =
+            err instanceof Error ? err.message : "Unknown error occurred";
+          sendEvent(controller, { type: "error", message });
+        }
       } finally {
-        controller.close();
+        request.signal.removeEventListener("abort", onClientAbort);
+        try {
+          controller.close();
+        } catch {
+          // already closed (e.g. cancelled)
+        }
       }
+    },
+    cancel() {
+      abortController.abort();
     },
   });
 

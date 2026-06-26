@@ -19,6 +19,19 @@ function githubHeaders(accept?: string): Record<string, string> {
   };
 }
 
+/** GitHub can hang on slow/large responses; cap every call and honor caller abort. */
+const GITHUB_FETCH_TIMEOUT_MS = 20_000;
+
+function fetchGitHub(
+  url: string,
+  init: RequestInit,
+  signal?: AbortSignal
+): Promise<Response> {
+  const timeout = AbortSignal.timeout(GITHUB_FETCH_TIMEOUT_MS);
+  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+  return fetch(url, { ...init, signal: combined });
+}
+
 function parseRepoPath(filePath: string): { owner: string; repo: string; path: string } {
   const parts = filePath.split("/");
   const repoName = parts[0];
@@ -104,7 +117,8 @@ export type ToolName = (typeof toolDefinitions)[number]["name"];
 
 export async function executeTool(
   name: ToolName,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  signal?: AbortSignal
 ): Promise<string> {
   try {
     switch (name) {
@@ -112,28 +126,33 @@ export async function executeTool(
         return await readFile(
           input.path as string,
           (input.offset as number) ?? 0,
-          (input.limit as number) ?? 500
+          (input.limit as number) ?? 500,
+          signal
         );
       case "search_files":
         return await searchFiles(
           input.pattern as string,
           input.path as string,
-          input.glob as string | undefined
+          input.glob as string | undefined,
+          signal
         );
       case "list_directory":
-        return await listDirectory(input.path as string);
+        return await listDirectory(input.path as string, signal);
       default:
         return `Unknown tool: ${name}`;
     }
   } catch (err) {
+    if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
+      return `Error: GitHub request was aborted or timed out.`;
+    }
     return `Error: ${err instanceof Error ? err.message : String(err)}`;
   }
 }
 
-async function readFile(filePath: string, offset: number, limit: number): Promise<string> {
+async function readFile(filePath: string, offset: number, limit: number, signal?: AbortSignal): Promise<string> {
   const { owner, repo, path } = parseRepoPath(filePath);
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-  const res = await fetch(url, { headers: githubHeaders() });
+  const res = await fetchGitHub(url, { headers: githubHeaders() }, signal);
 
   if (res.status === 404) {
     return `File not found: ${filePath}`;
@@ -165,7 +184,8 @@ async function readFile(filePath: string, offset: number, limit: number): Promis
 async function searchFiles(
   pattern: string,
   searchPath: string,
-  glob?: string
+  glob?: string,
+  signal?: AbortSignal
 ): Promise<string> {
   const parts = searchPath.split("/");
   const repoName = parts[0];
@@ -194,9 +214,11 @@ async function searchFiles(
   }
 
   const url = `https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=50`;
-  const res = await fetch(url, {
-    headers: githubHeaders("application/vnd.github.text-match+json"),
-  });
+  const res = await fetchGitHub(
+    url,
+    { headers: githubHeaders("application/vnd.github.text-match+json") },
+    signal
+  );
 
   if (res.status === 403 || res.status === 429) {
     return `GitHub API rate limit exceeded. Please wait a moment and try again.`;
@@ -231,12 +253,12 @@ async function searchFiles(
   return lines.join("\n") || "No matches found.";
 }
 
-async function listDirectory(dirPath: string): Promise<string> {
+async function listDirectory(dirPath: string, signal?: AbortSignal): Promise<string> {
   const { owner, repo, path } = parseRepoPath(dirPath);
   const url = path
     ? `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
     : `https://api.github.com/repos/${owner}/${repo}/contents`;
-  const res = await fetch(url, { headers: githubHeaders() });
+  const res = await fetchGitHub(url, { headers: githubHeaders() }, signal);
 
   if (res.status === 404) {
     return `Directory not found: ${dirPath}`;

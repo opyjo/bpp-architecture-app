@@ -79,5 +79,6 @@ export async function POST(request: Request) {
     systemPrompt,
     userContent,
     maxTokens: 8192,
+    signal: request.signal,
   });
 }

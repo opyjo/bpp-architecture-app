@@ -3,7 +3,12 @@ import { executeTool } from "@/lib/ai/tools";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: { path?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const path: string = body.path ?? "";
 
   if (!path.trim()) {
@@ -11,7 +16,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const rawOutput = await executeTool("read_file", { path });
+    const rawOutput = await executeTool("read_file", { path }, request.signal);
 
     if (rawOutput.startsWith("Error:") || rawOutput.startsWith("File not found:")) {
       return Response.json({ error: rawOutput }, { status: 404 });

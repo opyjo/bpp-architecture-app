@@ -42,6 +42,8 @@ export async function GET() {
         // The recursive tree response exceeds Next's 2MB fetch-cache limit,
         // so skip the data cache (drift is an explicit, on-demand check anyway).
         cache: "no-store",
+        // Cap a slow/hung GitHub response so the request can't hang indefinitely.
+        signal: AbortSignal.timeout(20_000),
       }
     );
 
@@ -118,7 +120,11 @@ export async function GET() {
     });
   } catch (err) {
     const message =
-      err instanceof Error ? err.message : "Failed to check drift";
+      err instanceof Error && err.name === "TimeoutError"
+        ? "GitHub request timed out. Please try again."
+        : err instanceof Error
+          ? err.message
+          : "Failed to check drift";
     return Response.json({ error: message }, { status: 500 });
   }
 }

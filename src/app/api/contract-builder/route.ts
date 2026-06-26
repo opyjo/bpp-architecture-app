@@ -20,7 +20,12 @@ Instructions:
 - If additional context files are provided (models, middleware, etc.), use them to enrich the spec.`;
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: { goCode?: string; additionalFiles?: string[]; fileName?: string; modelId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const goCode: string = body.goCode ?? "";
   const additionalFiles: string[] = body.additionalFiles ?? [];
   const fileName: string = body.fileName ?? "handler.go";
@@ -44,5 +49,6 @@ export async function POST(request: Request) {
     systemPrompt: SYSTEM_PROMPT,
     userContent,
     maxTokens: 16384,
+    signal: request.signal,
   });
 }

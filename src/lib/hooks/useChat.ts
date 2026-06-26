@@ -45,7 +45,6 @@ export function useChat(modelId: string, options?: UseChatOptions) {
     storageKey = DEFAULT_STORAGE_KEY,
     onMessagesChange,
     systemContext,
-    feature = "AI Chat",
   } = options ?? {};
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -55,6 +54,16 @@ export function useChat(modelId: string, options?: UseChatOptions) {
   const initializedRef = useRef(false);
   const onMessagesChangeRef = useRef(onMessagesChange);
   onMessagesChangeRef.current = onMessagesChange;
+  // Always-current snapshot so sendMessage doesn't need `messages` in its deps
+  // (which would otherwise make the callback change identity on every token).
+  // Read only at call time (event handlers), so updating it after commit is fine.
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  });
+
+  // Abort any in-flight stream if the component unmounts mid-response.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   // Load on mount
   useEffect(() => {
@@ -68,15 +77,17 @@ export function useChat(modelId: string, options?: UseChatOptions) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save on change + notify
+  // Save on change + notify — but NOT on every streamed token. Persisting per
+  // token does a synchronous JSON.stringify + localStorage.setItem (and DB write
+  // via onMessagesChange) hundreds of times per response, which janks the UI.
+  // Skip while streaming; the effect runs once more when isStreaming flips false.
   useEffect(() => {
-    if (initializedRef.current && messages.length > 0) {
-      if (persistToLocalStorage) {
-        saveMessages(storageKey, messages);
-      }
-      onMessagesChangeRef.current?.(messages);
+    if (!initializedRef.current || messages.length === 0 || isStreaming) return;
+    if (persistToLocalStorage) {
+      saveMessages(storageKey, messages);
     }
-  }, [messages, persistToLocalStorage, storageKey]);
+    onMessagesChangeRef.current?.(messages);
+  }, [messages, isStreaming, persistToLocalStorage, storageKey]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -107,7 +118,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
 
       try {
         // Build API messages from last N turns
-        const allMessages = [...messages, userMessage];
+        const allMessages = [...messagesRef.current, userMessage];
         const apiMessages = allMessages.slice(-MAX_SENT).map((m) => ({
           role: m.role,
           content: m.content,
@@ -230,7 +241,7 @@ export function useChat(modelId: string, options?: UseChatOptions) {
         abortRef.current = null;
       }
     },
-    [messages, isStreaming, modelId, systemContext, feature]
+    [isStreaming, modelId, systemContext]
   );
 
   const stopStreaming = useCallback(() => {

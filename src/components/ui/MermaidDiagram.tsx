@@ -18,6 +18,14 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
   const idRef = useRef(`mermaid-${Math.random().toString(36).slice(2, 9)}`);
   const { theme } = useTheme();
 
+  // Only render a diagram once it's near the viewport. mermaid.render() is a
+  // synchronous, main-thread layout pass; without this, tabs with several
+  // diagrams (and any theme toggle) render them all at once and freeze the UI.
+  // Starts visible only where IntersectionObserver is unavailable (no gating possible).
+  const [isVisible, setIsVisible] = useState(
+    () => typeof IntersectionObserver === "undefined"
+  );
+
   const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -65,8 +73,26 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
   const handleMouseUp = useCallback(() => setIsPanning(false), []);
 
+  // Mark visible when the container scrolls near the viewport.
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setIsVisible(true);
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
     let cancelled = false;
+    // Defer the heavy synchronous render off the current tick so a theme toggle
+    // (which changes every mounted diagram) repaints first and renders coalesce.
+    const timer = setTimeout(() => {
     async function render() {
       const mermaid = (await import("mermaid")).default;
 
@@ -134,8 +160,9 @@ export default function MermaidDiagram({ chart }: MermaidDiagramProps) {
       }
     }
     render();
-    return () => { cancelled = true; };
-  }, [chart, theme]);
+    }, 50);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [chart, theme, isVisible]);
 
   // Reset pan/zoom when chart changes
   useEffect(() => {

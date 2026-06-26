@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, memo, type ReactNode } from "react";
 import type { ChatMessage } from "@/lib/types/chat";
 import SyntaxHighlighter from "@/components/ui/SyntaxHighlighter";
 
@@ -277,9 +277,17 @@ function formatMarkdown(text: string) {
 }
 
 /* ── Message bubble ── */
-export default function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   const isThinking = !isUser && !message.content;
+
+  // Markdown parsing + syntax highlighting is expensive. Memoize on content so
+  // a re-render that doesn't change this message's text (e.g. another message
+  // streaming in the same conversation) doesn't re-parse and re-highlight it.
+  const renderedContent = useMemo(
+    () => (isUser || isThinking ? null : formatMarkdown(message.content)),
+    [isUser, isThinking, message.content]
+  );
 
   return (
     <div
@@ -299,7 +307,7 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
         }`}
       >
         <div className="whitespace-pre-wrap break-words overflow-hidden">
-          {isUser ? message.content : isThinking ? <ThinkingIndicator /> : formatMarkdown(message.content)}
+          {isUser ? message.content : isThinking ? <ThinkingIndicator /> : renderedContent}
         </div>
 
         {message.toolCalls && message.toolCalls.length > 0 && (
@@ -313,6 +321,8 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
     </div>
   );
 }
+
+export default memo(MessageBubble);
 
 /* ── Tool call badge ── */
 function ToolCallBadge({

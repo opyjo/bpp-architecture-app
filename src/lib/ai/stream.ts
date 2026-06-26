@@ -37,16 +37,20 @@ async function streamAnthropic(
   systemPrompt: string,
   userContent: string,
   controller: ReadableStreamDefaultController,
-  maxTokens: number
+  maxTokens: number,
+  signal?: AbortSignal
 ) {
   const client = new Anthropic({ apiKey });
-  const response = await client.messages.create({
-    model: modelId,
-    max_tokens: maxTokens,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userContent }],
-    stream: true,
-  });
+  const response = await client.messages.create(
+    {
+      model: modelId,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userContent }],
+      stream: true,
+    },
+    { signal }
+  );
 
   for await (const event of response) {
     if (
@@ -65,18 +69,22 @@ async function streamOpenAICompatible(
   systemPrompt: string,
   userContent: string,
   controller: ReadableStreamDefaultController,
-  maxTokens: number
+  maxTokens: number,
+  signal?: AbortSignal
 ) {
   const client = new OpenAI({ apiKey, baseURL: BASE_URLS[provider] });
-  const stream = await client.chat.completions.create({
-    model: modelId,
-    max_tokens: maxTokens,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userContent },
-    ],
-    stream: true,
-  });
+  const stream = await client.chat.completions.create(
+    {
+      model: modelId,
+      max_tokens: maxTokens,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+      stream: true,
+    },
+    { signal }
+  );
 
   for await (const chunk of stream) {
     const content = chunk.choices[0]?.delta?.content;
@@ -95,8 +103,18 @@ export function createStreamingResponse(opts: {
   systemPrompt: string;
   userContent: string;
   maxTokens?: number;
+  /** Pass the route's `request.signal` so the upstream call aborts on client disconnect. */
+  signal?: AbortSignal;
 }): Response {
-  const { modelId, systemPrompt, userContent, maxTokens = 8192 } = opts;
+  const { modelId, systemPrompt, userContent, maxTokens = 8192, signal } = opts;
+
+  // Bridge client-disconnect → our own controller so cancel() can also abort.
+  const abortController = new AbortController();
+  const onClientAbort = () => abortController.abort();
+  if (signal) {
+    if (signal.aborted) abortController.abort();
+    else signal.addEventListener("abort", onClientAbort);
+  }
 
   const model = getModel(modelId);
   const apiKey = getApiKey(model.provider);
@@ -124,7 +142,8 @@ export function createStreamingResponse(opts: {
             systemPrompt,
             userContent,
             controller,
-            maxTokens
+            maxTokens,
+            abortController.signal
           );
         } else {
           await streamOpenAICompatible(
@@ -134,17 +153,28 @@ export function createStreamingResponse(opts: {
             systemPrompt,
             userContent,
             controller,
-            maxTokens
+            maxTokens,
+            abortController.signal
           );
         }
         sendEvent(controller, { type: "done" });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        sendEvent(controller, { type: "error", message });
+        if (!abortController.signal.aborted) {
+          const message =
+            err instanceof Error ? err.message : "Unknown error occurred";
+          sendEvent(controller, { type: "error", message });
+        }
       } finally {
-        controller.close();
+        if (signal) signal.removeEventListener("abort", onClientAbort);
+        try {
+          controller.close();
+        } catch {
+          // already closed
+        }
       }
+    },
+    cancel() {
+      abortController.abort();
     },
   });
 
