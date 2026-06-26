@@ -304,6 +304,44 @@ export const mockQuestions: MockQA[] = [
       "Early on, I signed off acceptance criteria on a change without nailing down one edge case — what should happen when a particular field came back empty from an upstream service. It wasn't in the AC, so the dev built the reasonable-looking path, and it produced wrong behaviour in that case. It got caught in testing, but it was my gap — I'd left the failure path implicit.\n\nI handled it in two parts. In the moment, I owned it directly — I didn't frame it as the developer missing something, because the requirement was mine and the ambiguity was mine. I worked with them to define the correct behaviour for the empty case and we corrected it.\n\nBut the part I care about is that I fixed the system, not just the incident. I changed how I write AC: every story now has to make the failure paths and source-of-truth logic explicit — empty, timeout, conflicting values — before it goes to dev. So the Result wasn't just that one bug fixed; it was that a whole class of 'we never specified the edge case' defects got designed out of my work. That's the mistake that made me a better analyst.",
   },
 
+  // — supplemental behavioural questions —
+  {
+    id: "q39",
+    num: 39,
+    category: "Behavioural (STAR)",
+    question:
+      "Tell us about a time you improved a business process through a system enhancement.",
+    probe:
+      "→ Contingency Management. The agent lookup process was manual and untraceable; the views, state machine, and audit log you specified turned it into a repeatable, reconstructable process.",
+    answer:
+      "On Contingency Management, the back-office process agents followed to investigate a subscriber or an order was largely manual — pulling from scattered places, with no consistent record of what was checked or changed. The real business problem wasn't 'we need a tool,' it was 'this process isn't repeatable or traceable.'\n\nSo I specified the enhancement around fixing the process, not just building screens. Before any development work commenced, I produced the data mapping so the agent's view pulled from one reliable source instead of several, a state machine so an order's status moved through defined transitions rather than ad-hoc updates, and — the part I pushed for — an audit log as a formal requirement, so every consequential action was recorded with who did it and when.\n\nThe Result was that the agents' investigation process went from improvised to repeatable and reconstructable. And the proof it genuinely improved the process is downstream: that audit log has since been used in two separate internal investigations — the business could reconstruct exactly what happened, which the old manual process simply couldn't do. The enhancement changed how the work gets done, not just how fast.",
+    stories: ["Contingency"],
+  },
+  {
+    id: "q40",
+    num: 40,
+    category: "Behavioural (STAR)",
+    question:
+      "Describe the most challenging project you've worked on and how you overcame the challenges.",
+    probe:
+      "→ UPCM. The challenge: a live production export pipeline with zero documentation and contested tribal knowledge. Overcame it by mapping real behaviour, modelling it, and getting three groups to sign off.",
+    answer:
+      "The most challenging was UPCM — an export pipeline already running in production but with no documentation anywhere. No spec, no domain model, just behaviour buried in the code and knowledge scattered across a few people's heads. The challenge was that I had to produce reliable requirements for something nobody could fully describe, and I couldn't trust any single account of how it worked.\n\nI overcame it in three moves. First, I stopped relying on descriptions and mapped the actual behaviour end to end — with no docs, the system itself was the only trustworthy source of truth. Second, I turned what I found into two concrete artifacts: a domain model in the business's own language, and a state machine for export status — READY_TO_EXPORT moving to EXPORTED, FAILED, or CANCELLED, with the trigger events and error rules made explicit. Third — and this is what closed it out — I took that back to the three groups who touched the pipeline and got them to sign off that yes, this is the real model.\n\nThe Result was that my reconstruction became the reference for every change made to that pipeline afterward. The hardest part wasn't technical — it was converting undocumented, contested knowledge into a single agreed source of truth, and that's exactly what I did.",
+    stories: ["UPCM"],
+  },
+  {
+    id: "q41",
+    num: 41,
+    category: "Behavioural (STAR)",
+    question:
+      "Give an example of how you've improved a business process — not just a product.",
+    probe:
+      "→ Catalog. Post-delivery review against the AC was ad-hoc; you turned it into a repeatable, defined review standard so 'done' reliably means 'meets the requirement.'",
+    answer:
+      "A clear one is how I changed the way the team closes out work, starting on Catalog Management. The process before was that 'done' meant the developer said it was done — verification against the requirements was ad-hoc and depended on whoever happened to look. That let mismatches slip through to later.\n\nWhat I did was turn post-delivery review into a defined, repeatable step rather than a one-off. Because I'd written the acceptance criteria up front to be concrete and verifiable, I could run each delivered build back against its own AC, line by line, confirm pass or fail including the edge cases, and raise any miss as a defect tied to the specific criterion it violated — not 'this feels off,' but 'AC-4 says empty name shows N/A, the build throws.'\n\nThen I made that a standard the team followed on every story, not just mine. The Result was a process improvement, not a single-feature win: 'done' started to reliably mean 'meets the requirement,' the check became consistent across stories instead of depending on who was reviewing, and we caught mismatches before they shipped. I improved how the team finishes work, which outlasts any one feature.",
+    stories: ["Catalog"],
+  },
+
   // ── 4 · Technical & Data-Mapping Depth ─────────────────────────────
   {
     id: "q19",
@@ -418,6 +456,31 @@ export const mockQuestions: MockQA[] = [
     stories: ["Catalog"],
   },
 
+  // — supplemental technical / communication questions —
+  {
+    id: "q42",
+    num: 42,
+    category: "Technical & Data-Mapping Depth",
+    question:
+      "How do you communicate complex model results to non-technical stakeholders?",
+    probe:
+      "Translate into their language before showing them yours. Lead with a picture, frame everything as business impact, check by having them narrate it back. → UPCM sign-off from three non-technical groups.",
+    answer:
+      "My rule is to translate into the stakeholder's language before I ever show them mine. A non-technical stakeholder doesn't need the schema or the state-transition table — they need to see their own process reflected back accurately, and they need the 'so what.'\n\nConcretely, I do three things. First, I lead with a picture, not a spec — a state diagram or a domain model drawn in the nouns and verbs they actually use, so 'READY_TO_EXPORT → EXPORTED → FAILED' becomes a story about what happens to their item, not jargon. Second, I frame every result as business impact: not 'this field can be null,' but 'in this case the export silently drops and nobody's told — here's who that affects.' Third, I check that it landed by having them narrate it back, because if they can re-tell the model in their own words, it's understood.\n\nThe proof this works is UPCM. I had to take a technical state machine and domain model to three non-technical groups and get them to sign off that it was correct. They couldn't have signed off on a YAML file — they signed off because I showed them their own process in their own language, with the consequences made plain. That sign-off is what turned my model into the agreed reference.",
+    stories: ["UPCM"],
+  },
+  {
+    id: "q43",
+    num: 43,
+    category: "Technical & Data-Mapping Depth",
+    question: "What tools do you use for Business Systems analysis, and why?",
+    probe:
+      "Ground each tool in the work and the outcome it buys: OpenAPI/YAML + openapi-typescript (Membership), SQL for contract validation (Contingency), diagramming for state machines/domain models, Jira for AC, Confluence-style docs for the durable reference.",
+    answer:
+      "I pick tools by the job they do, so let me go by activity. For defining the contract, I use OpenAPI in YAML as the source of truth, and on Membership I paired it with openapi-typescript to generate the front-end types straight from the spec — I use that because it makes any contract drift a compile error instead of a runtime surprise a customer hits. For validating the contract against reality, I use SQL: on Contingency I queried the database directly to confirm the payload genuinely matched the source of truth, because I won't take an API doc on faith.\n\nFor modelling, I use diagramming tools for state machines and domain models, because a picture in the business's language gets sign-off that a table of fields never will. For the requirements themselves, I use Jira to hold per-story acceptance criteria so no story reaches a developer without written AC, and Confluence-style docs for the data-mapping documents and domain models so there's a durable reference instead of tribal knowledge. And for exercising an API directly, something like Postman to poke endpoints and confirm behaviour.\n\nThe through-line is that I don't use tools for their own sake — each one closes a specific gap: define the contract precisely, validate it against the data, communicate it for sign-off, and keep it as the source of truth the team builds against.",
+    stories: ["Membership", "Contingency"],
+  },
+
   // ── 5 · Domain & Regulatory ────────────────────────────────────────
   {
     id: "q29",
@@ -529,6 +592,32 @@ export const mockQuestions: MockQA[] = [
       "Own it without calculation, fix the immediate issue, then fix the process that let it through. Accountability + systemic fix.",
     answer:
       "Three moves, in order. First, I own it without calculation — it was my spec, so I don't go looking for whose implementation choice technically did it. In the moment, accountability has to be unambiguous, because the priority is fixing the problem, not allocating blame.\n\nSecond, I fix the immediate issue — work with the team to stabilise production, define the correct behaviour, and get the fix out. That's the bleeding-stops step.\n\nThird, and this is the part that actually matters long-term, I fix the process that let it through, not just the incident. I ask how a gap in the spec got past sign-off — was it a class of edge case I don't reliably cover? Then I change how I work so that whole class is designed out. That's exactly what I did after I once signed off AC that left an empty-field case implicit: I didn't just fix that bug, I made failure paths and source-of-truth logic a mandatory part of every AC I write.\n\nSo the answer is accountability plus a systemic fix. A production issue is expensive; the least I can do is convert it into a permanent improvement in how the requirements get written.",
+  },
+
+  // — supplemental situational questions —
+  {
+    id: "q44",
+    num: 44,
+    category: "Situational",
+    question:
+      "How do you prioritize competing business requirements during a project?",
+    probe:
+      "Make the criteria explicit first, then sequence by dependency and value-vs-effort — not by who's loudest. → Monorepo dependency mapping; the 80/20 value framing.",
+    answer:
+      "I don't prioritize by who's loudest — I make the criteria explicit first, then sequence against them. Before ranking anything, I get agreement on what we're optimising for: member or customer impact, regulatory necessity, risk, and effort. Once everyone's measuring against the same yardstick, a lot of the 'competing' tension resolves itself, because we're no longer trading opinions.\n\nThen I apply two lenses. The first is dependency order — some requirements aren't actually competing, one just has to come first or everything else breaks. On the Monorepo, with around 17 concurrent projects, I mapped the dependency chain and that made the real priority obvious: the upstream shared-package update had to be sequenced first because everything downstream relied on it. The second lens is value versus effort — I look for the 80% of the value sitting in 20% of the complexity, and I'll sequence that ahead of an expensive, low-impact item even if someone's attached to the latter.\n\nThen I make the prioritisation visible and explain the sequencing before anyone hits a wall — here's what's first, here's why, here's when your piece lands. The Result of working that way is that priorities are defensible against shared criteria rather than personalities, and people accept the order because they can see the reasoning.",
+    stories: ["Monorepo"],
+  },
+  {
+    id: "q45",
+    num: 45,
+    category: "Situational",
+    question:
+      "How do you handle conflicting requirements from different stakeholders?",
+    probe:
+      "Separate the stated 'want' from the underlying need; often it's a definitional conflict, not a real one. Reconcile in one room against shared criteria — never via separate bilateral promises. → Catalog expire-vs-cancel.",
+    answer:
+      "The first thing I do is get underneath the conflict, because stakeholders usually state a 'want' when what matters is the underlying need — and the wants collide far more often than the needs do. So I start with separate sessions to draw out what each group actually requires and why, without them arguing past each other.\n\nA lot of the time the conflict turns out to be definitional — everyone using the same word to mean different things. On Catalog, marketing, product, and billing all had different requirements for a retired product, and the real conflict was that 'expire' and 'cancel' meant different things to each of them. I mapped those as two distinct states with different downstream effects, which exposed that they weren't actually asking for contradictory behaviour — they'd just never agreed on the terms.\n\nThen I reconcile in one room, with the trade-off visible to everyone, against the shared criteria — never through separate bilateral promises, because that only defers the collision and burns trust. The Result on Catalog was a single agreed definition of expire versus cancel with written sign-off from all three groups, which the dev team built directly against. And when requirements genuinely can't both be satisfied, that same forum makes the trade-off explicit so the business chooses with full information rather than me quietly picking a side.",
+    stories: ["Catalog"],
   },
 
   // ── 7 · Questions for the Panel ────────────────────────────────────

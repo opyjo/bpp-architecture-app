@@ -39,6 +39,7 @@ export const tabGroups: TabGroup[] = [
     label: "Interview Prep",
     tintClass: "tab-group-interview",
     tabs: [
+      { id: "canadalife", label: "Canada Life Cheatsheet" },
       { id: "mock", label: "Mock Interview" },
       { id: "bsa", label: "BSA Cheatsheet" },
       { id: "apigee", label: "Apigee" },

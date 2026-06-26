@@ -18,6 +18,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   flags: "Feature flag inventory & states",
   learnings: "Captured lessons & notes",
   subflow: "Configurator, aggregator & flow runner map",
+  canadalife: "Visual Canada Life interview cheat sheet",
   mock: "Canada Life BSA mock interview Q&A",
   bsa: "Business analyst cheatsheet",
   apigee: "Apigee gateway concepts",
