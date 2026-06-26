@@ -18,6 +18,7 @@ const FeatureFlagsTab = dynamic(() => import("@/components/tabs/FeatureFlagsTab"
 const LearningsTab = dynamic(() => import("@/components/tabs/LearningsTab"), { ssr: false });
 const ServicesTab = dynamic(() => import("@/components/tabs/ServicesTab"), { ssr: false });
 const BsaCheatsheetTab = dynamic(() => import("@/components/tabs/BsaCheatsheetTab"), { ssr: false });
+const MockInterviewTab = dynamic(() => import("@/components/tabs/MockInterviewTab"), { ssr: false });
 const InterviewCoachTab = dynamic(() => import("@/components/tabs/InterviewCoachTab"), { ssr: false });
 const MicrofrontendsTab = dynamic(() => import("@/components/tabs/MicrofrontendsTab"), { ssr: false });
 const ApigeeTab = dynamic(() => import("@/components/tabs/ApigeeTab"), { ssr: false });
@@ -48,6 +49,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   learnings: LearningsTab,
   services: ServicesTab,
   mfe: MicrofrontendsTab,
+  mock: MockInterviewTab,
   bsa: BsaCheatsheetTab,
   apigee: ApigeeTab,
   openapi: OpenApiTab,

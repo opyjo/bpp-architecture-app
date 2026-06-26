@@ -65,6 +65,37 @@ export const DEFAULT_CATEGORIES: CategoryDef[] = [
   { name: "Past Roles", color: "coral" },
 ];
 
+/**
+ * Built-in one-line descriptions shown when hovering a category filter pill.
+ * Keyed by lowercased category name so lookups are case-insensitive. Custom
+ * categories without an entry fall back to a generic description.
+ */
+export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  opening: "How you kick off the conversation — your intro and first impression.",
+  star: "Situation · Task · Action · Result — structured stories that prove impact.",
+  technical:
+    "Deep-dive questions on systems, code, and architecture — design, tradeoffs, and how things work.",
+  behavioral:
+    "Soft-skill & culture-fit questions — teamwork, conflict, leadership, and handling failure.",
+  closing: "Wrapping up strong — recap, enthusiasm, and clear next steps.",
+  "past roles":
+    "Walk-throughs of previous jobs — responsibilities, impact, and why you moved on.",
+  "about me":
+    "Your personal pitch — background, motivations, and what you're looking for next.",
+  stories:
+    "Ready-to-tell stories — concrete situations you can pull into any answer.",
+  "questions to ask":
+    "Thoughtful questions for the interviewer — about the role, team, and company.",
+};
+
+/** Resolve the hover description for a category, with a generic fallback. */
+export function categoryDescription(name: string): string {
+  return (
+    CATEGORY_DESCRIPTIONS[name.trim().toLowerCase()] ??
+    `Cards tagged “${name}”.`
+  );
+}
+
 /** Colors a category can be assigned, used by the category manager UI. */
 export const CATEGORY_COLOR_OPTIONS: CategoryColor[] = [
   "blue",

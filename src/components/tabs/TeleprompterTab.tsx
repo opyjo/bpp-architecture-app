@@ -52,10 +52,12 @@ import {
   CATEGORY_COLOR_OPTIONS,
   CATEGORY_DOT_CLASSES,
   resolveCategoryClass,
+  categoryDescription,
   getAllBullets,
   TEMPLATE_CARDS,
 } from "@/data/teleprompter-defaults";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import Tooltip from "@/components/ui/Tooltip";
 
 // ── Static color class maps (no dynamic construction) ──────────────────────
 
@@ -1986,29 +1988,36 @@ export default function TeleprompterTab() {
                 </button>
               )}
             </div>
-            <button
-              onClick={() => setActiveCategory(null)}
-              className={`px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
-                !activeCategory
-                  ? "bg-arch-text/10 text-arch-text border-arch-text/25"
-                  : "bg-transparent border-arch-border text-arch-text3 hover:text-arch-text hover:border-arch-text/25"
-              }`}
-            >
-              All
-            </button>
-            {categories.map((cat) => (
+            <Tooltip content="Show cards from every category." side="bottom">
               <button
-                key={cat.name}
-                onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
-                  activeCategory === cat.name
+                onClick={() => setActiveCategory(null)}
+                className={`px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
+                  !activeCategory
                     ? "bg-arch-text/10 text-arch-text border-arch-text/25"
                     : "bg-transparent border-arch-border text-arch-text3 hover:text-arch-text hover:border-arch-text/25"
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full shrink-0 ${CATEGORY_DOT_CLASSES[cat.color]}`} />
-                {cat.name}
+                All
               </button>
+            </Tooltip>
+            {categories.map((cat) => (
+              <Tooltip
+                key={cat.name}
+                content={categoryDescription(cat.name)}
+                side="bottom"
+              >
+                <button
+                  onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full border transition-colors ${
+                    activeCategory === cat.name
+                      ? "bg-arch-text/10 text-arch-text border-arch-text/25"
+                      : "bg-transparent border-arch-border text-arch-text3 hover:text-arch-text hover:border-arch-text/25"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${CATEGORY_DOT_CLASSES[cat.color]}`} />
+                  {cat.name}
+                </button>
+              </Tooltip>
             ))}
             <button
               onClick={() => setShowCategoryManager(true)}

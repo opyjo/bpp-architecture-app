@@ -39,6 +39,7 @@ export const tabGroups: TabGroup[] = [
     label: "Interview Prep",
     tintClass: "tab-group-interview",
     tabs: [
+      { id: "mock", label: "Mock Interview" },
       { id: "bsa", label: "BSA Cheatsheet" },
       { id: "apigee", label: "Apigee" },
       { id: "openapi", label: "OpenAPI 3.0" },
