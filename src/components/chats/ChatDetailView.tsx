@@ -38,8 +38,8 @@ export default function ChatDetailView({ chatId }: { chatId: string }) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 bg-arch-bg text-arch-text3 gap-3">
         <p className="text-[13px]">Chat not found</p>
-        <Link href="/chats" className="text-[12px] text-arch-purple hover:underline">
-          Back to saved chats
+        <Link href="/saved" className="text-[12px] text-arch-purple hover:underline">
+          Back to saved items
         </Link>
       </div>
     );

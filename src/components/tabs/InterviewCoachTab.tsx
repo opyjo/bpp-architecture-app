@@ -218,7 +218,7 @@ export default function InterviewCoachTab() {
             </span>
           )}
           <Link
-            href="/chats"
+            href="/saved"
             className="text-[11px] text-arch-text3 hover:text-arch-teal transition-colors px-2 py-1 rounded hover:bg-white/5 flex items-center gap-1"
           >
             Saved chats <ExternalLink className="w-3 h-3" />

@@ -20,11 +20,9 @@ export function buildBreadcrumbs(
   } else if (pathname.startsWith("/analyses/")) {
     crumbs.push({ label: "Saved Analyses", href: "/analyses" });
     crumbs.push({ label: dynamicLabel || "Detail" });
-  } else if (pathname === "/chats") {
-    crumbs.push({ label: "Saved Chats" });
   } else if (pathname.startsWith("/chats/")) {
-    crumbs.push({ label: "Saved Chats", href: "/chats" });
-    crumbs.push({ label: dynamicLabel || "Detail" });
+    crumbs.push({ label: "All Saved", href: "/saved" });
+    crumbs.push({ label: dynamicLabel || "Chat" });
   } else if (pathname.startsWith("/specs/")) {
     crumbs.push({ label: "All Saved", href: "/saved" });
     crumbs.push({ label: dynamicLabel || "API Spec" });
