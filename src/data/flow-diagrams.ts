@@ -14,6 +14,8 @@ export interface FlowDiagramStep {
   activeEdge: [string, string];
   mutation?: string;
   services: string[];
+  /** Optional: tools used at this step (rendered as a labelled "Tools" chip row). */
+  tools?: string[];
 }
 
 // Shared node layout for the horizontal flow diagram

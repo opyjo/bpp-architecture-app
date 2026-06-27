@@ -3,6 +3,8 @@
 import React from "react";
 import SectionLayout from "@/components/ui/SectionLayout";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
+import FlowDiagram from "@/components/ui/FlowDiagram";
+import type { FlowNode, FlowDiagramStep } from "@/data/flow-diagrams";
 import {
   systemContextDiagram,
   integrationPatterns,
@@ -35,6 +37,14 @@ const sidebarGroups = [
       { id: "cl-jdmap", label: "JD → your evidence" },
       { id: "cl-senior", label: "Senior-level signals" },
       { id: "cl-clearance", label: "Reliability Status" },
+    ],
+  },
+  {
+    label: "Worked Example (project)",
+    items: [
+      { id: "cl-wx-brief", label: "The project + animated flow" },
+      { id: "cl-wx-steps", label: "Every BSA step" },
+      { id: "cl-wx-artifacts", label: "Sample artifacts" },
     ],
   },
   {
@@ -170,6 +180,64 @@ const dgApis = `flowchart LR
   ADJ -. "claims experience" .-> PR["Renewal Pricing"]
   PR -. "sets next year premium" .-> PS["Plan Sponsor"]`;
 
+// ── Click-through worked-example flows (same UX as "UI pages & flows") ────────
+
+// The BSA lifecycle — 12 phases laid out in a snake so consecutive steps sit
+// next to each other. Click Prev/Next (or the dots) to walk it.
+const wxLifecycleNodes: FlowNode[] = [
+  { id: "s0", label: "Frame", subtitle: "kickoff", color: "#6b7590", x: 30, y: 30 },
+  { id: "s1", label: "Q&A log", subtitle: "JD #1", color: "#4a8fe8", x: 200, y: 30 },
+  { id: "s2", label: "Req review", subtitle: "JD #2", color: "#7c6fcd", x: 370, y: 30 },
+  { id: "s3", label: "Data map", subtitle: "JD #3", color: "#3eb89a", x: 540, y: 30 },
+  { id: "s4", label: "OpenAPI+JDL", subtitle: "JD #4", color: "#e8a83a", x: 540, y: 130 },
+  { id: "s5", label: "Orchestration", subtitle: "JD #5", color: "#58b87a", x: 370, y: 130 },
+  { id: "s6", label: "Accept. crit.", subtitle: "JD #6", color: "#4a8fe8", x: 200, y: 130 },
+  { id: "s7", label: "Stories", subtitle: "JD #7", color: "#7c6fcd", x: 30, y: 130 },
+  { id: "s8", label: "Grooming", subtitle: "JD #8", color: "#3eb89a", x: 30, y: 230 },
+  { id: "s9", label: "Build", subtitle: "support", color: "#6b7590", x: 200, y: 230 },
+  { id: "s10", label: "Review", subtitle: "JD #9", color: "#e86f6f", x: 370, y: 230 },
+  { id: "s11", label: "Standardize", subtitle: "senior", color: "#58b87a", x: 540, y: 230 },
+];
+
+const wxLifecycleSteps: FlowDiagramStep[] = [
+  { label: "0 · Frame the problem & map stakeholders", description: "Pin down the business goal and who's involved before touching requirements.", mutation: "Scope + RACI map", services: ["Product", "Compliance", "Dev lead"], tools: ["Confluence", "Miro"], activeNodes: ["s0"], activeEdge: ["s0", "s0"] },
+  { label: "1 · Integration Q&A log (JD #1)", description: "List every open question per integration point and chase each one to a signed-off answer.", mutation: "Q&A log", services: ["Disney partner", "Security", "Architects"], tools: ["Confluence", "Jira"], activeNodes: ["s0", "s1"], activeEdge: ["s0", "s1"] },
+  { label: "2 · Requirements review (JD #2)", description: "Per-component business problem + R1..Rn, reviewed and signed off before design.", mutation: "Signed-off requirements", services: ["Product", "Architecture"], tools: ["Confluence", "Workshop"], activeNodes: ["s1", "s2"], activeEdge: ["s1", "s2"] },
+  { label: "3 · Data mapping (JD #3)", description: "Map every field both directions and validate it against the Disney sandbox.", mutation: "Data-mapping doc", services: ["Disney partner", "Dev", "QA"], tools: ["Confluence", "SQL", "Postman", "Sandbox"], activeNodes: ["s2", "s3"], activeEdge: ["s2", "s3"] },
+  { label: "4 · OpenAPI + JDL (JD #4)", description: "Write the API contract and the domain shapes first as the single source of truth.", mutation: "openapi.yaml + JDL", services: ["Architecture", "Dev"], tools: ["Swagger/Stoplight", "JDL (JHipster)", "Git"], activeNodes: ["s3", "s4"], activeEdge: ["s3", "s4"] },
+  { label: "5 · Southbound orchestration (JD #5)", description: "Define the multi-step provisioning flow plus compensation, retry and DLQ.", mutation: "Orchestration spec", services: ["Architecture", "Dev"], tools: ["Mermaid", "draw.io"], activeNodes: ["s4", "s5"], activeEdge: ["s4", "s5"] },
+  { label: "6 · Acceptance criteria (JD #6)", description: "Given/When/Then including the unhappy paths so 'done' is unambiguous.", mutation: "AC per story", services: ["QA", "Dev"], tools: ["Jira", "Gherkin"], activeNodes: ["s5", "s6"], activeEdge: ["s5", "s6"] },
+  { label: "7 · Stories & tasks (JD #7)", description: "Break the work into buildable stories with AC attached, split into tasks.", mutation: "Backlog", services: ["Dev team"], tools: ["Jira"], activeNodes: ["s6", "s7"], activeEdge: ["s6", "s7"] },
+  { label: "8 · Grooming & pointing (JD #8)", description: "Run refinement: walk the stories, surface dependencies, size with the engineers.", mutation: "Sprint-ready backlog", services: ["Dev team", "Scrum master"], tools: ["Jira", "Planning Poker"], activeNodes: ["s7", "s8"], activeEdge: ["s7", "s8"] },
+  { label: "9 · Build support", description: "Source of truth during build; resolve ambiguity and update the AC so it's closed for good.", mutation: "Clarifications + updated AC", services: ["Dev team"], tools: ["Jira", "Slack/Teams"], activeNodes: ["s8", "s9"], activeEdge: ["s8", "s9"] },
+  { label: "10 · Post-delivery review (JD #9)", description: "Test the build back against the same AC line by line, including the failure paths.", mutation: "Review + sign-off", services: ["QA", "Dev"], tools: ["Postman", "Test env", "Jira"], activeNodes: ["s9", "s10"], activeEdge: ["s9", "s10"] },
+  { label: "11 · Standardize & share (senior)", description: "Turn it into a reusable new-provider onboarding template and mentor the team.", mutation: "Reusable template", services: ["BSA team"], tools: ["Confluence"], activeNodes: ["s10", "s11"], activeEdge: ["s10", "s11"] },
+];
+
+// The runtime flow once Disney+ is integrated.
+const wxRuntimeNodes: FlowNode[] = [
+  { id: "ui", label: "Customer", subtitle: "adds Disney+", color: "#7c6fcd", x: 20, y: 130 },
+  { id: "order", label: "order-api", subtitle: "PostOrder", color: "#4a8fe8", x: 150, y: 130 },
+  { id: "reseller", label: "reseller", subtitle: "disney", color: "#e8a83a", x: 290, y: 130 },
+  { id: "auth", label: "disney-auth", subtitle: "OAuth2/JWT", color: "#6b7590", x: 440, y: 40 },
+  { id: "catalog", label: "catalog-api", subtitle: "authorize", color: "#4a8fe8", x: 440, y: 130 },
+  { id: "disney", label: "Disney API", subtitle: "entitlement", color: "#6b7590", x: 440, y: 220 },
+  { id: "pg", label: "PostgreSQL", subtitle: "subscription", color: "#58b87a", x: 600, y: 40 },
+  { id: "kafka", label: "Kafka", subtitle: "events", color: "#3eb89a", x: 600, y: 130 },
+  { id: "audit", label: "audit-api", subtitle: "immutable", color: "#e86f6f", x: 600, y: 220 },
+];
+
+const wxRuntimeSteps: FlowDiagramStep[] = [
+  { label: "1 · Customer adds Disney+", description: "The customer adds a Disney+ subscription on their account.", mutation: "POST /order {sessionId}", services: ["order-api"], tools: ["REST / Gin", "HTTPS"], activeNodes: ["ui", "order"], activeEdge: ["ui", "order"] },
+  { label: "2 · Route by providerId", description: "order-api hands fulfillment to the Disney adapter based on providerId = disney.", mutation: "providerId = disney", services: ["reseller-service-disney"], tools: ["Go", "Feature flag"], activeNodes: ["order", "reseller"], activeEdge: ["order", "reseller"] },
+  { label: "3 · Authenticate", description: "DisneyGetUserInfoAdaptor gets a token from disney-auth-api, then the subscriber's Disney profile.", mutation: "getToken + getUserInfo", services: ["disney-auth-api"], tools: ["OAuth2 / JWT", "AWS Secrets Manager"], activeNodes: ["reseller", "auth"], activeEdge: ["reseller", "auth"] },
+  { label: "4 · Authorize products", description: "CatalogClientInterface checks the reseller is authorized for the Disney product keys (EffectiveStatus = Active).", mutation: "IsResellerAuthorizedForProducts", services: ["catalog-api"], tools: ["GraphQL"], activeNodes: ["reseller", "catalog"], activeEdge: ["reseller", "catalog"] },
+  { label: "5 · Provision & activate", description: "Provision the Disney entitlement, write merchant_entitlement, and move status PENDING → ACTIVE.", mutation: "entitlement + PENDING → ACTIVE", services: ["Disney API", "PostgreSQL"], tools: ["REST", "PostgreSQL", "sqlc"], activeNodes: ["reseller", "disney", "pg"], activeEdge: ["reseller", "disney"] },
+  { label: "6 · Publish event", description: "Publishes SubscriptionActivatedType for downstream consumers (email, read models).", mutation: "SubscriptionActivatedType", services: ["Kafka"], tools: ["Kafka"], activeNodes: ["reseller", "kafka"], activeEdge: ["reseller", "kafka"] },
+  { label: "7 · Audit", description: "Writes a synchronous, immutable audit entry on the critical path.", mutation: "ACTIVATED", services: ["audit-api"], tools: ["PostgreSQL", "append-only"], activeNodes: ["reseller", "audit"], activeEdge: ["reseller", "audit"] },
+  { label: "8 · Failure & grace path", description: "On timeout: retry then FAILED + fallout Lambda. On cancel: 5-day grace (suspend, not cancel) before deprovision.", mutation: "timeout → FAILED · cancel → GRACE 5d", services: ["DLQ", "alerting"], tools: ["Kafka DLQ", "fallout Lambda", "Retry/backoff"], activeNodes: ["reseller", "disney"], activeEdge: ["reseller", "disney"] },
+];
+
 // ─── Real Go snippets (from the go-repo) ─────────────────────────────────────
 
 const codeFlowExecutor = `// flow-runner-api — saga with reverse-order compensation
@@ -228,6 +296,35 @@ return &SubscriptionListResponse{
     Partial:       partial,   // <- the requirement: never fail the whole page
     TotalCount:    len(merged),
 }, nil`;
+
+const wxOpenApi = `# reseller-service-disney — provisioning contract (excerpt)
+paths:
+  /disney/provision:
+    post:
+      operationId: provisionDisney
+      responses:
+        '201': { description: Entitlement created }
+        '409': { description: Duplicate — idempotent }
+components:
+  schemas:
+    ProvisionRequest:
+      type: object
+      required: [partnerRef, productKey, accountNumber]
+      properties:
+        partnerRef:    { type: string }   # = our subscriptionId (idempotency)
+        productKey:    { type: string }   # = catalog product, authorized for the reseller
+        accountNumber: { type: string }`;
+
+const wxJdl = `// domain model the Disney integration builds on (JDL)
+enum ProviderId     { NETFLIX, DISNEY, BANGO, BELLMEDIA, RADIOCANADA }
+enum MerchantStatus { PROVISIONED, DEPROVISIONED, SUSPENDED, FAILED }
+
+entity MerchantEntitlement {
+  subscriptionId UUID            required
+  provider       ProviderId      required   // DISNEY
+  entitlement    String                     // Disney's entitlement reference
+  merchantStatus MerchantStatus  required
+}`;
 
 // ─── Presentational helpers ──────────────────────────────────────────────────
 
@@ -800,6 +897,245 @@ export default function CanadaLifeTab() {
                   </ul>
                 </Card>
               ))}
+            </div>
+          );
+        }
+
+        // ════════════════ WORKED EXAMPLE ════════════════
+
+        // ── The project + animated flow ───────────────────────────
+        if (activeId === "cl-wx-brief") {
+          return (
+            <div>
+              <H>Worked example: integrate Disney+ on the platform</H>
+              <Desc>
+                A real API-integration project on the go-repo — speccing the Disney+ integration
+                (<Code>reseller-service-disney</Code> + <Code>disney-auth-api</Code>) end-to-end. It exercises every JD
+                responsibility and maps 1:1 to onboarding a new benefits carrier at Canada Life.
+              </Desc>
+              <Card accent="blue" className="mb-3">
+                <Badge color="blue">The ask</Badge>
+                <div className="text-[12px] text-arch-text2 leading-relaxed mt-2">
+                  Bell wants to sell <strong className="text-arch-text">Disney+</strong> subscriptions, bundled on the
+                  customer&apos;s bill. Disney is integrated through <Code>reseller-service-disney</Code>: authentication via{" "}
+                  <Code>disney-auth-api</Code> (OAuth2 / JWT), product authorization through the catalog
+                  (<Code>IsResellerAuthorizedForProducts</Code>), an entitlement stored on success, and a 5-day grace period on
+                  cancel.
+                </div>
+              </Card>
+              <Sub>The BSA lifecycle — click through each step</Sub>
+              <div className="text-[11px] text-arch-text3 mb-2">
+                Use <strong className="text-arch-text2">Prev / Next</strong> or the dots to walk all 12 steps; the active phase
+                highlights and the panel explains what you do, the deliverable, and who you work with.
+              </div>
+              <FlowDiagram nodes={wxLifecycleNodes} steps={wxLifecycleSteps} />
+              <Sub>Cast — real services involved</Sub>
+              <Table
+                headers={["Piece", "Role in this project"]}
+                rows={[
+                  [<Code key="1">reseller-service-disney</Code>, "write adapter implementing CatalogClientInterface"],
+                  [<Code key="2">disney-auth-api</Code>, "OAuth2 / JWT auth (DisneyGetUserInfoAdaptor)"],
+                  [<Code key="3">order-api / configurator</Code>, "order entry & conversion (unchanged)"],
+                  [<Code key="4">catalog-api</Code>, "Disney products + reseller authorization"],
+                  [<Code key="5">audit-api</Code>, "immutable log of every mutation"],
+                  [<Code key="6">Secrets Manager</Code>, "Disney client secret"],
+                ]}
+              />
+              <Callout color="teal" label="Why this project">
+                It&apos;s the most integration-heavy thing a BSA leads, so it touches all 9 JD responsibilities. Use it as your
+                &ldquo;walk me through a project&rdquo; answer.
+              </Callout>
+            </div>
+          );
+        }
+
+        // ── Every BSA step ────────────────────────────────────────
+        if (activeId === "cl-wx-steps") {
+          const STEPS = [
+            { n: "0", jd: "Kickoff", accent: "gray", title: "Frame the problem & map stakeholders",
+              does: "Pin down the business goal and who's involved before touching requirements.",
+              deliverable: "Scope one-pager + stakeholder / RACI map",
+              who: "Product, Disney partner, Billing, Catalog, dev lead, Compliance, QA",
+              example: "Goal: sell Disney+ bundled on the Bell bill. External dependency: Disney partner creds + disney-auth-api + sandbox." },
+            { n: "1", jd: "JD #1", accent: "blue", title: "Integration requirements Q&A log",
+              does: "For each integration point, list every open question and chase each one to a signed-off answer.",
+              deliverable: "Q&A log (question · owner · status · answer)",
+              who: "Disney partner, architects, security, compliance",
+              example: "Auth (disney-auth-api)? Product authorization? Identifiers? Grace period? Idempotency? PII & retention? EN/FR?" },
+            { n: "2", jd: "JD #2", accent: "purple", title: "Requirements review (pre-design gate)",
+              does: "Turn the answers into a per-component requirements doc and get stakeholder sign-off BEFORE design.",
+              deliverable: "Signed-off requirements (R1..Rn) per component",
+              who: "Product, architecture, dev lead",
+              example: "R1 providerId 'disney' routes to reseller-service-disney; R3 auth via disney-auth-api; R5 5-day grace." },
+            { n: "3", jd: "JD #3", accent: "teal", title: "Data mapping (both directions)",
+              does: "Map every field: our order → Disney provision request, and Disney's response → our subscription/UI; validate vs sandbox.",
+              deliverable: "Data-mapping document",
+              who: "Disney partner, dev, QA",
+              example: "order.subscriptionId → partnerRef; Disney entitlement → merchant_entitlement.entitlement; status map." },
+            { n: "4", jd: "JD #4", accent: "amber", title: "OpenAPI + JDL contracts",
+              does: "Write the API contract and the domain shapes first, as the source of truth the code is built from.",
+              deliverable: "openapi.yaml + JDL (ProviderId, MerchantEntitlement)",
+              who: "Architecture, dev",
+              example: "POST /disney/provision; CatalogClientInterface for authorization; ProviderId includes DISNEY." },
+            { n: "5", jd: "JD #5", accent: "green", title: "Southbound orchestration spec",
+              does: "Define the multi-step provisioning flow AND the compensation/rollback + retry + DLQ.",
+              deliverable: "Orchestration spec (steps + state transitions + failure handling)",
+              who: "Architecture, dev",
+              example: "validate → authenticate → authorize → provision → activate → publish → audit; on fail → deprovision + retry." },
+            { n: "6", jd: "JD #6", accent: "blue", title: "Acceptance criteria per story",
+              does: "Write Given/When/Then including the unhappy paths so 'done' is unambiguous.",
+              deliverable: "AC per story",
+              who: "QA, dev",
+              example: "Auth/provision fails → retry then FAILED + alert; duplicate provision → 409 (idempotent)." },
+            { n: "7", jd: "JD #7", accent: "purple", title: "Development stories & tasks",
+              does: "Break the work into buildable stories with AC attached, split into tasks.",
+              deliverable: "Backlog of stories + tasks",
+              who: "Dev team",
+              example: "Stories: routing by providerId · reseller-service-disney adapter · disney-auth-api integration · catalog authorization · 5-day grace · EN/FR emails." },
+            { n: "8", jd: "JD #8", accent: "teal", title: "Lead grooming & pointing",
+              does: "Run refinement: walk the stories, surface dependencies, size the work with the engineers.",
+              deliverable: "Estimated, sequenced, sprint-ready backlog",
+              who: "Dev team, scrum master",
+              example: "Dependency surfaced: catalog must mark Disney products authorized + disney-auth-api creds lead time → sequence those first." },
+            { n: "9", jd: "Build", accent: "gray", title: "Source of truth during build",
+              does: "Answer mid-sprint questions; resolve ambiguity against intent; update the AC so it's closed for good.",
+              deliverable: "Clarifications + updated AC",
+              who: "Dev team",
+              example: "Dev asks: what if the Disney auth token expires mid-provision? → decide (refresh + retry), write it into the AC." },
+            { n: "10", jd: "JD #9", accent: "coral", title: "Post-delivery review",
+              does: "Test the build back against the same AC, line by line, including failure paths; raise defects tied to AC.",
+              deliverable: "Review report + defects + sign-off",
+              who: "QA, dev",
+              example: "Force a disney-auth-api timeout; confirm it goes FAILED + alert, not stuck PENDING." },
+            { n: "11", jd: "Senior", accent: "green", title: "Standardize & share",
+              does: "Turn the Disney integration into a reusable 'new-provider onboarding' template + checklist; mentor the team.",
+              deliverable: "Reusable onboarding template / checklist",
+              who: "BSA team, dev",
+              example: "Next provider (e.g., a benefits carrier) reuses the same Q&A log, data-map template, and orchestration pattern." },
+          ];
+          return (
+            <div>
+              <H>Every step a BSA plays — Disney+ integration</H>
+              <Desc>
+                The full lifecycle, mapped to the JD. Each step: what you do, the deliverable, who you work with, and a concrete
+                example from this project.
+              </Desc>
+              <div className="space-y-2.5">
+                {STEPS.map((s) => (
+                  <Card key={s.n} accent={s.accent}>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span
+                        className="shrink-0 w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center"
+                        style={{ background: `color-mix(in srgb, var(--arch-${s.accent}) 18%, transparent)`, color: `var(--arch-${s.accent})` }}
+                      >
+                        {s.n}
+                      </span>
+                      <span className="text-[12.5px] font-semibold text-arch-text">{s.title}</span>
+                      <Badge color={s.accent}>{s.jd}</Badge>
+                    </div>
+                    <div className="space-y-1 text-[11.5px] leading-relaxed">
+                      <div><span className="text-arch-text3">Does: </span><span className="text-arch-text2">{s.does}</span></div>
+                      <div><span className="text-arch-text3">Deliverable: </span><span className="text-arch-text">{s.deliverable}</span></div>
+                      <div><span className="text-arch-text3">Talks to: </span><span className="text-arch-text2">{s.who}</span></div>
+                      <div><span className="text-arch-text3">Example: </span><span className="text-arch-text2 italic">{s.example}</span></div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // ── Sample artifacts ──────────────────────────────────────
+        if (activeId === "cl-wx-artifacts") {
+          return (
+            <div>
+              <H>Sample artifacts — the actual documents</H>
+              <Desc>Concrete, abbreviated versions of what you&apos;d produce at each step. This is what &ldquo;BSA deliverables&rdquo; look like on paper.</Desc>
+
+              <Sub>1 · Integration Q&A log (excerpt)</Sub>
+              <Table
+                headers={["Open question", "Owner", "Resolved answer"]}
+                rows={[
+                  ["How does Disney authenticate?", "Disney + Security", "disney-auth-api: OAuth2 / JWT token, then getUserInfo"],
+                  ["How is product access authorized?", "Architecture", "CatalogClientInterface.IsResellerAuthorizedForProducts (EffectiveStatus = Active)"],
+                  ["What identifier comes back?", "Disney", "An entitlement reference → stored in merchant_entitlement"],
+                  ["Grace period on cancel?", "Product", "5 days — suspend, don't cancel"],
+                  ["Idempotency?", "Architecture", "partnerRef = our subscriptionId; duplicate → 409"],
+                  ["PII & retention?", "Compliance", "accountNumber + email only; audit kept 7 years"],
+                  ["EN / FR?", "Product", "Both; templated via SES"],
+                ]}
+              />
+
+              <Sub>2 · Signed-off requirements</Sub>
+              <Card accent="purple">
+                <ul className="list-disc pl-4 space-y-0.5 text-[11.5px] text-arch-text2">
+                  <li><Code>R1</Code> providerId &ldquo;disney&rdquo; routes to reseller-service-disney</li>
+                  <li><Code>R2</Code> reseller-service-disney implements CatalogClientInterface (authorize, provision, deprovision, status)</li>
+                  <li><Code>R3</Code> auth via disney-auth-api (OAuth2 / JWT); secret in Secrets Manager, rotated</li>
+                  <li><Code>R4</Code> product authorization checked before provisioning (IsResellerAuthorizedForProducts)</li>
+                  <li><Code>R5</Code> 5-day grace on cancel (suspend, not cancel)</li>
+                  <li><Code>R6</Code> every mutation → audit-api with correlationId + agentId</li>
+                  <li><Code>R7</Code> EN/FR confirmation emails</li>
+                </ul>
+              </Card>
+
+              <Sub>3 · Data mapping (excerpt)</Sub>
+              <Table
+                headers={["Dir", "From", "To"]}
+                rows={[
+                  [<Badge key="1" color="amber">out</Badge>, "order.subscriptionId", "ProvisionRequest.partnerRef (idempotency key)"],
+                  [<Badge key="2" color="amber">out</Badge>, "selectedPlan.productId", "Disney productKey (authorized for the reseller)"],
+                  [<Badge key="3" color="teal">in</Badge>, "Disney entitlement ref", "merchant_entitlement.entitlement"],
+                  [<Badge key="4" color="teal">in</Badge>, "Disney active", "subscription.status = ACTIVE"],
+                  [<Badge key="5" color="teal">in</Badge>, "Disney failure", "subscription.status = FAILED (→ retry/alert)"],
+                ]}
+              />
+
+              <Sub>4 · OpenAPI + JDL (excerpt)</Sub>
+              <CodeBlock caption="reseller-service-disney contract">{wxOpenApi}</CodeBlock>
+              <CodeBlock caption="domain model the Disney integration builds on">{wxJdl}</CodeBlock>
+
+              <Sub>5 · Southbound orchestration (steps + compensation)</Sub>
+              <Table
+                headers={["Step", "Execute", "Compensate"]}
+                rows={[
+                  ["Validate order", "reseller-service-disney", "—"],
+                  ["Authenticate", "disney-auth-api (OAuth2 / JWT)", "—"],
+                  ["Authorize products", "catalog · IsResellerAuthorizedForProducts", "—"],
+                  ["Provision entitlement", "Disney → merchant_entitlement", "deprovision via Disney"],
+                  ["Activate", "PENDING → ACTIVE (PostgreSQL)", "revert to PENDING"],
+                  ["Publish event", "Kafka SubscriptionActivatedType", "publish SubscriptionRevoked"],
+                  ["Audit", "audit-api ACTIVATED", "audit COMPENSATED"],
+                ]}
+              />
+
+              <Sub>6 · Story + acceptance criteria</Sub>
+              <Card accent="amber">
+                <div className="text-[11.5px] text-arch-text2 mb-2">
+                  <strong>As a</strong> Bell residential customer <strong>I want to</strong> add a Disney+ subscription{" "}
+                  <strong>so that</strong> I get bundled billing and Disney+ access.
+                </div>
+                <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-arch-text2">
+                  <li><Code>AC-1</Code> Given providerId=disney, when submitted, then reseller-service-disney authenticates via disney-auth-api and sets status=PENDING</li>
+                  <li><Code>AC-2</Code> Given the reseller is authorized for the Disney product (IsResellerAuthorizedForProducts), then the entitlement is provisioned and status→ACTIVE with SubscriptionActivatedType published</li>
+                  <li><Code>AC-3</Code> Given Disney auth or provisioning fails, then retry per policy; on exhaustion set FAILED + raise an alert (fallout Lambda)</li>
+                  <li><Code>AC-4</Code> Given the same order twice, then the second is rejected (idempotent via partnerRef)</li>
+                  <li><Code>AC-5</Code> Given the customer cancels, then the subscription enters GRACE_PERIOD (5 days) before deprovision</li>
+                  <li><Code>AC-6</Code> Confirmation emails are sent in the member&apos;s language (EN/FR)</li>
+                </ul>
+              </Card>
+
+              <Sub>7 · How it runs once built — click through</Sub>
+              <div className="text-[11px] text-arch-text3 mb-2">Step through the runtime flow with Prev / Next or the dots.</div>
+              <FlowDiagram nodes={wxRuntimeNodes} steps={wxRuntimeSteps} />
+
+              <Callout color="green" label="Transfers straight to Canada Life">
+                Swap &ldquo;Disney+&rdquo; for &ldquo;a new group-benefits carrier&rdquo; or &ldquo;a new claims-adjudication
+                integration&rdquo; — the same 11 steps apply. The merchant adapter becomes a carrier adapter; <Code>audit-api</Code>{" "}
+                becomes your OSFI auditability; EN/FR is the same bilingual NFR; the <Code>partnerRef</Code> idempotency key protects
+                against double-submitting a member&apos;s enrolment.
+              </Callout>
             </div>
           );
         }

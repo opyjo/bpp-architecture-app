@@ -143,6 +143,26 @@ export default function FlowDiagram({ steps, nodes }: FlowDiagramProps) {
               </span>
             ))}
           </div>
+          {step.tools && step.tools.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5 items-center">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-arch-text3 mr-0.5">
+                Tools
+              </span>
+              {step.tools.map((t) => (
+                <span
+                  key={t}
+                  className="inline-block font-mono text-[9px] px-1 py-px rounded"
+                  style={{
+                    background: "color-mix(in srgb, var(--arch-teal) 14%, transparent)",
+                    color: "var(--arch-teal)",
+                    border: "1px solid color-mix(in srgb, var(--arch-teal) 30%, transparent)",
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
