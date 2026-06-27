@@ -9,6 +9,7 @@ import {
   Target,
   CornerDownRight,
   ListChecks,
+  Brain,
   X,
 } from "lucide-react";
 import {
@@ -17,6 +18,8 @@ import {
   type MockQA,
   type MockCategory,
 } from "@/data/mock-interview";
+import { getMentalModel } from "@/data/star-mental-models";
+import StarMentalModelView from "@/components/star/StarMentalModelView";
 
 // ─── Accent helpers (full literal classes so Tailwind keeps them) ─────────────
 
@@ -54,6 +57,11 @@ function QAItem({
 }) {
   const accent = accentMap[accentForCategory[qa.category]];
   const isPanel = qa.category === "Questions for the Panel";
+  const model = getMentalModel(qa.stories?.[0]);
+  // Behavioural stories default to the mental-model view; everything else to the answer.
+  const [view, setView] = useState<"mental" | "answer">(
+    model && qa.category === "Behavioural (STAR)" ? "mental" : "answer"
+  );
 
   return (
     <div
@@ -134,18 +142,50 @@ function QAItem({
               )}
             </div>
 
-            {/* Answer */}
-            <div className="mt-3">
-              <div className="mb-1.5 flex items-center gap-1.5">
-                <CornerDownRight className="size-3 text-arch-text3" />
-                <span className="text-[9.5px] font-semibold uppercase tracking-wider text-arch-text3">
-                  {isPanel ? "How to play it" : "Model answer"}
-                </span>
+            {/* Mental-model / Model-answer toggle (only when a model exists) */}
+            {model && (
+              <div className="mt-3 inline-flex rounded-lg border border-arch-border bg-arch-bg p-0.5">
+                <button
+                  onClick={() => setView("mental")}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    view === "mental"
+                      ? `${accent.bg} ${accent.text}`
+                      : "text-arch-text3 hover:text-arch-text2"
+                  }`}
+                >
+                  <Brain className="size-3" /> Mental model
+                </button>
+                <button
+                  onClick={() => setView("answer")}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    view === "answer"
+                      ? `${accent.bg} ${accent.text}`
+                      : "text-arch-text3 hover:text-arch-text2"
+                  }`}
+                >
+                  <CornerDownRight className="size-3" /> Model answer
+                </button>
               </div>
-              <div className="whitespace-pre-line text-[12.5px] leading-[1.75] text-arch-text2">
-                {qa.answer}
+            )}
+
+            {/* Body — mental model or full answer */}
+            {model && view === "mental" ? (
+              <div className="mt-3">
+                <StarMentalModelView model={model} variant="compact" />
               </div>
-            </div>
+            ) : (
+              <div className="mt-3">
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <CornerDownRight className="size-3 text-arch-text3" />
+                  <span className="text-[9.5px] font-semibold uppercase tracking-wider text-arch-text3">
+                    {isPanel ? "How to play it" : "Model answer"}
+                  </span>
+                </div>
+                <div className="whitespace-pre-line text-[12.5px] leading-[1.75] text-arch-text2">
+                  {qa.answer}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

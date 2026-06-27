@@ -24,6 +24,10 @@ import {
   Users,
   Tag,
   Settings2,
+  Brain,
+  Star,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import {
   DndContext,
@@ -55,9 +59,14 @@ import {
   categoryDescription,
   getAllBullets,
   TEMPLATE_CARDS,
+  MENTAL_MODEL_TEMPLATE,
+  type CardMentalModel,
+  type MentalModelBeat,
 } from "@/data/teleprompter-defaults";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Tooltip from "@/components/ui/Tooltip";
+import { STAR_MENTAL_MODELS } from "@/data/star-mental-models";
+import StarMentalModelView from "@/components/star/StarMentalModelView";
 
 // ── Static color class maps (no dynamic construction) ──────────────────────
 
@@ -214,6 +223,7 @@ function CardView({
   onEdit,
   onClone,
   onPresent,
+  onMentalModel,
 }: {
   card: TeleprompterCard;
   cardIndex: number;
@@ -223,6 +233,7 @@ function CardView({
   onClone: (targetRole?: string) => void;
   onEdit: () => void;
   onPresent: () => void;
+  onMentalModel: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [cloneOpen, setCloneOpen] = useState(false);
@@ -297,6 +308,18 @@ function CardView({
               </div>
             )}
           </div>
+          <button
+            onClick={onMentalModel}
+            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-colors ${
+              card.mentalModel
+                ? "text-arch-purple bg-arch-purple/10 hover:bg-arch-purple/15"
+                : "text-arch-text3 hover:text-arch-text hover:bg-arch-bg3"
+            }`}
+            title={card.mentalModel ? "View / edit mental model" : "Add a mental model"}
+          >
+            <Brain size={16} />
+            <span className="text-[11px] font-medium">Mental Model</span>
+          </button>
           <button
             onClick={onEdit}
             className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
@@ -1066,6 +1089,7 @@ function PresentationOverlay({
   onClose,
   onPrev,
   onNext,
+  onMentalModel,
 }: {
   card: TeleprompterCard;
   currentIndex: number;
@@ -1074,6 +1098,7 @@ function PresentationOverlay({
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onMentalModel: () => void;
 }) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -1093,7 +1118,7 @@ function PresentationOverlay({
   }, [onClose, onPrev, onNext]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-arch-bg1">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-arch-bg">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-arch-border/50">
         <div className="flex items-center gap-3 sm:gap-4">
@@ -1103,7 +1128,19 @@ function PresentationOverlay({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="hidden sm:inline text-[12px] text-arch-text3 mr-2">
+          <button
+            onClick={onMentalModel}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${
+              card.mentalModel
+                ? "text-arch-purple bg-arch-purple/10 hover:bg-arch-purple/15"
+                : "text-arch-text3 hover:text-arch-text hover:bg-arch-bg3"
+            }`}
+            title={card.mentalModel ? "View / edit mental model" : "Add a mental model"}
+          >
+            <Brain size={16} />
+            <span className="hidden sm:inline text-[12px] font-medium">Mental Model</span>
+          </button>
+          <span className="hidden sm:inline text-[12px] text-arch-text3 mx-2">
             ESC to exit
           </span>
           <button
@@ -1185,6 +1222,471 @@ function PresentationOverlay({
       </div>
     </div>
   );
+}
+
+// ── Mental Models overlay ──────────────────────────────────────────────────
+// A full-screen deck over the static STAR mental models (spine + named beats),
+// independent of the editable/DB-backed cards. Mirrors PresentationOverlay chrome.
+
+function MentalModelOverlay({ onClose }: { onClose: () => void }) {
+  const [index, setIndex] = useState(0);
+  const total = STAR_MENTAL_MODELS.length;
+  const model = STAR_MENTAL_MODELS[index];
+
+  const goPrev = useCallback(
+    () => setIndex((i) => (i - 1 + total) % total),
+    [total]
+  );
+  const goNext = useCallback(() => setIndex((i) => (i + 1) % total), [total]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, goPrev, goNext]);
+
+  if (!model) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col bg-arch-bg">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-arch-border/50">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-arch-purple/30 bg-arch-purple/15 px-3.5 py-1 text-[14px] font-medium text-arch-purple">
+            <Brain size={14} /> Mental Model
+          </span>
+          <span className="text-[14px] text-arch-text3 tabular-nums">
+            {index + 1} / {total}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline text-[12px] text-arch-text3 mr-2">
+            ESC to exit
+          </span>
+          <button
+            onClick={onClose}
+            className="p-2.5 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+            title="Exit (Esc)"
+          >
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 flex items-start sm:items-center justify-center overflow-auto px-4 sm:px-8 py-6 sm:py-10">
+        <div className="w-full max-w-4xl">
+          <h1 className="font-bold text-arch-text text-[28px] sm:text-[32px] md:text-[40px] leading-tight mb-6 sm:mb-10">
+            {model.title}
+          </h1>
+          <StarMentalModelView model={model} variant="presentation" />
+        </div>
+      </div>
+
+      {/* Bottom navigation */}
+      <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-arch-border/50">
+        <button
+          onClick={goPrev}
+          className="flex items-center gap-2 px-4 py-2.5 text-[14px] text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 active:bg-arch-bg3 rounded-lg transition-colors"
+        >
+          <ChevronLeft size={20} /> Previous
+        </button>
+        <div className="hidden sm:flex items-center gap-2">
+          {Array.from({ length: total }, (_, i) => (
+            <span
+              key={i}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                i === index ? "bg-arch-purple scale-125" : "bg-arch-bg3"
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          onClick={goNext}
+          className="flex items-center gap-2 px-4 py-2 text-[14px] text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+        >
+          Next <ChevronRight size={20} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Per-card mental model modal (view + edit) ──────────────────────────────
+
+// STAR / story cards keep the manual spine+beats format (no AI). Everything
+// else gets the "Generate with AI" path. Match on category, case-insensitive.
+function isStoryCard(card: TeleprompterCard): boolean {
+  const k = card.category.trim().toLowerCase();
+  return k === "star" || k === "stories" || k.includes("star");
+}
+
+// Extract a CardMentalModel from a (possibly fenced) AI JSON response.
+function parseMentalModelJSON(raw: string): CardMentalModel | null {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  let obj: unknown;
+  try {
+    obj = JSON.parse(raw.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+  if (typeof obj !== "object" || obj === null) return null;
+  const rec = obj as { spine?: unknown; beats?: unknown };
+  const rawBeats = Array.isArray(rec.beats) ? rec.beats : [];
+  const beats: MentalModelBeat[] = rawBeats
+    .map((b) => {
+      const rb = (b ?? {}) as { hook?: unknown; say?: unknown; crux?: unknown };
+      return {
+        hook: String(rb.hook ?? "").trim(),
+        say: String(rb.say ?? "").trim(),
+        crux: Boolean(rb.crux),
+      };
+    })
+    .filter((b) => b.hook || b.say);
+  if (beats.length === 0) return null;
+  return { spine: String(rec.spine ?? "").trim(), beats };
+}
+
+function CardMentalModelModal({
+  card,
+  onSave,
+  onDelete,
+  onClose,
+}: {
+  card: TeleprompterCard;
+  onSave: (model: CardMentalModel) => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  const story = isStoryCard(card);
+  // Start in view mode if the card already has a model; otherwise straight into
+  // editing. Story cards seed from the STAR template; other cards start minimal
+  // (their structure comes from AI or the user, not the STAR skeleton).
+  const [editing, setEditing] = useState(!card.mentalModel);
+  const [model, setModel] = useState<CardMentalModel>(() =>
+    structuredClone(
+      card.mentalModel ??
+        (story ? MENTAL_MODEL_TEMPLATE : { spine: "", beats: [{ hook: "", say: "" }] })
+    )
+  );
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const generateWithAI = async () => {
+    setGenerating(true);
+    setGenError(null);
+    try {
+      const bulletsText = getAllBullets(card)
+        .map((b) => b.text.replace(/\*\*/g, ""))
+        .join("\n");
+      const res = await fetch("/api/mental-model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: card.title,
+          bulletsText,
+          fullText: card.fullText ?? "",
+          category: card.category,
+        }),
+      });
+      if (!res.ok || !res.body) {
+        const e = await res.json().catch(() => null);
+        throw new Error(e?.error || `Request failed (${res.status})`);
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let text = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let evt: { type?: string; text?: string; message?: string };
+          try {
+            evt = JSON.parse(line);
+          } catch {
+            continue;
+          }
+          if (evt.type === "text_delta") text += evt.text ?? "";
+          else if (evt.type === "error") throw new Error(evt.message || "Generation failed");
+        }
+      }
+      const parsed = parseMentalModelJSON(text);
+      if (!parsed) throw new Error("Couldn't parse the generated model — try again.");
+      setModel(parsed);
+      setEditing(true);
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : "Generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const hasContent =
+    model.spine.trim().length > 0 ||
+    model.beats.some((b) => b.hook.trim() || b.say.trim());
+
+  const setBeat = (i: number, patch: Partial<MentalModelBeat>) =>
+    setModel((m) => ({
+      ...m,
+      beats: m.beats.map((b, j) => (j === i ? { ...b, ...patch } : b)),
+    }));
+
+  const addBeat = () =>
+    setModel((m) => ({ ...m, beats: [...m.beats, { hook: "", say: "" }] }));
+
+  const removeBeat = (i: number) =>
+    setModel((m) => ({ ...m, beats: m.beats.filter((_, j) => j !== i) }));
+
+  const handleSave = () => {
+    // Trim and drop fully-empty beats before persisting.
+    const cleaned: CardMentalModel = {
+      spine: model.spine.trim(),
+      beats: model.beats
+        .map((b) => ({ hook: b.hook.trim(), say: b.say.trim(), crux: b.crux }))
+        .filter((b) => b.hook || b.say),
+    };
+    onSave(cleaned);
+    setModel(structuredClone(cleaned));
+    setEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    if (card.mentalModel) {
+      setModel(structuredClone(card.mentalModel));
+      setEditing(false);
+    } else {
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl max-h-[88vh] flex flex-col bg-arch-bg2 border border-arch-border rounded-2xl shadow-xl shadow-black/20 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-arch-border">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-arch-purple">
+              <Brain size={13} /> Mental Model
+            </div>
+            <h2 className="text-[15px] font-semibold text-arch-text truncate mt-0.5">
+              {card.title}
+            </h2>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {!editing && (
+              <button
+                onClick={() => setEditing(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-arch-text2 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+              >
+                <Pencil size={13} /> Edit
+              </button>
+            )}
+            {card.mentalModel && (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="p-2 text-arch-text3 hover:text-arch-coral hover:bg-arch-bg3 rounded-lg transition-colors"
+                title="Delete mental model"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 text-arch-text3 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+              title="Close (Esc)"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-auto p-5">
+          {confirmingDelete && (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-arch-coral/30 bg-arch-coral/10 px-3 py-2.5">
+              <span className="text-[12.5px] text-arch-text2">
+                Delete this mental model? This can&apos;t be undone.
+              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  className="px-2.5 py-1.5 text-[12px] font-medium text-arch-text2 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={onDelete}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white bg-arch-coral hover:bg-arch-coral/90 rounded-lg transition-colors"
+                >
+                  <Trash2 size={13} /> Delete
+                </button>
+              </div>
+            </div>
+          )}
+          {editing ? (
+            <div className="flex flex-col gap-5">
+              {/* AI generate — non-story cards only (STAR/stories stay manual) */}
+              {!story && (
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    onClick={generateWithAI}
+                    disabled={generating}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-semibold text-white bg-gradient-to-r from-arch-purple to-arch-blue rounded-lg hover:opacity-90 disabled:opacity-60 transition-opacity"
+                  >
+                    {generating ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" /> Generating…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={15} /> Generate with AI
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[11px] text-arch-text3 text-center">
+                    The AI shapes the model to fit this card — then tweak it below and save.
+                  </p>
+                  {genError && (
+                    <p className="text-[11.5px] text-arch-coral text-center">{genError}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Spine */}
+              <div>
+                <label className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-arch-amber">
+                  <LifeBuoyIcon /> The spine — if you blank
+                </label>
+                <textarea
+                  value={model.spine}
+                  onChange={(e) => setModel((m) => ({ ...m, spine: e.target.value }))}
+                  placeholder="One fallback sentence — the whole story in one breath."
+                  rows={3}
+                  className="w-full bg-arch-bg1 border border-arch-border rounded-lg px-3 py-2 text-[13px] text-arch-text placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50 resize-y"
+                />
+              </div>
+
+              {/* Beats */}
+              <div className="flex flex-col gap-3">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-arch-text3">
+                  Beats
+                </span>
+                {model.beats.map((beat, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-arch-border bg-arch-bg1 p-3 flex flex-col gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={beat.hook}
+                        onChange={(e) => setBeat(i, { hook: e.target.value })}
+                        placeholder="HOOK (e.g. STAKES)"
+                        className="flex-1 min-w-0 bg-arch-bg2 border border-arch-border rounded-md px-2 py-1 text-[12px] font-semibold uppercase tracking-wide text-arch-text placeholder:text-arch-text3 placeholder:font-normal placeholder:normal-case focus:outline-none focus:ring-1 focus:ring-arch-blue/50"
+                      />
+                      <button
+                        onClick={() => setBeat(i, { crux: !beat.crux })}
+                        title="Mark as the crux beat"
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                          beat.crux
+                            ? "text-arch-amber bg-arch-amber/15"
+                            : "text-arch-text3 hover:text-arch-text hover:bg-arch-bg3"
+                        }`}
+                      >
+                        <Star
+                          size={13}
+                          className={beat.crux ? "fill-arch-amber" : ""}
+                        />
+                        Crux
+                      </button>
+                      <button
+                        onClick={() => removeBeat(i)}
+                        title="Remove beat"
+                        className="p-1.5 text-arch-text3 hover:text-arch-coral hover:bg-arch-bg3 rounded-md transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <textarea
+                      value={beat.say}
+                      onChange={(e) => setBeat(i, { say: e.target.value })}
+                      placeholder="What you say — the one line you improvise from."
+                      rows={2}
+                      className="w-full bg-arch-bg2 border border-arch-border rounded-md px-2 py-1.5 text-[12.5px] text-arch-text2 placeholder:text-arch-text3 focus:outline-none focus:ring-1 focus:ring-arch-blue/50 resize-y"
+                    />
+                  </div>
+                ))}
+                <button
+                  onClick={addBeat}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 text-[12px] font-medium text-arch-text2 border border-dashed border-arch-border rounded-lg hover:text-arch-text hover:border-arch-text3/40 transition-colors"
+                >
+                  <Plus size={14} /> Add beat
+                </button>
+              </div>
+            </div>
+          ) : hasContent ? (
+            <StarMentalModelView model={model} variant="compact" />
+          ) : (
+            <p className="py-10 text-center text-[13px] text-arch-text3">
+              No mental model yet. Click <span className="font-medium text-arch-text2">Edit</span> to add one.
+            </p>
+          )}
+        </div>
+
+        {/* Footer (edit mode) */}
+        {editing && (
+          <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-arch-border">
+            <button
+              onClick={handleCancelEdit}
+              className="px-3.5 py-2 text-[12px] font-medium text-arch-text2 hover:text-arch-text hover:bg-arch-bg3 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-white bg-arch-purple hover:bg-arch-purple/90 rounded-lg transition-colors"
+            >
+              <Check size={14} /> Save
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Small inline life-buoy (lucide LifeBuoy isn't imported here; keep label icon simple).
+function LifeBuoyIcon() {
+  return <Brain size={12} />;
 }
 
 // ── Role picker (landing screen) ───────────────────────────────────────────
@@ -1591,6 +2093,9 @@ export default function TeleprompterTab() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [presenting, setPresenting] = useState(false);
+  const [showMentalModels, setShowMentalModels] = useState(false);
+  // The card whose per-card mental model modal is open (null = closed).
+  const [mentalModelCard, setMentalModelCard] = useState<TeleprompterCard | null>(null);
   const addMenuRef = useRef<HTMLDivElement>(null);
 
   // ── Category + search filter state ──────────────────────────────────────
@@ -1794,6 +2299,13 @@ export default function TeleprompterTab() {
           )}
           {viewingRole && (
           <>
+          <button
+            onClick={() => setShowMentalModels(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-arch-purple hover:bg-arch-purple/10 rounded-lg transition-colors"
+            title="Rehearse stories as mental models"
+          >
+            <Brain size={12} /> Mental Models
+          </button>
           <button
             onClick={() => setShowOverview(!showOverview)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors ${
@@ -2104,6 +2616,7 @@ export default function TeleprompterTab() {
                   onEdit={() => setIsEditing(true)}
                   onClone={handleCloneCard}
                   onPresent={() => setPresenting(true)}
+                  onMentalModel={() => setMentalModelCard(currentCard)}
                 />
               )}
             </div>
@@ -2143,6 +2656,34 @@ export default function TeleprompterTab() {
             onClose={() => setPresenting(false)}
             onPrev={goPrev}
             onNext={goNext}
+            onMentalModel={() => setMentalModelCard(currentCard)}
+          />,
+          document.body
+        )}
+
+      {/* Mental Models overlay — static STAR mental-model deck */}
+      {showMentalModels &&
+        createPortal(
+          <MentalModelOverlay onClose={() => setShowMentalModels(false)} />,
+          document.body
+        )}
+
+      {/* Per-card mental model modal (view + edit) */}
+      {mentalModelCard &&
+        createPortal(
+          <CardMentalModelModal
+            card={mentalModelCard}
+            onSave={(model) => {
+              updateCard(mentalModelCard.id, { mentalModel: model });
+              setMentalModelCard((prev) =>
+                prev ? { ...prev, mentalModel: model } : prev
+              );
+            }}
+            onDelete={() => {
+              updateCard(mentalModelCard.id, { mentalModel: undefined });
+              setMentalModelCard(null);
+            }}
+            onClose={() => setMentalModelCard(null)}
           />,
           document.body
         )}

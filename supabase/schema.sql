@@ -107,6 +107,7 @@ create table if not exists public.teleprompter_cards (
   bullets    jsonb not null default '[]',
   sections   jsonb,
   full_text  text,
+  mental_model jsonb,                           -- per-card mental model: { spine, beats[] }
   role       text,                              -- null = shared across all roles
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -114,6 +115,7 @@ create table if not exists public.teleprompter_cards (
 );
 -- Migration for an existing database (safe to run repeatedly):
 --   alter table public.teleprompter_cards add column if not exists role text;
+--   alter table public.teleprompter_cards add column if not exists mental_model jsonb;
 
 -- ---- triggers + RLS for every table ----------------------------------------
 do $$

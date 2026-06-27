@@ -4,7 +4,11 @@ import { useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSavedHook } from "./createSavedHook";
 import type { SavedTeleprompterCard } from "@/lib/types/saved-teleprompter-card";
-import type { HighlightedPhrase, CardSection } from "@/data/teleprompter-defaults";
+import type {
+  HighlightedPhrase,
+  CardSection,
+  CardMentalModel,
+} from "@/data/teleprompter-defaults";
 
 type InsertPayload = {
   title: string;
@@ -12,6 +16,7 @@ type InsertPayload = {
   bullets: HighlightedPhrase[];
   sections?: CardSection[] | null;
   full_text?: string | null;
+  mental_model?: CardMentalModel | null;
   role?: string | null;
   sort_order: number;
 };

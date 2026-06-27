@@ -37,6 +37,7 @@ function toDbRow(card: TeleprompterCard, sortOrder: number) {
     bullets: card.bullets,
     sections: card.sections ?? null,
     full_text: card.fullText ?? null,
+    mental_model: card.mentalModel ?? null,
     role: card.role ?? null,
     sort_order: sortOrder,
   };
@@ -50,6 +51,7 @@ function fromDbRow(row: SavedTeleprompterCard): TeleprompterCard {
     bullets: row.bullets,
     ...(row.sections ? { sections: row.sections } : {}),
     ...(row.full_text ? { fullText: row.full_text } : {}),
+    ...(row.mental_model ? { mentalModel: row.mental_model } : {}),
     ...(row.role ? { role: row.role } : {}),
   };
 }
@@ -342,6 +344,7 @@ export function useTeleprompterCards() {
       if (updates.bullets !== undefined) dbUpdates.bullets = updates.bullets;
       if (updates.sections !== undefined) dbUpdates.sections = updates.sections ?? null;
       if (updates.fullText !== undefined) dbUpdates.full_text = updates.fullText ?? null;
+      if ("mentalModel" in updates) dbUpdates.mental_model = updates.mentalModel ?? null;
       // Persist role whenever the key is present, so "→ Shared" (undefined) saves too.
       if ("role" in updates) dbUpdates.role = updates.role ?? null;
 

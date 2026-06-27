@@ -31,6 +31,36 @@ export interface CardSection {
   bullets: HighlightedPhrase[];
 }
 
+/** One named beat in a card's mental model (e.g. STAKES, THE CONFLICT). */
+export interface MentalModelBeat {
+  /** Punchy label for the beat, e.g. "STAKES". */
+  hook: string;
+  /** One-line "what you say" prompt — improvised aloud, not read verbatim. */
+  say: string;
+  /** Marks the single pivotal beat (rendered with a ⭐). */
+  crux?: boolean;
+}
+
+/** A card's mental model: a fallback "spine" sentence plus named beats. */
+export interface CardMentalModel {
+  /** Fallback sentence to say if you blank — the whole story in one breath. */
+  spine: string;
+  /** Named beats, in telling order. */
+  beats: MentalModelBeat[];
+}
+
+/** Blank starter the editor seeds when a card has no mental model yet. */
+export const MENTAL_MODEL_TEMPLATE: CardMentalModel = {
+  spine: "",
+  beats: [
+    { hook: "STAKES", say: "" },
+    { hook: "MESS", say: "" },
+    { hook: "THE CONFLICT", say: "", crux: true },
+    { hook: "THE MOVE", say: "" },
+    { hook: "LANDED", say: "" },
+  ],
+};
+
 export interface TeleprompterCard {
   id: string;
   title: string;
@@ -38,6 +68,8 @@ export interface TeleprompterCard {
   bullets: HighlightedPhrase[];
   sections?: CardSection[];
   fullText?: string;
+  /** Optional per-card mental model (spine + named beats). */
+  mentalModel?: CardMentalModel;
   /**
    * Role this card belongs to. `undefined` (or null in the DB) = shared across
    * ALL roles. A string = only shown when that role is the active role.
