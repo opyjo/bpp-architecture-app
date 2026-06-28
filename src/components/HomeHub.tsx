@@ -57,7 +57,7 @@ const GROUP_ACCENT: Record<
 const DEFAULT_ACCENT = GROUP_ACCENT.Platform;
 
 function hrefFor(tab: { id: string; href?: string }): string {
-  return tab.href ?? `/?tab=${tab.id}`;
+  return tab.href ?? `/${tab.id}`;
 }
 
 export default function HomeHub() {

@@ -1,116 +1,22 @@
-"use client";
-
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import dynamic from "next/dynamic";
-import ArchitectureTab from "@/components/tabs/ArchitectureTab";
+import { redirect } from "next/navigation";
 import HomeHub from "@/components/HomeHub";
 import { ALL_TAB_IDS } from "@/lib/tabs";
 
-// Dynamic imports for all tabs except ArchitectureTab (default tab, loaded eagerly)
-const UiPagesTab = dynamic(() => import("@/components/tabs/UiPagesTab"), { ssr: false });
-const KafkaEventsTab = dynamic(() => import("@/components/tabs/KafkaEventsTab"), { ssr: false });
-const ReferenceTab = dynamic(() => import("@/components/tabs/ReferenceTab"), { ssr: false });
-const AiChatTab = dynamic(() => import("@/components/tabs/AiChatTab"), { ssr: false });
-const LambdaFunctionsTab = dynamic(() => import("@/components/tabs/LambdaFunctionsTab"), { ssr: false });
-const RepoExplorerTab = dynamic(() => import("@/components/tabs/RepoExplorerTab"), { ssr: false });
-const FeatureFlagsTab = dynamic(() => import("@/components/tabs/FeatureFlagsTab"), { ssr: false });
-const LearningsTab = dynamic(() => import("@/components/tabs/LearningsTab"), { ssr: false });
-const ServicesTab = dynamic(() => import("@/components/tabs/ServicesTab"), { ssr: false });
-const BsaCheatsheetTab = dynamic(() => import("@/components/tabs/BsaCheatsheetTab"), { ssr: false });
-const CanadaLifeTab = dynamic(() => import("@/components/tabs/CanadaLifeTab"), { ssr: false });
-const MockInterviewTab = dynamic(() => import("@/components/tabs/MockInterviewTab"), { ssr: false });
-const InterviewCoachTab = dynamic(() => import("@/components/tabs/InterviewCoachTab"), { ssr: false });
-const MicrofrontendsTab = dynamic(() => import("@/components/tabs/MicrofrontendsTab"), { ssr: false });
-const ApigeeTab = dynamic(() => import("@/components/tabs/ApigeeTab"), { ssr: false });
-const OpenApiTab = dynamic(() => import("@/components/tabs/OpenApiTab"), { ssr: false });
-const ContractBuilderTab = dynamic(() => import("@/components/tabs/ContractBuilderTab"), { ssr: false });
-const ChangeImpactTab = dynamic(() => import("@/components/tabs/ChangeImpactTab"), { ssr: false });
-const RunbookManagerTab = dynamic(() => import("@/components/tabs/RunbookManagerTab"), { ssr: false });
-const CodeReviewTab = dynamic(() => import("@/components/tabs/CodeReviewTab"), { ssr: false });
-const SequenceDiagramTab = dynamic(() => import("@/components/tabs/SequenceDiagramTab"), { ssr: false });
-const TestPlanTab = dynamic(() => import("@/components/tabs/TestPlanTab"), { ssr: false });
-const TeleprompterTab = dynamic(() => import("@/components/tabs/TeleprompterTab"), { ssr: false });
-const ChangePackageTab = dynamic(() => import("@/components/tabs/ChangePackageTab"), { ssr: false });
-const DriftTab = dynamic(() => import("@/components/tabs/DriftTab"), { ssr: false });
-const SystemMapTab = dynamic(() => import("@/components/tabs/SystemMapTab"), { ssr: false });
-const RepoInsightsTab = dynamic(() => import("@/components/tabs/RepoInsightsTab"), { ssr: false });
-const ApoartStoriesTab = dynamic(() => import("@/components/tabs/ApoartStoriesTab"), { ssr: false });
-const SubscriptionFlowTab = dynamic(() => import("@/components/tabs/SubscriptionFlowTab"), { ssr: false });
-
-// Tab component mapping
-const TAB_COMPONENTS: Record<string, React.ComponentType> = {
-  arch: ArchitectureTab,
-  pages: UiPagesTab,
-  events: KafkaEventsTab,
-  lambdas: LambdaFunctionsTab,
-  repo: RepoExplorerTab,
-  ref: ReferenceTab,
-  flags: FeatureFlagsTab,
-  learnings: LearningsTab,
-  services: ServicesTab,
-  mfe: MicrofrontendsTab,
-  canadalife: CanadaLifeTab,
-  mock: MockInterviewTab,
-  bsa: BsaCheatsheetTab,
-  apigee: ApigeeTab,
-  openapi: OpenApiTab,
-  coach: InterviewCoachTab,
-  teleprompter: TeleprompterTab,
-  contract: ContractBuilderTab,
-  review: CodeReviewTab,
-  sequence: SequenceDiagramTab,
-  testplan: TestPlanTab,
-  impact: ChangeImpactTab,
-  runbooks: RunbookManagerTab,
-  ai: AiChatTab,
-  pipeline: ChangePackageTab,
-  drift: DriftTab,
-  systemmap: SystemMapTab,
-  insights: RepoInsightsTab,
-  apoart: ApoartStoriesTab,
-  subflow: SubscriptionFlowTab,
-};
-
-function HomeContent() {
-  const searchParams = useSearchParams();
-
-  // No (or unknown) ?tab= → show the home hub. A valid tab id → show that tab.
-  const tabParam = searchParams.get("tab");
-  const activeTab =
-    tabParam && ALL_TAB_IDS.includes(tabParam) ? tabParam : "home";
-
-  // Render ONLY the active tab. Inactive tabs are unmounted (not merely hidden),
-  // so heavy tabs — especially the synchronous-rendering Mermaid diagrams — don't
-  // accumulate and block the main thread. `key={activeTab}` gives each tab a fresh
-  // mount on switch. Trade-off: unsaved in-tab state does not survive a tab switch
-  // (AiChat and ContractBuilder persist their own state to localStorage).
-  const ActiveComponent =
-    activeTab === "home" ? null : TAB_COMPONENTS[activeTab];
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
+  // Back-compat: old links / installed PWA used `/?tab=<id>`. Redirect those to
+  // the new per-tab path so bookmarks and the manifest start_url keep working.
+  const { tab } = await searchParams;
+  if (typeof tab === "string" && ALL_TAB_IDS.includes(tab)) {
+    redirect(`/${tab}`);
+  }
 
   return (
     <div className="flex-1 overflow-hidden">
-      {activeTab === "home" ? (
-        <HomeHub />
-      ) : ActiveComponent ? (
-        <div key={activeTab} className="h-full">
-          <ActiveComponent />
-        </div>
-      ) : null}
+      <HomeHub />
     </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-arch-blue/30 border-t-arch-blue rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <HomeContent />
-    </Suspense>
   );
 }

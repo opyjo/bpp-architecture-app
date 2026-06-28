@@ -26,7 +26,7 @@ export default function CommandPalette() {
     (entry: SearchEntry | undefined) => {
       if (!entry) return;
       if (entry.href) router.push(entry.href);
-      else if (entry.tab) router.push(`/?tab=${entry.tab}`);
+      else if (entry.tab) router.push(`/${entry.tab}`);
       close();
     },
     [router, close]

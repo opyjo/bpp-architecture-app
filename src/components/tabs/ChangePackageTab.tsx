@@ -357,14 +357,14 @@ export default function ChangePackageTab() {
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <Link
-            href="/?tab=sequence"
+            href="/sequence"
             className="hidden sm:flex items-center gap-1 text-[11px] text-arch-text3 hover:text-arch-purple transition-colors px-2 py-1 rounded hover:bg-white/5"
           >
             <ExternalLink className="w-3 h-3" />
             Sequence tab
           </Link>
           <Link
-            href="/?tab=testplan"
+            href="/testplan"
             className="hidden sm:flex items-center gap-1 text-[11px] text-arch-text3 hover:text-arch-teal transition-colors px-2 py-1 rounded hover:bg-white/5"
           >
             <ExternalLink className="w-3 h-3" />

@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "Quick-glance interview teleprompter cards and architecture reference for the Bell Subscription Manager platform.",
     // Installed app opens straight to the teleprompter.
-    start_url: "/?tab=teleprompter",
+    start_url: "/teleprompter",
     scope: "/",
     display: "standalone",
     orientation: "any",

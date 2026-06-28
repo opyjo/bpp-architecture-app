@@ -3,11 +3,17 @@ export interface BreadcrumbSegment {
   href?: string;
 }
 
+import { ALL_TAB_IDS } from "./tabs";
+
 export function buildBreadcrumbs(
   pathname: string,
   dynamicLabel?: string
 ): BreadcrumbSegment[] {
   if (pathname === "/") return [];
+
+  // Workspace tab routes (/services, /teleprompter, …) show no breadcrumb — the
+  // global nav already highlights the active tab. Matches the old ?tab= behavior.
+  if (ALL_TAB_IDS.includes(pathname.slice(1))) return [];
 
   const crumbs: BreadcrumbSegment[] = [{ label: "Home", href: "/" }];
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Sparkles, X, Eraser } from "lucide-react";
+import { ALL_TAB_IDS } from "@/lib/tabs";
 import { useChat } from "@/lib/hooks/useChat";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import { getAssistantContext, buildSystemContext } from "@/lib/assistant-context";
@@ -13,8 +14,10 @@ import ModelSelector from "@/components/ai/ModelSelector";
 
 function AssistantSidebarInner() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const tab = searchParams.get("tab");
+  // Tabs are now their own routes (/services, /teleprompter, …); derive the
+  // active tab id from the path segment so assistant context still resolves.
+  const seg = pathname.slice(1);
+  const tab = ALL_TAB_IDS.includes(seg) ? seg : null;
 
   const [open, setOpen] = useState(false);
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);

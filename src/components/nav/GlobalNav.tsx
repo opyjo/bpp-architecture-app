@@ -2,39 +2,25 @@
 
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { tabGroups, findActiveGroupForPath, type TabGroup } from "@/lib/tabs";
+import { usePathname } from "next/navigation";
+import { tabGroups, findActiveGroupForPath, tabHref, type TabGroup } from "@/lib/tabs";
 
 function TabDropdown({
   group,
-  activeTab,
-  onTabClick,
   animIndex,
   currentPathname,
 }: {
   group: TabGroup;
-  activeTab: string;
-  onTabClick: (id: string) => void;
   animIndex: number;
   currentPathname: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // A non-href tab is active on the home page
-  const activeChild = group.tabs.find((t) => !t.href && t.id === activeTab);
-  const isHomeActive = currentPathname === "/" && !!activeChild;
-
-  // An href tab is active when the current path matches
+  // A group is active when the current path matches one of its tabs' routes.
   const match = findActiveGroupForPath(currentPathname);
-  const isHrefActive = match?.group === group;
-
-  const isGroupActive = isHomeActive || isHrefActive;
-  const activeLabel = isHomeActive
-    ? activeChild!.label
-    : isHrefActive
-      ? match!.tab.label
-      : null;
+  const isGroupActive = match?.group === group;
+  const activeLabel = isGroupActive ? match!.tab.label : null;
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -83,9 +69,10 @@ function TabDropdown({
       {open && (
         <div className="dropdown-panel absolute top-full left-0 mt-1 z-50 min-w-[210px] py-2 px-0.5 bg-arch-bg2/95 border border-arch-border rounded-lg shadow-lg shadow-black/20">
           {group.tabs.map((tab, i) => {
-            const isTabActive = tab.href
-              ? currentPathname.startsWith(tab.href)
-              : currentPathname === "/" && activeTab === tab.id;
+            const href = tabHref(tab);
+            const isTabActive =
+              currentPathname === href ||
+              currentPathname.startsWith(href + "/");
 
             return tab.href ? (
               <Link
@@ -120,13 +107,11 @@ function TabDropdown({
                 )}
               </Link>
             ) : (
-              <button
+              <Link
                 key={tab.id}
-                onClick={() => {
-                  onTabClick(tab.id);
-                  setOpen(false);
-                }}
-                className={`dropdown-item w-full text-left px-3.5 py-2 text-xs font-medium transition-colors duration-150 ${
+                href={href}
+                onClick={() => setOpen(false)}
+                className={`dropdown-item block w-full text-left px-3.5 py-2 text-xs font-medium transition-colors duration-150 ${
                   isTabActive
                     ? "text-arch-blue bg-arch-blue/10"
                     : "text-arch-text2 hover:text-arch-text hover:bg-arch-blue/[0.08]"
@@ -134,7 +119,7 @@ function TabDropdown({
                 style={{ animationDelay: `${i * 30}ms` }}
               >
                 {tab.label}
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -145,22 +130,6 @@ function TabDropdown({
 
 function GlobalNavInner() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
-  // Default to "home" so no group is highlighted on the hub.
-  const activeTab = searchParams.get("tab") || "home";
-
-  const handleTabClick = useCallback(
-    (id: string) => {
-      if (pathname === "/") {
-        router.replace(`/?tab=${id}`, { scroll: false });
-      } else {
-        router.push(`/?tab=${id}`);
-      }
-    },
-    [pathname, router]
-  );
 
   return (
     <div className="flex flex-wrap bg-arch-bg3 border-b border-arch-border tab-bar-enter">
@@ -189,8 +158,6 @@ function GlobalNavInner() {
           <TabDropdown
             key={group.label}
             group={group}
-            activeTab={activeTab}
-            onTabClick={handleTabClick}
             animIndex={i}
             currentPathname={pathname}
           />

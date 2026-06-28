@@ -81,22 +81,29 @@ export const tabGroups: TabGroup[] = [
   },
 ];
 
-/** All valid non-href tab IDs (rendered inline on the home page) */
+/** All valid non-href tab IDs (each rendered at its own `/<id>` route) */
 export const ALL_TAB_IDS = tabGroups
   .flatMap((g) => g.tabs)
   .filter((t) => !t.href)
   .map((t) => t.id);
 
+/** The path a tab navigates to: an explicit href, else its own `/<id>` route. */
+export function tabHref(tab: TabItem): string {
+  return tab.href ?? `/${tab.id}`;
+}
+
 /**
- * Given a pathname (e.g. "/saved", "/analyses"), return the group whose
- * href-tab matches, or undefined if on the home page / no match.
+ * Given a pathname (e.g. "/services", "/saved", "/analyses/123"), return the
+ * group + tab whose route matches, or undefined on the home page / no match.
+ * Uses exact-or-subpath matching so "/analyze" doesn't match "/analyses".
  */
 export function findActiveGroupForPath(
   pathname: string
 ): { group: TabGroup; tab: TabItem } | undefined {
   for (const group of tabGroups) {
     for (const tab of group.tabs) {
-      if (tab.href && pathname.startsWith(tab.href)) {
+      const href = tabHref(tab);
+      if (pathname === href || pathname.startsWith(href + "/")) {
         return { group, tab };
       }
     }
