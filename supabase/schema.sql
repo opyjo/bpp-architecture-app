@@ -4,11 +4,11 @@
 -- Idempotent bootstrap for a fresh Supabase project. Run in the SQL editor.
 -- Covers every "saved items" table the app persists to.
 --
--- Row Level Security is ENABLED on every table. By default the policies are
--- PERMISSIVE for the `anon` role, because the app ships with only the public
--- anon key and no end-user auth (single-tenant / personal tool). To lock the
--- data down to authenticated users, see docs/auth-and-rls.md and swap in the
--- commented "authenticated-only" policies at the bottom of each block.
+-- Row Level Security is ENABLED on every table with NO permissive policy, so the
+-- database denies all direct anon/authenticated access. The app reaches its data
+-- only through the server route `/api/saved/[table]` (behind the shared-password
+-- proxy) using the SERVICE-ROLE key, which bypasses RLS. The public anon key can
+-- no longer read or write anything. See docs/auth-and-rls.md.
 -- ============================================================================
 
 -- ---- updated_at trigger function -------------------------------------------
@@ -133,14 +133,11 @@ begin
       'create trigger set_updated_at before update on public.%I
          for each row execute function public.update_updated_at();', t);
 
-    -- enable RLS
+    -- enable RLS, deny-by-default: no policy is created, so direct anon/
+    -- authenticated access is denied. The service-role key (server API route
+    -- only) bypasses RLS. Drop any permissive policy from earlier versions.
     execute format('alter table public.%I enable row level security;', t);
-
-    -- default: permissive anon access (single-tenant / personal tool)
     execute format('drop policy if exists "anon_all" on public.%I;', t);
-    execute format(
-      'create policy "anon_all" on public.%I
-         for all to anon, authenticated using (true) with check (true);', t);
   end loop;
 end $$;
 

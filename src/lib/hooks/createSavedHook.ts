@@ -1,81 +1,76 @@
 "use client";
 
 import { useCallback } from "react";
-import { supabase } from "@/lib/supabase";
 
 /**
- * Factory that creates CRUD hooks for any Supabase table.
- * Eliminates 7 nearly-identical useSaved*.ts hooks.
+ * Factory that creates CRUD hooks for any saved-items table.
+ *
+ * Access goes through the server route `/api/saved/[table]` (behind the shared
+ * password proxy), NOT directly to Supabase — the browser no longer holds a key
+ * that can read/write the database. The hook surface is unchanged.
  */
+async function readError(res: Response, fallback: string): Promise<string> {
+  const body = await res.json().catch(() => null);
+  return body?.error || fallback;
+}
+
 export function createSavedHook<
   T extends { id: string; updated_at: string },
   InsertPayload extends Record<string, unknown>,
   UpdatePayload extends Record<string, unknown> = Partial<InsertPayload>
 >(tableName: string) {
+  const base = `/api/saved/${tableName}`;
+
   return function useSaved() {
     const fetchItems = useCallback(
       async (opts?: { limit?: number }): Promise<T[]> => {
-        let query = supabase
-          .from(tableName)
-          .select("*")
-          .order("updated_at", { ascending: false });
-
-        if (opts?.limit) {
-          query = query.limit(opts.limit);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return data as T[];
+        const qs = opts?.limit ? `?limit=${opts.limit}` : "";
+        const res = await fetch(`${base}${qs}`);
+        if (!res.ok) throw new Error(await readError(res, "Failed to load items"));
+        return (await res.json()) as T[];
       },
       []
     );
 
-    const getItem = useCallback(
-      async (id: string): Promise<T | null> => {
-        const { data, error } = await supabase
-          .from(tableName)
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (error) throw error;
-        return data as T;
-      },
-      []
-    );
+    const getItem = useCallback(async (id: string): Promise<T | null> => {
+      const res = await fetch(`${base}?id=${encodeURIComponent(id)}`);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(await readError(res, "Failed to load item"));
+      return (await res.json()) as T;
+    }, []);
 
     const saveItem = useCallback(
       async (payload: InsertPayload): Promise<string> => {
-        const { data, error } = await supabase
-          .from(tableName)
-          .insert(payload)
-          .select("id")
-          .single();
-
-        if (error) throw error;
-        return data.id;
+        const res = await fetch(base, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(await readError(res, "Failed to save item"));
+        const { id } = await res.json();
+        return id as string;
       },
       []
     );
 
     const updateItem = useCallback(
       async (id: string, updates: UpdatePayload) => {
-        // Note: updated_at is handled by a DB trigger — no manual setting needed
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await supabase
-          .from(tableName)
-          .update(updates as any)
-          .eq("id", id);
-
-        if (error) throw error;
+        // updated_at is handled by a DB trigger — no manual setting needed.
+        const res = await fetch(base, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, updates }),
+        });
+        if (!res.ok) throw new Error(await readError(res, "Failed to update item"));
       },
       []
     );
 
     const deleteItem = useCallback(async (id: string) => {
-      const { error } = await supabase.from(tableName).delete().eq("id", id);
-      if (error) throw error;
+      const res = await fetch(`${base}?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(await readError(res, "Failed to delete item"));
     }, []);
 
     return { fetchItems, getItem, saveItem, updateItem, deleteItem };

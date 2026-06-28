@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback } from "react";
-import { supabase } from "@/lib/supabase";
 import { createSavedHook } from "./createSavedHook";
 import type { SavedTeleprompterCard } from "@/lib/types/saved-teleprompter-card";
 import type {
@@ -30,31 +29,33 @@ const useSavedBase = createSavedHook<SavedTeleprompterCard, InsertPayload, Updat
 export function useSavedTeleprompterCards() {
   const { saveItem, updateItem, deleteItem } = useSavedBase();
 
-  // Custom fetch ordered by sort_order ASC instead of default updated_at DESC
+  // Custom fetch ordered by sort_order ASC instead of the default updated_at DESC.
   const fetchTeleprompterCards = useCallback(async (): Promise<SavedTeleprompterCard[]> => {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select("*")
-      .order("sort_order", { ascending: true });
-
-    if (error) throw error;
-    return data as SavedTeleprompterCard[];
+    const res = await fetch(`/api/saved/${TABLE}?order=sort_order&dir=asc`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error || "Failed to load teleprompter cards");
+    }
+    return (await res.json()) as SavedTeleprompterCard[];
   }, []);
 
   const deleteAllTeleprompterCards = useCallback(async () => {
-    const { error } = await supabase.from(TABLE).delete().gte("sort_order", 0);
-    if (error) throw error;
+    const res = await fetch(`/api/saved/${TABLE}?all=true`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error || "Failed to clear teleprompter cards");
+    }
   }, []);
 
   const batchUpdateSortOrders = useCallback(
     async (updates: { id: string; sort_order: number }[]) => {
       await Promise.all(
         updates.map(({ id, sort_order }) =>
-          supabase.from(TABLE).update({ sort_order }).eq("id", id)
+          updateItem(id, { sort_order } as UpdatePayload)
         )
       );
     },
-    []
+    [updateItem]
   );
 
   return {
