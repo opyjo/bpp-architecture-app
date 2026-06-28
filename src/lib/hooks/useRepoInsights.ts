@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { streamNDJSON } from "@/lib/stream";
 
 export type InsightLens = "business" | "go" | "saas";
@@ -24,6 +24,10 @@ export function useRepoInsights(): UseRepoInsightsReturn {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight stream when the component unmounts so it can't
+  // setState on an unmounted component (leak + React warning).
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const analyze = useCallback(
     async (

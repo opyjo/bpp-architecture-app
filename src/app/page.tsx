@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import ArchitectureTab from "@/components/tabs/ArchitectureTab";
@@ -80,32 +80,23 @@ function HomeContent() {
   const activeTab =
     tabParam && ALL_TAB_IDS.includes(tabParam) ? tabParam : "home";
 
-  // Track visited tabs — once visited, stay mounted (preserves state)
-  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() =>
-    activeTab === "home" ? new Set() : new Set([activeTab])
-  );
-
-  // Keep visitedTabs in sync when URL changes
-  if (activeTab !== "home" && !visitedTabs.has(activeTab)) {
-    setVisitedTabs((prev) => new Set(prev).add(activeTab));
-  }
+  // Render ONLY the active tab. Inactive tabs are unmounted (not merely hidden),
+  // so heavy tabs — especially the synchronous-rendering Mermaid diagrams — don't
+  // accumulate and block the main thread. `key={activeTab}` gives each tab a fresh
+  // mount on switch. Trade-off: unsaved in-tab state does not survive a tab switch
+  // (AiChat and ContractBuilder persist their own state to localStorage).
+  const ActiveComponent =
+    activeTab === "home" ? null : TAB_COMPONENTS[activeTab];
 
   return (
     <div className="flex-1 overflow-hidden">
-      {activeTab === "home" && <HomeHub />}
-      {ALL_TAB_IDS.map((tabId) => {
-        if (!visitedTabs.has(tabId)) return null;
-        const Component = TAB_COMPONENTS[tabId];
-        if (!Component) return null;
-        return (
-          <div
-            key={tabId}
-            className={activeTab === tabId ? "h-full" : "hidden"}
-          >
-            <Component />
-          </div>
-        );
-      })}
+      {activeTab === "home" ? (
+        <HomeHub />
+      ) : ActiveComponent ? (
+        <div key={activeTab} className="h-full">
+          <ActiveComponent />
+        </div>
+      ) : null}
     </div>
   );
 }

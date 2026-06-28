@@ -35,6 +35,10 @@ export function useContractBuilder(): UseContractBuilderReturn {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Abort any in-flight stream when the component unmounts so it can't
+  // setState on an unmounted component (leak + React warning).
+  useEffect(() => () => abortRef.current?.abort(), []);
+
   // Restore last spec from localStorage on mount
   useEffect(() => {
     try {

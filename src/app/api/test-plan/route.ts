@@ -97,9 +97,14 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
-  const requirement: string = body.requirement ?? "";
-  const testTypes: string[] = body.testTypes ?? [];
-  const modelId: string = body.modelId || DEFAULT_MODEL_ID;
+  // Validate runtime types — a non-string requirement would otherwise throw a
+  // TypeError (.trim()) outside the try/catch and return a raw 500.
+  const requirement = typeof body.requirement === "string" ? body.requirement : "";
+  const testTypes = Array.isArray(body.testTypes)
+    ? body.testTypes.filter((t): t is string => typeof t === "string")
+    : [];
+  const modelId =
+    typeof body.modelId === "string" && body.modelId ? body.modelId : DEFAULT_MODEL_ID;
 
   if (!requirement.trim()) {
     return Response.json({ error: "No requirement provided" }, { status: 400 });

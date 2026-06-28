@@ -35,11 +35,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const title = (body.title ?? "").trim();
-  const bulletsText = (body.bulletsText ?? "").trim();
-  const fullText = (body.fullText ?? "").trim();
-  const category = (body.category ?? "").trim();
-  const modelId = body.modelId || DEFAULT_MENTAL_MODEL_MODEL_ID;
+  // Coerce to strings before .trim() — non-string body fields would otherwise
+  // throw a TypeError outside the try/catch and return a raw 500.
+  const asStr = (v: unknown) => (typeof v === "string" ? v : "");
+  const title = asStr(body.title).trim();
+  const bulletsText = asStr(body.bulletsText).trim();
+  const fullText = asStr(body.fullText).trim();
+  const category = asStr(body.category).trim();
+  const modelId =
+    typeof body.modelId === "string" && body.modelId
+      ? body.modelId
+      : DEFAULT_MENTAL_MODEL_MODEL_ID;
 
   if (!title && !bulletsText && !fullText) {
     return Response.json({ error: "No card content provided" }, { status: 400 });

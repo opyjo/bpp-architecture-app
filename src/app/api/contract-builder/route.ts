@@ -26,10 +26,15 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
-  const goCode: string = body.goCode ?? "";
-  const additionalFiles: string[] = body.additionalFiles ?? [];
-  const fileName: string = body.fileName ?? "handler.go";
-  const modelId: string = body.modelId || DEFAULT_MODEL_ID;
+  // Validate runtime types — TS annotations don't enforce them, and a non-string
+  // field would otherwise throw a TypeError (e.g. .trim()) outside the try/catch.
+  const goCode = typeof body.goCode === "string" ? body.goCode : "";
+  const additionalFiles = Array.isArray(body.additionalFiles)
+    ? body.additionalFiles.filter((f): f is string => typeof f === "string")
+    : [];
+  const fileName = typeof body.fileName === "string" ? body.fileName : "handler.go";
+  const modelId =
+    typeof body.modelId === "string" && body.modelId ? body.modelId : DEFAULT_MODEL_ID;
 
   if (!goCode.trim()) {
     return Response.json({ error: "No Go code provided" }, { status: 400 });

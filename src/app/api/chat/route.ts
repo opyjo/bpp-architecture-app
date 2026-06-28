@@ -550,7 +550,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
   const incomingMessages: { role: "user" | "assistant"; content: string }[] =
-    body.messages ?? [];
+    Array.isArray(body.messages)
+      ? body.messages.filter(
+          (m) =>
+            m &&
+            (m.role === "user" || m.role === "assistant") &&
+            typeof m.content === "string"
+        )
+      : [];
   const selectedModelId: string = body.modelId ?? "claude-sonnet-4.6";
   const context: string | undefined = body.context;
 
