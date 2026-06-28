@@ -96,7 +96,7 @@ export default function CommandPalette() {
               setQuery(e.target.value);
               setActive(0);
             }}
-            placeholder="Search services, events, lambdas, runbooks, tabs…"
+            placeholder="Search services, events, lambdas, tabs…"
             className="flex-1 bg-transparent text-sm text-arch-text placeholder:text-arch-text3 focus:outline-none"
           />
           <kbd className="hidden sm:flex items-center gap-0.5 rounded border border-arch-border px-1.5 py-0.5 text-[10px] font-medium text-arch-text3">

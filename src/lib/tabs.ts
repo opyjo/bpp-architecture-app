@@ -55,7 +55,6 @@ export const tabGroups: TabGroup[] = [
       { id: "impact", label: "Change Impact" },
       { id: "systemmap", label: "System Map" },
       { id: "drift", label: "Doc Drift" },
-      { id: "runbooks", label: "Incident Runbooks" },
     ],
   },
   {
@@ -66,7 +65,6 @@ export const tabGroups: TabGroup[] = [
       { id: "analyze", label: "Ticket Analyzer", href: "/analyze" },
       { id: "pipeline", label: "Change Package" },
       { id: "contract", label: "API Contract Builder" },
-      { id: "review", label: "Code Review" },
       { id: "sequence", label: "Sequence Diagrams" },
       { id: "testplan", label: "Test Plan" },
       { id: "ai", label: "AI Assistant" },

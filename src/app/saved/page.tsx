@@ -2,23 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useSavedReviews } from "@/lib/hooks/useSavedReviews";
 import { useSavedTestPlans } from "@/lib/hooks/useSavedTestPlans";
 import { useSavedSpecs } from "@/lib/hooks/useSavedSpecs";
 import { useSavedSequenceDiagrams } from "@/lib/hooks/useSavedSequenceDiagrams";
 import { useSavedAnalyses } from "@/lib/hooks/useSavedAnalyses";
 import { useSavedChats } from "@/lib/hooks/useSavedChats";
-import { useSavedRunbooks } from "@/lib/hooks/useSavedRunbooks";
 import { cn, timeAgo, downloadAsMarkdown } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-  Code2,
   ClipboardCheck,
   FileCode2,
   GitBranch,
   FileText,
-  MessageSquare,
-  BookOpen,
   Loader2,
   Trash2,
   Search,
@@ -36,14 +31,12 @@ const BSA_PREFIX = "[BSA Coach]";
 
 type ContentType =
   | "all"
-  | "reviews"
   | "testplans"
   | "specs"
   | "sequence_diagrams"
   | "analyses"
   | "ai_chats"
-  | "coach_chats"
-  | "runbooks";
+  | "coach_chats";
 
 interface TypeConfig {
   id: ContentType;
@@ -79,14 +72,6 @@ const TYPES: TypeConfig[] = [
     detailLink: (id) => `/test-plans/${id}`,
   },
   {
-    id: "reviews",
-    label: "Code Reviews",
-    icon: Code2,
-    color: "text-arch-purple",
-    bgColor: "bg-arch-purple/10",
-    detailLink: (id) => `/reviews/${id}`,
-  },
-  {
     id: "specs",
     label: "API Specs",
     icon: FileCode2,
@@ -117,14 +102,6 @@ const TYPES: TypeConfig[] = [
     color: "text-arch-teal",
     bgColor: "bg-arch-teal/10",
     detailLink: (id) => `/chats/${id}`,
-  },
-  {
-    id: "runbooks",
-    label: "Runbooks",
-    icon: BookOpen,
-    color: "text-arch-coral",
-    bgColor: "bg-arch-coral/10",
-    detailLink: (id) => `/runbooks/${id}`,
   },
 ];
 
@@ -172,14 +149,12 @@ export default function SavedHubPage() {
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<Record<ContentType, number>>({
     all: 0,
-    reviews: 0,
     testplans: 0,
     specs: 0,
     sequence_diagrams: 0,
     analyses: 0,
     ai_chats: 0,
     coach_chats: 0,
-    runbooks: 0,
   });
   const [search, setSearch] = useState("");
   // Lazy initializer is SSR-safe: loadTagMap guards on `typeof window`,
@@ -189,50 +164,42 @@ export default function SavedHubPage() {
   const [tagEditingFor, setTagEditingFor] = useState<string | null>(null);
   const [tagDraft, setTagDraft] = useState("");
 
-  const { fetchReviews, deleteReview } = useSavedReviews();
   const { fetchTestPlans, deleteTestPlan } = useSavedTestPlans();
   const { fetchSpecs, deleteSpec } = useSavedSpecs();
   const { fetchSequenceDiagrams, deleteSequenceDiagram } =
     useSavedSequenceDiagrams();
   const { fetchAnalyses, deleteAnalysis } = useSavedAnalyses();
   const { fetchChats, deleteChat } = useSavedChats();
-  const { fetchRunbooks, deleteRunbook } = useSavedRunbooks();
 
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
       const results = await Promise.allSettled([
-        fetchReviews(),
         fetchTestPlans(),
         fetchSpecs(),
         fetchSequenceDiagrams(),
         fetchAnalyses(),
         fetchChats(),
-        fetchRunbooks(),
       ]);
 
       const newCounts: Record<string, number> = {
         all: 0,
-        reviews: 0,
         testplans: 0,
         specs: 0,
         sequence_diagrams: 0,
         analyses: 0,
         ai_chats: 0,
         coach_chats: 0,
-        runbooks: 0,
       };
       const items: SavedItem[] = [];
 
-      // Non-chat types mapped in order
+      // Non-chat types mapped by their position in the results array above.
       const simpleKeys: { key: Exclude<ContentType, "all" | "ai_chats" | "coach_chats">; index: number }[] = [
-        { key: "reviews", index: 0 },
-        { key: "testplans", index: 1 },
-        { key: "specs", index: 2 },
-        { key: "sequence_diagrams", index: 3 },
-        { key: "analyses", index: 4 },
-        // chats at index 5 — handled separately
-        { key: "runbooks", index: 6 },
+        { key: "testplans", index: 0 },
+        { key: "specs", index: 1 },
+        { key: "sequence_diagrams", index: 2 },
+        { key: "analyses", index: 3 },
+        // chats at index 4 — handled separately
       ];
 
       simpleKeys.forEach(({ key, index }) => {
@@ -249,9 +216,6 @@ export default function SavedHubPage() {
         data.forEach((row) => {
           let subtitle = "";
           switch (key) {
-            case "reviews":
-              subtitle = (row.language as string) || "";
-              break;
             case "testplans":
               subtitle =
                 (row.test_types as string[])?.join(", ") || "all types";
@@ -267,9 +231,6 @@ export default function SavedHubPage() {
             case "analyses":
               subtitle = `${(row.messages as unknown[])?.length || 0} messages`;
               break;
-            case "runbooks":
-              subtitle = (row.severity as string) || "";
-              break;
           }
           items.push({
             id: row.id,
@@ -282,7 +243,7 @@ export default function SavedHubPage() {
       });
 
       // Split chats into AI Assistant vs Interview Coach
-      const chatsResult = results[5];
+      const chatsResult = results[4];
       if (chatsResult.status === "fulfilled") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const chats = chatsResult.value as any[];
@@ -324,14 +285,12 @@ export default function SavedHubPage() {
     Exclude<ContentType, "all">,
     (id: string) => Promise<void>
   > = {
-    reviews: deleteReview,
     testplans: deleteTestPlan,
     specs: deleteSpec,
     sequence_diagrams: deleteSequenceDiagram,
     analyses: deleteAnalysis,
     ai_chats: deleteChat,
     coach_chats: deleteChat,
-    runbooks: deleteRunbook,
   };
 
   const handleDelete = async (item: SavedItem) => {

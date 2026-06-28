@@ -10,13 +10,11 @@ export const runtime = "nodejs";
 // Hard allowlist: the client may only touch these tables. Without this, the route
 // would be a generic proxy to the whole database.
 const TABLES = new Set([
-  "reviews",
   "test_plans",
   "specs",
   "sequence_diagrams",
   "analyses",
   "chats",
-  "runbooks",
   "teleprompter_cards",
 ]);
 

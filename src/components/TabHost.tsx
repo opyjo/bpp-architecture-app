@@ -25,8 +25,6 @@ const ApigeeTab = dynamic(() => import("@/components/tabs/ApigeeTab"), { ssr: fa
 const OpenApiTab = dynamic(() => import("@/components/tabs/OpenApiTab"), { ssr: false });
 const ContractBuilderTab = dynamic(() => import("@/components/tabs/ContractBuilderTab"), { ssr: false });
 const ChangeImpactTab = dynamic(() => import("@/components/tabs/ChangeImpactTab"), { ssr: false });
-const RunbookManagerTab = dynamic(() => import("@/components/tabs/RunbookManagerTab"), { ssr: false });
-const CodeReviewTab = dynamic(() => import("@/components/tabs/CodeReviewTab"), { ssr: false });
 const SequenceDiagramTab = dynamic(() => import("@/components/tabs/SequenceDiagramTab"), { ssr: false });
 const TestPlanTab = dynamic(() => import("@/components/tabs/TestPlanTab"), { ssr: false });
 const TeleprompterTab = dynamic(() => import("@/components/tabs/TeleprompterTab"), { ssr: false });
@@ -57,11 +55,9 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   coach: InterviewCoachTab,
   teleprompter: TeleprompterTab,
   contract: ContractBuilderTab,
-  review: CodeReviewTab,
   sequence: SequenceDiagramTab,
   testplan: TestPlanTab,
   impact: ChangeImpactTab,
-  runbooks: RunbookManagerTab,
   ai: AiChatTab,
   pipeline: ChangePackageTab,
   drift: DriftTab,

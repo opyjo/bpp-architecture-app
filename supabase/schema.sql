@@ -23,18 +23,6 @@ $$ language plpgsql;
 -- ---- helper: apply standard columns + trigger + RLS to a table -------------
 -- (Postgres has no "macro", so each table is spelled out below for clarity.)
 
--- ============================ reviews =======================================
-create table if not exists public.reviews (
-  id            uuid primary key default gen_random_uuid(),
-  title         text not null,
-  code_snippet  text not null default '',
-  review_content text not null default '',
-  focus_areas   text[] not null default '{}',
-  language      text not null default 'go',
-  created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now()
-);
-
 -- ============================ test_plans ====================================
 create table if not exists public.test_plans (
   id           uuid primary key default gen_random_uuid(),
@@ -89,16 +77,6 @@ create table if not exists public.chats (
   updated_at timestamptz not null default now()
 );
 
--- ============================ runbooks ======================================
-create table if not exists public.runbooks (
-  id         uuid primary key default gen_random_uuid(),
-  title      text not null,
-  severity   text not null default 'P3',
-  content    jsonb not null default '{}',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 -- ============================ teleprompter_cards ============================
 create table if not exists public.teleprompter_cards (
   id         uuid primary key default gen_random_uuid(),
@@ -122,8 +100,8 @@ do $$
 declare
   t text;
   tables text[] := array[
-    'reviews','test_plans','specs','sequence_diagrams',
-    'analyses','chats','runbooks','teleprompter_cards'
+    'test_plans','specs','sequence_diagrams',
+    'analyses','chats','teleprompter_cards'
   ];
 begin
   foreach t in array tables loop

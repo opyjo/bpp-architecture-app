@@ -61,15 +61,6 @@ const CONTEXTS: Record<string, AssistantContext> = {
       "Best practices for flag naming",
     ],
   },
-  runbooks: {
-    label: "Incident Runbooks",
-    context: "The user is viewing incident runbooks (symptoms, resolution + rollback steps, escalation).",
-    prompts: [
-      "Draft a runbook for Kafka consumer lag",
-      "First triage steps for merchant provisioning failures",
-      "When should I escalate a P1?",
-    ],
-  },
   impact: {
     label: "Change Impact",
     context: "The user is analyzing the blast radius of a proposed change across services and events.",
@@ -117,7 +108,7 @@ export function getAssistantContext(tab: string | null, pathname: string): Assis
   if (pathname.startsWith("/saved")) {
     return {
       label: "Saved",
-      context: "The user is browsing their saved artifacts (reviews, test plans, specs, runbooks).",
+      context: "The user is browsing their saved artifacts (test plans, specs, sequence diagrams, analyses, chats).",
       prompts: ["Summarize what I've saved", "Suggest a next artifact to create"],
     };
   }

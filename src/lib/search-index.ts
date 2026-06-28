@@ -2,7 +2,6 @@ import { tabGroups } from "@/lib/tabs";
 import { allServiceDeepDives } from "@/data/service-deep-dives";
 import { kafkaEvents } from "@/data/events";
 import { lambdaFunctions } from "@/data/lambdas";
-import { runbookCatalog } from "@/data/runbooks";
 import { featureFlagSystems } from "@/data/feature-flags";
 
 export type SearchKind =
@@ -10,7 +9,6 @@ export type SearchKind =
   | "Service"
   | "Event"
   | "Lambda"
-  | "Runbook"
   | "Flag";
 
 export interface SearchEntry {
@@ -31,7 +29,6 @@ const KIND_TINT: Record<SearchKind, string> = {
   Service: "text-arch-teal bg-arch-teal/10 border-arch-teal/25",
   Event: "text-arch-amber bg-arch-amber/10 border-arch-amber/25",
   Lambda: "text-arch-coral bg-arch-coral/10 border-arch-coral/25",
-  Runbook: "text-arch-red bg-arch-red/10 border-arch-red/25",
   Flag: "text-arch-purple bg-arch-purple/10 border-arch-purple/25",
 };
 
@@ -99,18 +96,6 @@ export function buildSearchIndex(): SearchEntry[] {
       kind: "Lambda",
       keywords: `${l.name} ${l.serviceGroup} ${l.description}`.toLowerCase(),
       tab: "lambdas",
-    });
-  }
-
-  // Incident runbooks
-  for (const r of runbookCatalog) {
-    entries.push({
-      id: `runbook:${r.id}`,
-      title: r.title,
-      subtitle: `${r.severity} · ${truncate(r.description, 70)}`,
-      kind: "Runbook",
-      keywords: `${r.title} ${r.severity} ${r.description} ${r.tags.join(" ")}`.toLowerCase(),
-      tab: "runbooks",
     });
   }
 
