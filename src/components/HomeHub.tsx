@@ -27,7 +27,6 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   teleprompter: "Scrolling talking-point cards",
   impact: "Assess a change's blast radius",
   systemmap: "Interactive dependency map",
-  drift: "Detect docs vs. code drift",
   insights: "Business, Go & SaaS lenses on your repo",
   analyze: "AI ticket analyzer",
   pipeline: "Generate change packages",

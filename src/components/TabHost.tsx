@@ -29,7 +29,6 @@ const SequenceDiagramTab = dynamic(() => import("@/components/tabs/SequenceDiagr
 const TestPlanTab = dynamic(() => import("@/components/tabs/TestPlanTab"), { ssr: false });
 const TeleprompterTab = dynamic(() => import("@/components/tabs/TeleprompterTab"), { ssr: false });
 const ChangePackageTab = dynamic(() => import("@/components/tabs/ChangePackageTab"), { ssr: false });
-const DriftTab = dynamic(() => import("@/components/tabs/DriftTab"), { ssr: false });
 const SystemMapTab = dynamic(() => import("@/components/tabs/SystemMapTab"), { ssr: false });
 const RepoInsightsTab = dynamic(() => import("@/components/tabs/RepoInsightsTab"), { ssr: false });
 const ApoartStoriesTab = dynamic(() => import("@/components/tabs/ApoartStoriesTab"), { ssr: false });
@@ -60,7 +59,6 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   impact: ChangeImpactTab,
   ai: AiChatTab,
   pipeline: ChangePackageTab,
-  drift: DriftTab,
   systemmap: SystemMapTab,
   insights: RepoInsightsTab,
   apoart: ApoartStoriesTab,

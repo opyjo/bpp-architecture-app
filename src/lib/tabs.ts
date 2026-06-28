@@ -54,7 +54,6 @@ export const tabGroups: TabGroup[] = [
     tabs: [
       { id: "impact", label: "Change Impact" },
       { id: "systemmap", label: "System Map" },
-      { id: "drift", label: "Doc Drift" },
     ],
   },
   {
