@@ -21,6 +21,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   canadalife: "Visual Canada Life interview cheat sheet",
   mock: "Canada Life BSA mock interview Q&A",
   bsa: "Business analyst cheatsheet",
+  hoopp: "HOOPP Senior Technical BSA interview prep",
   apigee: "Apigee gateway concepts",
   openapi: "OpenAPI 3.0 spec reference",
   coach: "Interview practice coach",
