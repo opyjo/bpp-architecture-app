@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useChat } from "@/lib/hooks/useChat";
 import { useSavedChats } from "@/lib/hooks/useSavedChats";
 import { useSpeech } from "@/lib/hooks/useSpeech";
@@ -12,23 +12,52 @@ import { Save, ExternalLink, Mic, MicOff, Volume2, VolumeX, X, Send } from "luci
 import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { bsaCoachSystemContext } from "@/data/bsa-cheatsheet";
-
-const MOCK_INTERVIEW_PROMPT = "Mock interview — 5 BSA questions";
-
-const COACH_PROMPTS = [
+import {
+  INTERVIEW_ROLES,
+  DEFAULT_ROLE_ID,
   MOCK_INTERVIEW_PROMPT,
-  "How do I gather integration requirements?",
-  "Explain the saga pattern simply",
-  "Bell project examples for behavioral Qs",
-];
+  getInterviewRole,
+  buildCoachSystemContext,
+  type InterviewRole,
+} from "@/data/interview-roles";
+
+const ROLE_STORAGE_KEY = "interview-coach-role";
 
 export default function InterviewCoachTab() {
+  const [roleId, setRoleId] = useState(DEFAULT_ROLE_ID);
+
+  // Restore the last-selected role after mount (avoids SSR/hydration mismatch).
+  useEffect(() => {
+    const stored = localStorage.getItem(ROLE_STORAGE_KEY);
+    if (stored && INTERVIEW_ROLES.some((r) => r.id === stored)) {
+      setRoleId(stored);
+    }
+  }, []);
+
+  const selectRole = (id: string) => {
+    setRoleId(id);
+    localStorage.setItem(ROLE_STORAGE_KEY, id);
+  };
+
+  const role = getInterviewRole(roleId);
+
+  // Keyed by role so useChat re-initializes with the role's own chat history.
+  return <CoachChat key={role.id} role={role} onRoleChange={selectRole} />;
+}
+
+function CoachChat({
+  role,
+  onRoleChange,
+}: {
+  role: InterviewRole;
+  onRoleChange: (id: string) => void;
+}) {
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
+  const systemContext = useMemo(() => buildCoachSystemContext(role), [role]);
   const { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory } =
     useChat(modelId, {
-      storageKey: "bsa-coach-chat",
-      systemContext: bsaCoachSystemContext,
+      storageKey: role.storageKey,
+      systemContext,
     });
   const { saveChat } = useSavedChats();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -133,7 +162,7 @@ export default function InterviewCoachTab() {
     const firstUserMsg = messages.find((m) => m.role === "user");
     setSaveTitle(
       firstUserMsg
-        ? firstUserMsg.content.slice(0, 50) + (firstUserMsg.content.length > 50 ? "\u2026" : "")
+        ? firstUserMsg.content.slice(0, 50) + (firstUserMsg.content.length > 50 ? "…" : "")
         : "Untitled"
     );
     setShowSavePopover(true);
@@ -143,7 +172,9 @@ export default function InterviewCoachTab() {
     if (isSaving) return;
     setIsSaving(true);
     const rawTitle = saveTitle.trim() || "Untitled";
-    const finalTitle = rawTitle.startsWith("[BSA Coach]") ? rawTitle : `[BSA Coach] ${rawTitle}`;
+    const finalTitle = rawTitle.startsWith(role.savePrefix)
+      ? rawTitle
+      : `${role.savePrefix} ${rawTitle}`;
     try {
       await saveChat({
         title: finalTitle,
@@ -165,12 +196,36 @@ export default function InterviewCoachTab() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-arch-border bg-arch-bg2/80 backdrop-blur-sm">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-arch-teal to-arch-blue text-white flex items-center justify-center text-[8px] font-bold shrink-0">
-            BSA
+          <div
+            className={cn(
+              "w-6 h-6 rounded-lg bg-gradient-to-br text-white flex items-center justify-center text-[8px] font-bold shrink-0",
+              role.badgeGradient
+            )}
+          >
+            {role.badge}
           </div>
           <span className="text-[13px] font-semibold text-arch-text truncate">
             Interview Coach
           </span>
+          {/* Role switcher */}
+          <div className="flex items-center gap-1 p-0.5 rounded-full border border-arch-border bg-arch-bg/60 shrink-0">
+            {INTERVIEW_ROLES.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => onRoleChange(r.id)}
+                disabled={isStreaming}
+                title={`${r.company} — ${r.title}`}
+                className={cn(
+                  "px-2.5 py-0.5 rounded-full text-[10.5px] font-medium border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+                  r.id === role.id
+                    ? r.pillActive
+                    : "border-transparent text-arch-text3 hover:text-arch-text hover:bg-white/5"
+                )}
+              >
+                {r.company}
+              </button>
+            ))}
+          </div>
           <ModelSelector
             value={modelId}
             onChange={setModelId}
@@ -255,7 +310,7 @@ export default function InterviewCoachTab() {
               if (e.key === "Enter") handleSaveConfirm();
               if (e.key === "Escape") setShowSavePopover(false);
             }}
-            placeholder="Chat title\u2026"
+            placeholder="Chat title…"
             autoFocus
             className="flex-1 bg-transparent text-[12px] text-arch-text outline-none placeholder:text-arch-text3"
           />
@@ -264,7 +319,7 @@ export default function InterviewCoachTab() {
             disabled={isSaving}
             className="text-[11px] text-arch-green hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-40"
           >
-            {isSaving ? "Saving\u2026" : "Save"}
+            {isSaving ? "Saving…" : "Save"}
           </button>
           <button
             onClick={() => setShowSavePopover(false)}
@@ -331,6 +386,10 @@ export default function InterviewCoachTab() {
       >
         {isEmpty ? (
           <div className="w-full max-w-xl mx-auto flex flex-col gap-3">
+            <p className="text-center text-[11.5px] text-arch-text3">
+              Prepping for <span className="text-arch-text font-medium">{role.title}</span> at{" "}
+              <span className="text-arch-text font-medium">{role.company}</span>
+            </p>
             {voiceSupported && (
               <button
                 onClick={startMockInterview}
@@ -343,7 +402,7 @@ export default function InterviewCoachTab() {
               </button>
             )}
             <div className="flex flex-wrap items-center justify-center gap-1.5">
-              {COACH_PROMPTS.map((prompt) => (
+              {role.starterPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}
