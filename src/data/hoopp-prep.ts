@@ -710,6 +710,426 @@ export const practicePlatforms: PracticePlatform[] = [
   },
 ];
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MOCK INTERVIEW QUESTIONS — questions the panel could actually ask, with
+// what they're really testing, a model answer, and code where it earns points.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface InterviewQuestion {
+  id: string;
+  /** The question, phrased the way a panelist would say it. */
+  q: string;
+  /** What they're really assessing — say this to yourself before answering. */
+  tests: string;
+  /** Model answer / approach. `\n` renders as line breaks. */
+  answer: string;
+  code?: string;
+  lang?: string;
+  codeComment?: string;
+  /** Likely follow-up probes — rehearse these too. */
+  followups?: string[];
+}
+
+export interface QuestionGroup {
+  id: string;
+  title: string;
+  color: ConceptColor;
+  intro: string;
+  questions: InterviewQuestion[];
+}
+
+// ─── SQL questions ───────────────────────────────────────────────────────────
+
+const sqlQuestions: InterviewQuestion[] = [
+  {
+    id: "q-sql-noncontrib",
+    q: "Given `member` and `contribution` tables, find every active member who made no contribution in 2026.",
+    tests:
+      "Anti-join fluency, and whether you reach for a NULL-safe pattern. This is the single most common SQL interview shape.",
+    answer:
+      "Two clean ways: a LEFT JOIN ... WHERE child IS NULL, or NOT EXISTS. I prefer NOT EXISTS here — it reads as the business rule ('no contribution exists for this member in 2026') and, unlike NOT IN, it's safe if the sub-query can return NULLs.\n\nCall out the date-range grain: I filter contributions to 2026 inside the join/subquery, not in an outer WHERE, or I'd wrongly exclude members whose only rows are outside 2026.",
+    lang: "sql",
+    codeComment: "Active members with zero 2026 contributions",
+    code: `SELECT m.member_id, m.member_number
+FROM   member m
+WHERE  m.status = 'ACTIVE'
+  AND  NOT EXISTS (
+        SELECT 1 FROM contribution c
+        WHERE  c.member_id = m.member_id
+          AND  c.posted_date >= '2026-01-01'
+          AND  c.posted_date <  '2027-01-01'
+      );`,
+    followups: [
+      "Why NOT EXISTS over NOT IN? — NOT IN returns zero rows if the subquery yields a single NULL.",
+      "Rewrite as a LEFT JOIN — put the date filter in the ON clause, not the WHERE, or you convert it back to an inner join.",
+    ],
+  },
+  {
+    id: "q-sql-latest",
+    q: "Return the most recent contribution per member — one row each, ties broken deterministically.",
+    tests:
+      "Window functions vs GROUP BY. They want to see ROW_NUMBER with a deterministic ORDER BY, not a MAX(date) that re-joins and duplicates on ties.",
+    answer:
+      "ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY posted_date DESC, id DESC), then keep rn = 1. The secondary sort on a unique id is the tie-breaker so the result is deterministic — a MAX(posted_date) approach silently returns two rows if a member has two contributions on the same day.\n\nIf they want ALL rows tied for the latest, that's RANK() instead of ROW_NUMBER().",
+    lang: "sql",
+    codeComment: "Newest contribution per member, deterministic",
+    code: `WITH ranked AS (
+  SELECT c.*,
+         ROW_NUMBER() OVER (
+           PARTITION BY member_id
+           ORDER BY posted_date DESC, id DESC
+         ) AS rn
+  FROM   contribution c
+)
+SELECT * FROM ranked WHERE rn = 1;`,
+    followups: [
+      "ROW_NUMBER vs RANK vs DENSE_RANK? — RANK leaves gaps after ties, DENSE_RANK doesn't, ROW_NUMBER never ties.",
+      "How would you get the 2nd most recent? — same CTE, WHERE rn = 2.",
+    ],
+  },
+  {
+    id: "q-sql-allocation",
+    q: "Beneficiary allocations must sum to exactly 100% per member. Write a query that finds every member violating that rule.",
+    tests:
+      "Translating a real pension business rule into a GROUP BY ... HAVING check — the literal 'deterministic system behaviour' the JD asks for.",
+    answer:
+      "GROUP BY member_id, HAVING SUM(allocation_pct) <> 100. I'd only count active/approved beneficiaries (a DRAFT row shouldn't fail the check), and I'd flag members with NO beneficiary rows separately — those sum to NULL, not 0, so HAVING won't catch them. That 'missing entirely' case is exactly the edge case I'm paid to surface before build.",
+    lang: "sql",
+    codeComment: "Members whose approved allocations don't total 100%",
+    code: `SELECT member_id, SUM(allocation_pct) AS total_pct
+FROM   beneficiary
+WHERE  state = 'APPROVED'
+GROUP  BY member_id
+HAVING SUM(allocation_pct) <> 100;`,
+    followups: [
+      "What about members with no beneficiaries at all? — they don't appear here; catch them with an anti-join against member.",
+      "Floating-point rounding? — store allocation as integer basis points or NUMERIC, never FLOAT.",
+    ],
+  },
+  {
+    id: "q-sql-reconcile",
+    q: "The portal shows some members a stale balance. The DISP cache is loaded nightly from the core system. How do you use SQL to find exactly where they disagree?",
+    tests:
+      "Reconciliation — the heart of the role. They want the full-outer diff, not just 'I'd compare them'.",
+    answer:
+      "A FULL OUTER JOIN on member_id surfaces all three failure modes in one pass: in-core-missing-from-cache, in-cache-missing-from-core (orphan), and present-in-both-but-different-balance. I add a diagnosis column so the output is triage-ready, and I'd start with cheap count/SUM checksums per employer first — if the totals match, I don't need the row-level diff.",
+    lang: "sql",
+    codeComment: "Symmetric core-vs-cache reconciliation",
+    code: `SELECT COALESCE(c.member_id, d.member_id) AS member_id,
+       CASE
+         WHEN d.member_id IS NULL     THEN 'MISSING_IN_CACHE'
+         WHEN c.member_id IS NULL     THEN 'ORPHAN_IN_CACHE'
+         WHEN c.balance <> d.balance  THEN 'BALANCE_MISMATCH'
+         ELSE                              'OK'
+       END AS diff
+FROM   core.member c
+FULL   OUTER JOIN disp.member d ON d.member_id = c.member_id
+WHERE  d.member_id IS NULL
+   OR  c.member_id IS NULL
+   OR  c.balance <> d.balance;`,
+    followups: [
+      "Cheaper first check? — COUNT(*) and SUM(balance) per group as a checksum before the row diff.",
+      "balance is NULL on one side? — <> is NULL-unsafe; use IS DISTINCT FROM to treat NULLs as a real difference.",
+    ],
+  },
+  {
+    id: "q-sql-dupes",
+    q: "How would you detect duplicate members in a feed, and how do you tell a true duplicate from legitimate history?",
+    tests:
+      "Uniqueness detection plus judgment — do you understand versioned/temporal data, or do you treat every repeat as a bug?",
+    answer:
+      "GROUP BY the natural key (member_number or SIN) HAVING COUNT(*) > 1 finds repeats. But a repeat isn't automatically a duplicate: if the table is versioned (valid_from/valid_to or an is_current flag), multiple rows per member are correct history. So I qualify — count only current rows, or count distinct (key, effective_date). The real defect is two CURRENT rows for one member.",
+    lang: "sql",
+    codeComment: "True duplicates = >1 current row per natural key",
+    code: `SELECT member_number, COUNT(*) AS current_rows
+FROM   member
+WHERE  is_current = TRUE
+GROUP  BY member_number
+HAVING COUNT(*) > 1;`,
+    followups: [
+      "Why not just SELECT DISTINCT? — it hides the problem instead of proving how many and which rows collide.",
+    ],
+  },
+  {
+    id: "q-sql-nullsin",
+    q: "What's the danger of `WHERE member_id NOT IN (SELECT member_id FROM disp.member)` for a reconciliation?",
+    tests:
+      "A classic NULL trap. Getting this right signals real SQL depth, not memorized patterns.",
+    answer:
+      "If that subquery returns even one NULL member_id, NOT IN evaluates to UNKNOWN for every row and the whole query returns zero results — silently. You'd conclude the two systems are in perfect sync when they may be wildly off. That's a dangerous false-negative in a reconciliation.\n\nFix: use NOT EXISTS (unaffected by NULLs) or a LEFT JOIN ... WHERE right IS NULL, and add an explicit AND member_id IS NOT NULL guard where appropriate.",
+    followups: [
+      "Why does NOT IN behave this way? — three-valued logic: `x <> NULL` is UNKNOWN, so NOT IN can never confirm 'not present'.",
+    ],
+  },
+  {
+    id: "q-sql-whereHaving",
+    q: "Explain WHERE vs HAVING, and where a window function sits relative to both.",
+    tests:
+      "Logical query processing order — that you know when each clause actually runs.",
+    answer:
+      "WHERE filters individual rows BEFORE grouping. HAVING filters GROUPS after aggregation, so it can reference aggregates like SUM(). Window functions run AFTER GROUP BY/HAVING but BEFORE the final ORDER BY — which is why you can't put a window function in a WHERE clause; you wrap it in a CTE/subquery and filter the result (the rn = 1 pattern). Rough order: FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT/window → ORDER BY → LIMIT.",
+  },
+];
+
+// ─── Data modelling questions ────────────────────────────────────────────────
+
+const modellingQuestions: InterviewQuestion[] = [
+  {
+    id: "q-dm-beneficiary",
+    q: "Model member beneficiaries: a member can name several, each with a % allocation, and the design must protect the audit trail on changes.",
+    tests:
+      "1:M modelling, keys, and whether you build auditability in from the start rather than bolting it on.",
+    answer:
+      "MEMBER 1:M BENEFICIARY on member_id. Surrogate PK on both; store allocation_pct as NUMERIC/integer basis points, never FLOAT. The '100%' rule is a cross-row invariant, so it lives in application/DB logic, not a single-column constraint. I add a lifecycle state (DRAFT→PENDING→APPROVED) and a separate append-only beneficiary_audit table capturing who/when/before/after on every change — beneficiary is high-risk, so it's maker-checker and fully reconstructable.",
+    followups: [
+      "Where does the sum-to-100 rule live? — a deferred constraint or a service-layer check on approval; not a column CHECK.",
+      "How do you answer 'who were the beneficiaries as of last March'? — that's the audit table / temporal versioning, not the current row.",
+    ],
+  },
+  {
+    id: "q-dm-mn",
+    q: "A member can be enrolled in multiple plans, and a plan has many members. How do you model it?",
+    tests:
+      "M:N resolution via a junction table — the most common modelling question there is.",
+    answer:
+      "You can't put a foreign key on either side for M:N. Introduce an associative/junction table — MEMBERSHIP(member_id, plan_id, enrolled_on, status) — with the pair as the key. That table is also the natural home for relationship attributes like enrollment date and status, which have nowhere to live on either parent. If a member can be enrolled in the same plan twice over time, the key becomes (member_id, plan_id, enrolled_on).",
+    followups: [
+      "Where do enrollment date/status go? — on the junction row; they belong to the relationship, not to member or plan.",
+    ],
+  },
+  {
+    id: "q-dm-keys",
+    q: "Would you make SIN the primary key of the member table? Defend your choice.",
+    tests:
+      "Surrogate vs natural key, plus PII awareness — a pension-specific sharp edge.",
+    answer:
+      "No. I use a surrogate PK (a system-generated bigint) and put a UNIQUE constraint on SIN as a natural key. Three reasons: (1) SIN is sensitive PII — a surrogate PK keeps it out of URLs, logs, and foreign keys spread across the schema; (2) natural keys can change or be corrected, and cascading that through every FK is painful; (3) surrogate keys make joins stable and fast. You still enforce SIN uniqueness — you just don't make it the identity everything else references.",
+    followups: [
+      "What if two members legitimately share... nothing — SIN is unique by law, so a duplicate is a data-quality defect to raise, not a model to accommodate.",
+    ],
+  },
+  {
+    id: "q-dm-temporal",
+    q: "The business needs to answer 'what was this member's status on any past date'. How do you model that?",
+    tests:
+      "Temporal / slowly-changing-dimension modelling — directly relevant to pension audit and 'as-of' calculations.",
+    answer:
+      "Don't overwrite status in place — that destroys history. I model it as SCD Type 2: a member_status_history table with (member_id, status, valid_from, valid_to), where the current row has valid_to = NULL (or a sentinel like 9999-12-31). An 'as-of' query is then `WHERE valid_from <= :asOf AND (valid_to IS NULL OR valid_to > :asOf)`. This makes pension calculations reproducible and gives auditors a clean answer.",
+    lang: "sql",
+    codeComment: "Status as of a given date",
+    code: `SELECT status
+FROM   member_status_history
+WHERE  member_id = :member_id
+  AND  valid_from <= :as_of
+  AND (valid_to IS NULL OR valid_to > :as_of);`,
+    followups: [
+      "How do you avoid overlapping periods? — the write that closes the old row (sets valid_to) and opens the new must be one transaction.",
+    ],
+  },
+  {
+    id: "q-dm-cqrs",
+    q: "The member dashboard aggregates data from six back-end systems and must load fast. How do you model the storage behind it?",
+    tests:
+      "Normalize-vs-denormalize judgment and the CQRS read-model idea — the BFF's whole reason to exist.",
+    answer:
+      "I keep the systems of record normalized for write-correctness, and build a denormalized read-model — a member-dashboard projection in the DISP store — shaped exactly for the screen. Reads hit one pre-joined structure instead of fanning out to six systems live. The trade-off is staleness, so I specify freshness per field (which are live sync reads vs cache-tolerable) and a reconciliation job that keeps the projection honest against the sources. That normalize-write / denormalize-read split with reconciliation is the answer.",
+    followups: [
+      "How stale is acceptable? — a per-field decision I'd document with the Product Owner, tied to member impact.",
+      "How is the projection kept current? — event-driven update off the sources, or scheduled rebuild, with a reconciliation checksum.",
+    ],
+  },
+  {
+    id: "q-dm-audit",
+    q: "Design the audit trail for a beneficiary change. What does the record capture and what can you NOT do to it?",
+    tests:
+      "Immutability and regulated-data instincts — the append-only log pattern.",
+    answer:
+      "An append-only beneficiary_audit table: audit_id, beneficiary_id, action (CREATE/UPDATE/APPROVE/REJECT), changed_by (the real actor, never 'system' if a human acted), changed_at, and before_state/after_state as JSON. The critical constraint: INSERT only — no UPDATE or DELETE grants on it, ever. Current state becomes a projection over the log; if they conflict, the log wins. I'd flag any design that hard-deletes or mutates history as an audit gap before build.",
+    followups: [
+      "Soft-delete vs hard-delete for the beneficiary itself? — soft-delete (is_deleted/valid_to) so 'as-of' history survives.",
+    ],
+  },
+];
+
+// ─── Data-flow / API contract questions (the 'related technical' bucket) ──────
+
+const apiQuestions: InterviewQuestion[] = [
+  {
+    id: "q-api-syncasync",
+    q: "Design the API for 'get member pension projection'. Is it synchronous or asynchronous, and how does the contract reflect that?",
+    tests:
+      "Sync/async/workflow judgment and whether you specify the FULL contract, including the not-happy paths.",
+    answer:
+      "A projection can be an expensive calculation, so I default to async with a status contract, not a blocking call: POST returns 202 + a job id, the client polls (or gets a webhook) for PENDING→READY→FAILED. If the calc is actually fast/cached I keep it sync. Either way the contract specifies inputs, output payload, the source of truth for each field, freshness (is this live or a cached projection?), timeout behaviour, and the error/FAILED state. I document what's cached, what must be reconciled, and the acceptance criteria for each state.",
+    followups: [
+      "What does the UI show while PENDING? — a defined loading/interim state; that's an acceptance criterion, not an afterthought.",
+      "What if the calc fails? — explicit FAILED contract with a reason code, not a 500 the front end has to guess at.",
+    ],
+  },
+  {
+    id: "q-api-minimise",
+    q: "The core system returns an 80-field member payload. The dashboard needs 12 of them, two of which are SIN and banking info. What do you specify for the API?",
+    tests:
+      "Data minimisation, the BFF as a privacy choke point, and field-level thinking.",
+    answer:
+      "The BFF returns only the 12 fields the screen needs — never pass the raw core payload to the browser. SIN and banking are minimised or masked (last 3 of SIN) unless the caller's role explicitly needs them, and they never appear in logs or URLs. This is exactly why the BFF exists: it's the choke point where I strip a legacy payload down to what the member portal is allowed to see. I'd write per-field rules: source, transformation, who's authorized, and what shows when they're not (mask vs omit).",
+    followups: [
+      "Mask or omit the unauthorized field? — a deliberate per-field decision; omit if its presence itself leaks information.",
+    ],
+  },
+  {
+    id: "q-api-stale",
+    q: "A member updates their address but it doesn't appear on the portal for 15 minutes because of a cache TTL. Walk me through how you'd handle this.",
+    tests:
+      "Caching risk, eventual consistency, and turning a vague bug into a specified behaviour.",
+    answer:
+      "First I frame it as a consistency decision, not just a bug: is a 15-minute stale address acceptable for this field? For member-entered data the answer is usually no — seeing your own edit not take is a trust-killer. Options I'd put in front of the Product Owner: write-through/cache-invalidate on update, read-your-own-writes for the editing session, or shorten TTL for this field. Then I write it into the contract with an acceptance criterion and a negative test, so QA and Ops both have something concrete to verify.",
+    followups: [
+      "Which fields can tolerate staleness? — reference/config data can; member-editable and entitlement data usually can't.",
+    ],
+  },
+  {
+    id: "q-api-partial",
+    q: "The dashboard composes data from three systems. During a request, one of them is down. What should the API do?",
+    tests:
+      "Failure-path and fallback design — the JD's 'timeout/error states, fallback behaviour, source-system failure' verbatim.",
+    answer:
+      "I don't let one down-stream failure blank the whole dashboard. I specify partial-response behaviour: return the sections that resolved, and for the failed one return a defined degraded state (a 'temporarily unavailable' flag the UI renders gracefully) rather than a hard error or, worse, a stale value presented as live. The contract names, per section: timeout, retry policy, fallback content, and whether a failure is suppressible or must block. QA gets an explicit negative path per source system.",
+    followups: [
+      "Retry or fail fast? — depends on idempotency and latency budget; a read can retry, a non-idempotent write can't blindly.",
+      "Do you ever show cached data on failure? — only if it's clearly labelled and within an agreed freshness window.",
+    ],
+  },
+  {
+    id: "q-api-suppression",
+    q: "Give me the field-level rules for displaying an entitlement that may be suppressed depending on member status.",
+    tests:
+      "Turning a display rule into deterministic, testable logic — a decision table / CASE, with the ELSE handled.",
+    answer:
+      "I express it as a decision table so there's no ambiguity: for each (status, entitlement state) combination, define exactly one outcome — SHOW, HIDDEN, or a fallback like PENDING — and always define the ELSE/unknown branch, because an unhandled combination is a defect waiting to happen. That maps straight to a CASE expression and to one acceptance criterion per branch, so engineering builds it and QA tests every path including the negative ones.",
+    lang: "sql",
+    codeComment: "Suppression as a deterministic derived field",
+    code: `CASE
+  WHEN status = 'SUSPENDED'        THEN 'HIDDEN'
+  WHEN entitlement_state = 'DRAFT' THEN 'PENDING'
+  WHEN is_suppressed               THEN 'HIDDEN'
+  ELSE                                  'SHOW'
+END AS display_state`,
+    followups: [
+      "Why a decision table over prose? — every combination is enumerated, so two readers can't interpret it differently.",
+    ],
+  },
+];
+
+// ─── Python questions (lighter) ──────────────────────────────────────────────
+
+const pythonQuestions: InterviewQuestion[] = [
+  {
+    id: "q-py-reconcile",
+    q: "Given two lists of member dicts (source and target), write a function that returns members missing from target and members whose balance differs.",
+    tests:
+      "Dict-keyed lookup and set difference — the Python twin of the SQL anti-join. They want O(n), not a nested loop.",
+    answer:
+      "Index both by member_id into dicts (O(1) lookups), then a set difference finds missing keys and a walk over the intersection finds value mismatches. Keying by id keeps it linear — the naive 'for each source, scan all target' is O(n²) and I'd call that out.",
+    lang: "python",
+    code: `def reconcile(source, target):
+    src = {m["member_id"]: m for m in source}
+    tgt = {m["member_id"]: m for m in target}
+
+    missing_in_target = src.keys() - tgt.keys()
+
+    mismatches = [
+        mid for mid in src.keys() & tgt.keys()
+        if src[mid]["balance"] != tgt[mid]["balance"]
+    ]
+    return sorted(missing_in_target), sorted(mismatches)`,
+    followups: [
+      "How does this scale? — O(n) with dict indexing; the double-loop version is O(n²).",
+      "In pandas? — src.merge(tgt, on='member_id', how='outer', indicator=True) does the same in one call.",
+    ],
+  },
+  {
+    id: "q-py-validate",
+    q: "Read a CSV of members and report every row with a missing SIN or an invalid status. How do you structure it?",
+    tests:
+      "Collecting all errors vs failing on the first, and mapping each rule to an acceptance criterion.",
+    answer:
+      "One validate(row) that returns a LIST of errors, not a boolean — I want the full picture of a bad feed, not just its first bad row. Each rule in the function is one acceptance criterion, which keeps the code traceable back to requirements. Then I collect {row_id: errors} for everything that fails, so Ops gets a complete defect report in one pass.",
+    lang: "python",
+    code: `VALID_STATUS = {"ACTIVE", "DEFERRED", "RETIRED", "SUSPENDED"}
+
+def validate(row: dict) -> list[str]:
+    errors = []
+    if not row.get("sin"):
+        errors.append("missing SIN")
+    if row.get("status") not in VALID_STATUS:
+        errors.append(f"bad status: {row.get('status')}")
+    return errors
+
+bad = {r["member_id"]: validate(r) for r in rows if validate(r)}`,
+    followups: [
+      "Why return a list, not raise? — collecting errors gives a full report; raising stops at the first bad row.",
+    ],
+  },
+];
+
+export const questionGroups: QuestionGroup[] = [
+  {
+    id: "hoopp-q-sql",
+    title: "SQL questions",
+    color: "blue",
+    intro:
+      "The heaviest-weighted bank. Expect to WRITE these on a whiteboard or shared screen, not just describe them. Say the grain out loud before you join, and reach for NULL-safe patterns.",
+    questions: sqlQuestions,
+  },
+  {
+    id: "hoopp-q-dm",
+    title: "Data modelling questions",
+    color: "teal",
+    intro:
+      "Second-deepest. They'll hand you a fuzzy business scenario and watch you turn it into entities, keys, and cardinality — with auditability and PII handled up front, not bolted on.",
+    questions: modellingQuestions,
+  },
+  {
+    id: "hoopp-q-api",
+    title: "Data-flow & API questions",
+    color: "purple",
+    intro:
+      "The 'related technical' bucket — where the BSA role actually lives. Every answer is: name the contract fully (inputs, outputs, source of truth, freshness, error/fallback states) and turn the rule into something testable.",
+    questions: apiQuestions,
+  },
+  {
+    id: "hoopp-q-py",
+    title: "Python questions",
+    color: "amber",
+    intro:
+      "Lighter, but they may hand you a CSV instead of a database. Aim for readable, linear-time validation and reconciliation you can explain line by line.",
+    questions: pythonQuestions,
+  },
+];
+
+/** Rapid-fire concept checks — one-line question, one-line answer. */
+export interface QuickCheck {
+  q: string;
+  a: string;
+  color: ConceptColor;
+}
+
+export const quickChecks: QuickCheck[] = [
+  { color: "blue", q: "INNER vs LEFT JOIN in one line?", a: "INNER keeps only matched rows; LEFT keeps every left row, NULL-filling non-matches. The choice IS a business rule about who appears." },
+  { color: "blue", q: "How do you find rows in A but not B?", a: "Anti-join: LEFT JOIN ... WHERE b.key IS NULL, or NOT EXISTS. Avoid NOT IN if the subquery can return NULL." },
+  { color: "blue", q: "Latest row per group?", a: "ROW_NUMBER() OVER (PARTITION BY grp ORDER BY ts DESC) then WHERE rn = 1, with a unique tie-breaker in the ORDER BY." },
+  { color: "blue", q: "WHERE vs HAVING?", a: "WHERE filters rows before grouping; HAVING filters groups after aggregation and can reference SUM/COUNT." },
+  { color: "blue", q: "Compare two balances that may be NULL?", a: "Use IS DISTINCT FROM, not <> — <> with a NULL is UNKNOWN, so real differences slip through." },
+  { color: "teal", q: "Natural or surrogate PK for member?", a: "Surrogate PK + UNIQUE on the natural key (SIN). Keeps PII out of FKs/logs and joins stable." },
+  { color: "teal", q: "How do you model M:N?", a: "A junction/associative table holding both foreign keys — and any attributes of the relationship itself." },
+  { color: "teal", q: "'What was the value as of a past date'?", a: "Temporal / SCD Type 2: valid_from / valid_to rows; never overwrite history in place." },
+  { color: "purple", q: "Why does DISP (a BFF) exist?", a: "To shape data for the UI and act as the privacy/minimisation choke point — not to leak legacy contracts to the browser." },
+  { color: "purple", q: "One source system is down mid-request?", a: "Return a partial response with a defined degraded state per section — never blank the page or serve stale-as-live." },
+  { color: "coral", q: "Can you ever UPDATE an audit row?", a: "No. Audit logs are append-only, INSERT-only; current state is a projection over the log, and the log wins on conflict." },
+  { color: "amber", q: "pandas equivalent of a FULL OUTER JOIN?", a: "df1.merge(df2, on=key, how='outer', indicator=True) — the _merge column tags left_only / both / right_only." },
+];
+
 /** Suggested study order — shown as an ordered checklist. */
 export const studyOrder: string[] = [
   "Warm up SQL fundamentals on SQLZoo (joins, GROUP BY) — 1 short session.",

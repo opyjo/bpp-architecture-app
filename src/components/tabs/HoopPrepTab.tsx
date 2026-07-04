@@ -29,8 +29,11 @@ import {
   panelPoints,
   practicePlatforms,
   studyOrder,
+  questionGroups,
+  quickChecks,
   type ConceptCard,
   type ConceptColor,
+  type QuestionGroup,
 } from "@/data/hoopp-prep";
 
 // ─── Sidebar Definition ──────────────────────────────────────────────────────
@@ -71,6 +74,16 @@ const sidebarGroups = [
     items: [
       { id: "hoopp-audit", label: "Auditability" },
       { id: "hoopp-rbac", label: "RBAC & PII protection" },
+    ],
+  },
+  {
+    label: "Mock Interview Questions",
+    items: [
+      { id: "hoopp-q-sql", label: "SQL questions" },
+      { id: "hoopp-q-dm", label: "Data modelling questions" },
+      { id: "hoopp-q-api", label: "Data-flow & API questions" },
+      { id: "hoopp-q-py", label: "Python questions" },
+      { id: "hoopp-q-rapid", label: "Rapid-fire concept checks" },
     ],
   },
   {
@@ -170,6 +183,70 @@ function ConceptList({ cards, accent }: { cards: ConceptCard[]; accent: string }
   );
 }
 
+// ─── Mock Question Renderer ──────────────────────────────────────────────────
+
+function QuestionGroupView({ group }: { group: QuestionGroup }) {
+  return (
+    <div>
+      <SectionTitle>{group.title}</SectionTitle>
+      <SectionDesc>{group.intro}</SectionDesc>
+      {group.questions.map((item, i) => (
+        <div
+          key={item.id}
+          className="bg-arch-bg2 border border-arch-border rounded-lg p-4 mb-3.5"
+          style={{ borderLeft: `3px solid var(--arch-${group.color})` }}
+        >
+          <div className="flex items-start gap-2.5 mb-2">
+            <span
+              className="shrink-0 mt-0.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center"
+              style={{
+                background: `color-mix(in srgb, var(--arch-${group.color}) 15%, transparent)`,
+                color: `var(--arch-${group.color})`,
+              }}
+            >
+              {i + 1}
+            </span>
+            <div className="text-[12.5px] font-semibold text-arch-text leading-snug">{item.q}</div>
+          </div>
+
+          <div className="text-[10.5px] text-arch-text3 leading-relaxed mb-2.5 pl-7.5">
+            <span className="font-semibold uppercase tracking-wider text-[9px]" style={{ color: `var(--arch-${group.color})` }}>
+              What they&apos;re testing ·{" "}
+            </span>
+            {item.tests}
+          </div>
+
+          <div className="text-[11.5px] text-arch-text2 leading-[1.7] whitespace-pre-line">{item.answer}</div>
+
+          {item.code && (
+            <div className="mt-3">
+              <CodeBlock language={item.lang} comment={item.codeComment}>
+                {item.code}
+              </CodeBlock>
+            </div>
+          )}
+
+          {item.followups && item.followups.length > 0 && (
+            <div className="mt-3">
+              <div className="text-[9.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--arch-amber)" }}>
+                Likely follow-ups
+              </div>
+              <ul className="space-y-1">
+                {item.followups.map((f, j) => (
+                  <li key={j} className="flex items-start gap-1.5 text-[11px] text-arch-text2 leading-relaxed">
+                    <span className="text-arch-amber mt-px">↳</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function HoopPrepTab() {
@@ -185,6 +262,7 @@ export default function HoopPrepTab() {
             { label: "Data Modelling", desc: "Entities, keys, cardinality, ER + state machines", color: "teal" },
             { label: "Python", desc: "Comprehensions, validation, pandas reconciliation", color: "amber" },
             { label: "Regulated Data", desc: "Audit logs, immutability, RBAC, PII protection", color: "purple" },
+            { label: "Mock Questions", desc: "Real questions + model answers: SQL, modelling, API, Python, rapid-fire", color: "coral" },
             { label: "Panel Points", desc: "How to answer ambiguity/risk/challenge prompts", color: "green" },
             { label: "Practice", desc: "Curated SQL / modelling / Python drill sites + order", color: "coral" },
           ];
@@ -465,6 +543,50 @@ export default function HoopPrepTab() {
                 caption="RBAC is layered: users get roles, roles carry permissions, and the data layer still filters rows and masks columns. Never rely on the UI to hide what the API returns."
               />
               <ConceptList cards={rbacConcepts} accent="purple" />
+            </div>
+          );
+        }
+
+        // ── Mock questions (SQL / DM / API / Python) ──────────────
+        {
+          const group = questionGroups.find((g) => g.id === activeId);
+          if (group) {
+            return (
+              <div>
+                <Callout color={group.color} label="How to use these">
+                  Each card is a question the panel could ask, what they&apos;re really assessing, a model answer, and the
+                  code that earns points. Cover the answer, attempt it out loud, then check yourself — don&apos;t just read.
+                </Callout>
+                <QuestionGroupView group={group} />
+              </div>
+            );
+          }
+        }
+
+        // ── Rapid-fire concept checks ─────────────────────────────
+        if (activeId === "hoopp-q-rapid") {
+          return (
+            <div>
+              <SectionTitle>Rapid-fire concept checks</SectionTitle>
+              <SectionDesc>
+                One-line questions with one-line answers — the &ldquo;can you say it fast and correctly?&rdquo; layer.
+                Read the question, answer in your head, then reveal. Great for the final pass on interview morning.
+              </SectionDesc>
+              <div className="grid grid-cols-1 gap-2">
+                {quickChecks.map((c, i) => (
+                  <div
+                    key={i}
+                    className="bg-arch-bg2 border border-arch-border rounded-lg p-3"
+                    style={{ borderLeft: `3px solid var(--arch-${c.color})` }}
+                  >
+                    <div className="flex items-start gap-2 mb-1">
+                      <Badge color={c.color}>Q</Badge>
+                      <div className="text-[12px] font-semibold text-arch-text leading-snug">{c.q}</div>
+                    </div>
+                    <div className="text-[11px] text-arch-text2 leading-[1.6] pl-0.5">{c.a}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         }
