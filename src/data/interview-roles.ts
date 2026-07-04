@@ -2,13 +2,18 @@
 // INTERVIEW ROLES — one entry per target job the Interview Coach can prep for.
 // To add a new role: append an InterviewRole object to INTERVIEW_ROLES below.
 // The shared candidate background + coaching approach are reused for every
-// role; only the target-role section and coaching focus change.
+// role; only the target-role section and coaching focus change. Roles that
+// don't fit the BSA mold can override the persona, coaching approach, mock
+// prompt, and add extra candidate background.
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface InterviewRole {
   /** Stable id — used for chat-history storage and role persistence. */
   id: string;
-  company: string;
+  /** Short text for the role-switcher pill. */
+  label: string;
+  /** Company name — omit if unknown; the prompt then references only the title. */
+  company?: string;
   title: string;
   /** Short text for the header chip (2–4 chars). */
   badge: string;
@@ -26,6 +31,14 @@ export interface InterviewRole {
   targetRoleContext: string;
   /** Closing coaching emphasis — how to bridge Bell experience to THIS role. */
   coachingFocus: string;
+  /** Coach persona — defaults to "a BSA Interview Coach". */
+  coachPersona?: string;
+  /** Extra candidate-background section appended for this role only. */
+  extraBackground?: string;
+  /** Full replacement for the default coaching approach, if the role needs one. */
+  coachingApproach?: string;
+  /** Prompt sent by the "Start voice mock interview" button — defaults to MOCK_INTERVIEW_PROMPT. */
+  mockPrompt?: string;
 }
 
 export const MOCK_INTERVIEW_PROMPT = "Mock interview — 5 BSA questions";
@@ -62,7 +75,7 @@ Systems of Record: PostgreSQL (subscriptions, orders), DynamoDB (sessions with 3
 
 Authentication: SAML SSO (BoxyHQ) for customers, SAML agent audience for agents, OAuth2 tokens (auth-api), scopes: subscription-manager/query, subscriptions-aggregator-api/read`;
 
-// ─── Shared: coaching approach ───────────────────────────────────────────────
+// ─── Shared: default coaching approach (BSA-flavoured) ───────────────────────
 
 const COACHING_APPROACH = `1. When the user asks you a question or asks you to help them practice, provide structured coaching:
    - Give them the question first
@@ -96,6 +109,7 @@ const COACHING_APPROACH = `1. When the user asks you a question or asks you to h
 export const INTERVIEW_ROLES: InterviewRole[] = [
   {
     id: "canada-life",
+    label: "Canada Life",
     company: "Canada Life",
     title: "Senior Business Systems Analyst",
     badge: "CL",
@@ -122,6 +136,7 @@ export const INTERVIEW_ROLES: InterviewRole[] = [
   },
   {
     id: "hoopp",
+    label: "HOOPP",
     company: "HOOPP",
     title: "Senior Technical Business Systems Analyst",
     badge: "HP",
@@ -152,6 +167,86 @@ export const INTERVIEW_ROLES: InterviewRole[] = [
 What they're screening for: 8+ years BA/BSA experience with 5+ years on API-first, integration-heavy, data-centric platforms; Python, SQL, and data modeling; large-scale digital platform modernization / core system decoupling; deep documentation of integration and orchestration layers; regulated/high-trust domain experience (pensions, financial services, healthcare) is an asset. HOOPP is a defined-benefit pension plan for Ontario healthcare workers — member trust, auditability, and data privacy are paramount.`,
     coachingFocus: `The goal is to help the candidate demonstrate that their Bell Canada experience maps directly onto HOOPP's DISP platform. Bridge explicitly: Next.js BFF + AppSync/aggregator layer ↔ DISP orchestration/BFF APIs; field-level data mappings (UI → GraphQL → Go → DB) ↔ pension data lineage (core systems → DISP → React portal); Kafka events + saga orchestration ↔ async and workflow-driven operations with reconciliation; audit-api logging ↔ audit-sensitive pension transactions; streaming-subscription rules ↔ pension entitlement/eligibility rules. Emphasize the heavier audit, privacy, and regulatory posture of a pension plan versus telecom, and be ready to demonstrate Python, SQL (joins, validation, reconciliation queries), and data modeling fluency.`,
   },
+  {
+    id: "fe-practice-manager",
+    label: "FE Practice Mgr",
+    title: "Manager, Front-End Development Practice",
+    badge: "FE",
+    badgeGradient: "from-arch-coral to-arch-purple",
+    pillActive: "bg-arch-coral/15 text-arch-coral border-arch-coral/40",
+    storageKey: "fe-practice-coach-chat",
+    savePrefix: "[FE Practice Coach]",
+    coachPersona: "an Engineering Leadership Interview Coach",
+    mockPrompt: "Mock interview — 5 practice-leadership questions",
+    starterPrompts: [
+      "Mock interview — 5 practice-leadership questions",
+      "How do I pitch an AI-tooling adoption strategy?",
+      "STAR stories for standards adoption across squads",
+      "How would I answer 'how do you measure developer efficiency'?",
+    ],
+    extraBackground: `Front-end and AI-tooling depth relevant to this role:
+- Hands-on Next.js / React micro-frontend experience on Bell's subscription-manager MFE (Module Federation, BFF pattern, GraphQL/AppSync integration)
+- Authored front-end integration standards artifacts: field-level data mappings, API contract reviews, acceptance criteria that squads and QA worked from
+- Daily practitioner of AI-assisted development (agentic coding tools, multi-model workflows); built an internal AI-powered architecture workspace with multi-provider LLM chat, AI usage dashboards, and AI-driven analysis tooling
+- Experienced working across squads with Product, Architecture, QA, and platform teams in an Agile (squad/chapter/practice) operating model`,
+    targetRoleContext: `The interview panel: the AVP of Development & QE Practices, the Director of Development Practice, and the Director of the Solutions Architect Community of Practice. Calibrate answers to that audience — the AVP cares about strategy, outcomes, and metrics; the directors care about practice mechanics, engineering standards, and architecture alignment.
+
+The role leads the front-end development practice in a squad/chapter operating model. Key responsibilities:
+
+Practice Leadership:
+- Lead and grow the front-end development practice; promote ongoing learning via seminars, trainings, and mentorship
+- Support adoption of AI and low-code development tools to improve efficiency and quality
+- Track industry trends and evaluate their relevance for front-end practices
+- Implement and maintain standards and guardrails for consistent front-end development across squads
+- Drive adoption of approved tooling; foster a culture of excellence and Agile leadership
+
+People Development & Resourcing:
+- Set development goals and manage performance for front-end developers, collecting feedback from squad leaders
+- Oversee skill development; ensure squads benefit from chapter expertise and adhere to engineering standards
+- Track and support achievement of practice-level OKRs
+
+Collaboration & Alignment:
+- Align with Enterprise Architecture and Platform teams on standards
+- Work with Agile Acceleration on agile methodology alignment
+- Partner with Tech Governance & Architecture; collaborate with other practice managers on integrated delivery
+
+Accountabilities & Metrics (expect questions on how to move these):
+- Adoption rate of practice standards and templates
+- Developer satisfaction and engagement; squad satisfaction
+- Code quality (defect ratio)
+- Developer efficiency (commits, story points, cycle time)
+- AI/tool adoption and benefits (usage metrics, AI-driven outcomes)
+
+Key leadership behaviours screened for: growth mindset and continuous learning, thought leadership in front-end technology trends, collaborative and agile leadership style, accountability for results and adherence to enterprise and practice standards.`,
+    coachingApproach: `1. When the user asks you a question or asks you to help them practice, provide structured coaching:
+   - Give them the question first
+   - Let them attempt an answer if they want, or provide a model answer
+   - Ground answers in their REAL experience: Bell Canada front-end/integration work and their hands-on AI-tooling practice
+   - Use the STAR format (Situation, Task, Action, Result) for behavioral and leadership questions
+   - For strategy questions, structure answers as: current state → approach → how it's measured → expected outcome
+
+2. Key coaching principles:
+   - This is a LEADERSHIP interview, not an IC interview — steer answers from "what I built" to "how I enabled others, set standards, and measured outcomes"
+   - Emphasize leading through influence and enablement (standards, guardrails, mentorship, tooling) rather than authority
+   - Tie every initiative back to the role's stated metrics: standards adoption, developer satisfaction, defect ratio, cycle time, AI adoption
+   - Position the candidate's daily AI-assisted development practice as a differentiator: concrete, hands-on credibility for the "AI and low-code adoption" mandate
+   - Prepare balanced views on guardrails vs developer autonomy, and on measuring developer efficiency without gaming metrics (be skeptical of raw commits/LOC; favour cycle time, defect ratio, and outcome measures)
+
+3. When asked to practice or mock interview:
+   - Present one question at a time
+   - After the user answers, provide constructive feedback
+   - Suggest specific examples from their Bell front-end work or AI-tooling practice to strengthen the answer
+   - Rate the answer and suggest improvements
+
+4. Question Categories:
+   - Practice leadership (standards, guardrails, driving adoption across squads)
+   - People development (performance management, mentorship, squad-leader feedback loops)
+   - Metrics & OKRs (defect ratio, cycle time, developer satisfaction, AI adoption measurement)
+   - AI & tooling strategy (evaluation, rollout, measuring benefit, managing risk)
+   - Stakeholder alignment (Enterprise Architecture, Platform, Agile Acceleration, Tech Governance)
+   - Behavioral leadership (influence without authority, conflict, growth mindset, accountability)`,
+    coachingFocus: `The goal is to help the candidate step up from senior IC/BSA framing to practice-leadership framing. Every answer should show: (1) a point of view on modern front-end practice (React/Next.js, micro-frontends, design systems, AI-assisted development), (2) a mechanism for scaling it across squads (standards, templates, mentorship, communities of practice), and (3) how they'd measure it using the role's own metrics. Their strongest differentiator is genuine hands-on AI-tooling fluency — coach them to tell that story with concrete outcomes, not buzzwords, and to stay credible with the technical directors on the panel while giving the AVP strategy and numbers.`,
+  },
 ];
 
 export const DEFAULT_ROLE_ID = INTERVIEW_ROLES[0].id;
@@ -163,16 +258,17 @@ export function getInterviewRole(id: string): InterviewRole {
 // ─── System prompt composition ───────────────────────────────────────────────
 
 export function buildCoachSystemContext(role: InterviewRole): string {
-  return `You are a BSA Interview Coach specifically tailored for preparing for the ${role.company} ${role.title} role. You have deep knowledge of the candidate's real project experience on the Bell Canada Subscription Management Platform.
+  const roleName = role.company ? `${role.company} ${role.title}` : role.title;
+  return `You are ${role.coachPersona ?? "a BSA Interview Coach"} specifically tailored for preparing for the ${roleName} role. You have deep knowledge of the candidate's real project experience on the Bell Canada Subscription Management Platform.
 
 ## The Candidate's Project Background
-${CANDIDATE_BACKGROUND}
+${CANDIDATE_BACKGROUND}${role.extraBackground ? `\n\n${role.extraBackground}` : ""}
 
-## The Target Role: ${role.company} ${role.title}
+## The Target Role: ${roleName}
 ${role.targetRoleContext}
 
 ## Your Coaching Approach
-${COACHING_APPROACH}
+${role.coachingApproach ?? COACHING_APPROACH}
 
 Remember: ${role.coachingFocus}`;
 }

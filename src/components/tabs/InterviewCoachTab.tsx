@@ -151,7 +151,7 @@ function CoachChat({
   const startMockInterview = () => {
     if (isStreaming) return;
     if (supported.synthesis) setSpeakResponses(true);
-    sendMessage(MOCK_INTERVIEW_PROMPT);
+    sendMessage(role.mockPrompt ?? MOCK_INTERVIEW_PROMPT);
   };
 
   const showTranscriptBar = listening || transcript.length > 0 || interim.length > 0;
@@ -214,7 +214,7 @@ function CoachChat({
                 key={r.id}
                 onClick={() => onRoleChange(r.id)}
                 disabled={isStreaming}
-                title={`${r.company} — ${r.title}`}
+                title={r.company ? `${r.company} — ${r.title}` : r.title}
                 className={cn(
                   "px-2.5 py-0.5 rounded-full text-[10.5px] font-medium border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
                   r.id === role.id
@@ -222,7 +222,7 @@ function CoachChat({
                     : "border-transparent text-arch-text3 hover:text-arch-text hover:bg-white/5"
                 )}
               >
-                {r.company}
+                {r.label}
               </button>
             ))}
           </div>
@@ -387,8 +387,12 @@ function CoachChat({
         {isEmpty ? (
           <div className="w-full max-w-xl mx-auto flex flex-col gap-3">
             <p className="text-center text-[11.5px] text-arch-text3">
-              Prepping for <span className="text-arch-text font-medium">{role.title}</span> at{" "}
-              <span className="text-arch-text font-medium">{role.company}</span>
+              Prepping for <span className="text-arch-text font-medium">{role.title}</span>
+              {role.company && (
+                <>
+                  {" "}at <span className="text-arch-text font-medium">{role.company}</span>
+                </>
+              )}
             </p>
             {voiceSupported && (
               <button
