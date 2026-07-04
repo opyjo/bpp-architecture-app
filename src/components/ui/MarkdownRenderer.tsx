@@ -62,10 +62,13 @@ const components: Components = {
   code: ({ className, children }) => {
     // Fenced code blocks get className="language-xxx" from react-markdown
     const langMatch = className?.match(/language-(\w+)/);
-    if (langMatch) {
-      const code = String(children).replace(/\n$/, "");
+    const raw = String(children);
+    if (langMatch || raw.includes("\n")) {
+      // Multi-line content without a language is still a fenced block
+      // (e.g. ASCII diagrams) — render as plain text, never wrapped.
+      const code = raw.replace(/\n$/, "");
       return (
-        <SyntaxHighlighter code={code} language={langMatch[1]} />
+        <SyntaxHighlighter code={code} language={langMatch?.[1] ?? "text"} />
       );
     }
     // Inline code

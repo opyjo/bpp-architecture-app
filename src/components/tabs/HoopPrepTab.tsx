@@ -3,6 +3,8 @@
 import SectionLayout from "@/components/ui/SectionLayout";
 import CodeBlock from "@/components/ui/CodeBlock";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+import { hooppMentalModelMd } from "@/data/hoopp-mental-model";
 import {
   FlowDiagram,
   BranchDiagram,
@@ -36,6 +38,10 @@ import {
 const sidebarItems = [{ id: "hoopp-overview", label: "Overview & Role" }];
 
 const sidebarGroups = [
+  {
+    label: "Mental Model",
+    items: [{ id: "hoopp-mental-model", label: "Daily drill — full model" }],
+  },
   {
     label: "HOOPP / DISP Context",
     items: [{ id: "hoopp-disp", label: "Role, BFF & data flow" }],
@@ -173,6 +179,7 @@ export default function HoopPrepTab() {
         // ── Overview ──────────────────────────────────────────────
         if (activeId === "hoopp-overview") {
           const sections: { label: string; desc: string; color: ConceptColor }[] = [
+            { label: "Mental Model", desc: "The full printable daily-drill doc: identity, pillars, SQL, vocab, drill", color: "coral" },
             { label: "DISP Context", desc: "Role, BFF, sync/async, source-of-truth, traceability", color: "blue" },
             { label: "SQL", desc: "Joins, windows, CTEs — validation & reconciliation", color: "blue" },
             { label: "Data Modelling", desc: "Entities, keys, cardinality, ER + state machines", color: "teal" },
@@ -218,6 +225,25 @@ export default function HoopPrepTab() {
                 <strong className="text-arch-text">Python</strong> (lighter);{" "}
                 <strong className="text-arch-text">Regulated data handling</strong> — auditability, RBAC.
               </div>
+            </div>
+          );
+        }
+
+        // ── Mental model (full markdown doc) ──────────────────────
+        if (activeId === "hoopp-mental-model") {
+          return (
+            <div>
+              <SectionTitle>Interview mental model — daily drill</SectionTitle>
+              <SectionDesc>
+                The complete prep document: identity sentence, DISP picture, six pillars, SQL muscle memory, pension
+                vocabulary, positions, and the 30-minute daily loop. A printable copy lives at{" "}
+                <code className="text-arch-teal">HOOPP-INTERVIEW-MENTAL-MODEL.md</code> in the repo root.
+              </SectionDesc>
+              <Callout color="coral" label="How to drill">
+                Read Part 1 every day. Rotate one section of Parts 2–5 per day. Recite Part 6 out loud. By interview
+                day, every section header should trigger instant recall of what&apos;s under it.
+              </Callout>
+              <MarkdownRenderer content={hooppMentalModelMd} />
             </div>
           );
         }
