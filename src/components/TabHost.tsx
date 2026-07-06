@@ -21,6 +21,7 @@ const HoopPrepTab = dynamic(() => import("@/components/tabs/HoopPrepTab"), { ssr
 const CanadaLifeTab = dynamic(() => import("@/components/tabs/CanadaLifeTab"), { ssr: false });
 const MockInterviewTab = dynamic(() => import("@/components/tabs/MockInterviewTab"), { ssr: false });
 const InterviewCoachTab = dynamic(() => import("@/components/tabs/InterviewCoachTab"), { ssr: false });
+const SqlPracticeTab = dynamic(() => import("@/components/tabs/SqlPracticeTab"), { ssr: false });
 const MicrofrontendsTab = dynamic(() => import("@/components/tabs/MicrofrontendsTab"), { ssr: false });
 const ApigeeTab = dynamic(() => import("@/components/tabs/ApigeeTab"), { ssr: false });
 const OpenApiTab = dynamic(() => import("@/components/tabs/OpenApiTab"), { ssr: false });
@@ -54,6 +55,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   apigee: ApigeeTab,
   openapi: OpenApiTab,
   coach: InterviewCoachTab,
+  sql: SqlPracticeTab,
   teleprompter: TeleprompterTab,
   contract: ContractBuilderTab,
   sequence: SequenceDiagramTab,
