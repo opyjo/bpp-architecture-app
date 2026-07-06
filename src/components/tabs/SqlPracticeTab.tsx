@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PGlite } from "@electric-sql/pglite";
-import { Play, RotateCcw, Database, Loader2, Table2, AlertCircle, Terminal, Network, ChevronDown, Lightbulb, BookOpen, ListChecks, Zap } from "lucide-react";
+import { Play, RotateCcw, Database, Loader2, Table2, AlertCircle, Terminal, Network, ChevronDown, Lightbulb, BookOpen, ListChecks, Zap, ExternalLink } from "lucide-react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
 import {
@@ -176,6 +176,15 @@ export default function SqlPracticeTab() {
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-arch-purple" />
             <h2 className="text-sm font-semibold text-arch-text">SQL Playground</h2>
+            <a
+              href="/sql"
+              target="_blank"
+              rel="noopener"
+              title="Open the playground in a new browser tab — e.g. cheat sheet here, queries there"
+              className="ml-auto p-1 rounded text-arch-text3 hover:text-arch-purple hover:bg-arch-bg3 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
           <p className="text-[11px] text-arch-text2 mt-1 leading-relaxed">
             Real Postgres in your browser · HOOPP member-portal / DISP dataset
