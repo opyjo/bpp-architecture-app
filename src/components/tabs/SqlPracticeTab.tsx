@@ -171,7 +171,9 @@ export default function SqlPracticeTab() {
 
   return (
     <div className="h-full flex overflow-hidden">
-      {/* ── Sidebar: schema + examples ─────────────────────────────────────── */}
+      {/* ── Sidebar: schema + examples (Query mode only — the learning views
+             use the full width and cover the examples themselves) ──────────── */}
+      {mode === "query" && (
       <aside className="w-72 shrink-0 border-r border-arch-border bg-arch-bg2 overflow-y-auto">
         <div className="px-4 py-3.5 border-b border-arch-border sticky top-0 bg-arch-bg2 z-10">
           <div className="flex items-center gap-2">
@@ -245,6 +247,7 @@ export default function SqlPracticeTab() {
           </div>
         </div>
       </aside>
+      )}
 
       {/* ── Main: editor + results ─────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0">
