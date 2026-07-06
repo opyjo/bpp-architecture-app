@@ -10,8 +10,12 @@ export interface CheatSnippet {
   sql: string;
 }
 
+export type CheatLevel = "basics" | "core" | "advanced";
+
 export interface CheatSection {
   title: string;
+  /** Which learning level the section belongs to (rendered as grouped parts). */
+  level: CheatLevel;
   /** Why this topic matters / the mental model, shown under the title. */
   blurb: string;
   snippets: CheatSnippet[];
@@ -19,47 +23,174 @@ export interface CheatSection {
   tip?: string;
   /** Amber "classic trap" callout. */
   trap?: string;
+  /** A small hands-on exercise to attempt in the editor before moving on. */
+  tryIt?: string;
 }
+
+export const CHEAT_LEVELS: { key: CheatLevel; title: string; sub: string }[] = [
+  {
+    key: "basics",
+    title: "Level 1 · Start from zero",
+    sub: "Never written SQL — or forgotten all of it? These lessons assume nothing. Run every snippet, then do the \"your turn\" exercise before moving on.",
+  },
+  {
+    key: "core",
+    title: "Level 2 · The core toolkit",
+    sub: "NULLs, grouping, joins, subqueries — where real questions (and most interview questions) live.",
+  },
+  {
+    key: "advanced",
+    title: "Level 3 · Stand-out material",
+    sub: "Window functions and table design — the answers that separate candidates.",
+  },
+];
 
 export const CHEAT_SECTIONS: CheatSection[] = [
   {
-    title: "Reading rows",
+    title: "Meet the database: tables, rows, columns",
+    level: "basics",
     blurb:
-      "The skeleton of every query. Clauses always appear in this order: SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT.",
+      "A table is a grid, like a spreadsheet: each row is one record (one member), each column is one fact about it (name, salary). SELECT is how you ask for data, FROM says which table, and * means \"every column\". This one line is a complete, working query.",
     snippets: [
       {
-        sql: `-- Pick columns, filter rows, sort, and cap the result
-SELECT name, employer, salary
-FROM members
-WHERE status = 'active'
-ORDER BY salary DESC NULLS LAST
-LIMIT 5;`,
+        sql: `-- "Show me everything in the members table"
+SELECT * FROM members;`,
       },
       {
-        sql: `-- DISTINCT removes duplicate result rows
-SELECT DISTINCT employer FROM members ORDER BY employer;
-
--- Column aliases (AS) rename output; use them in ORDER BY
-SELECT name, salary * 0.09 AS annual_contribution
-FROM members
-WHERE salary IS NOT NULL
-ORDER BY annual_contribution DESC;`,
+        sql: `-- Peek at another table; LIMIT caps how many rows come back.
+-- Swap in contributions, projections or audit_log to explore them too.
+SELECT * FROM beneficiaries LIMIT 5;`,
       },
     ],
-    tip: "Logical execution order is FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY. That's why a WHERE can't see a SELECT alias, but ORDER BY can — a favourite interview probe.",
+    tip: "SELECT * is perfect for exploring a table you've never seen. In real queries (and interviews), name the columns you actually need instead.",
+    tryIt:
+      "Look at the projections table and the audit_log table the same way. What columns do they have? How many rows?",
   },
   {
-    title: "Filtering & the truth about NULL",
+    title: "Picking columns & making new ones",
+    level: "basics",
     blurb:
-      "NULL means \"unknown\" — it is never equal to anything, including itself. Comparisons with NULL don't return false, they return NULL, and the row silently drops out of your filter.",
+      "Instead of *, list the columns you want, in the order you want them. AS renames a column in the output, and you can compute brand-new columns with ordinary math. Anything after -- on a line is a comment — the database ignores it.",
     snippets: [
       {
-        sql: `-- Operator toolbox
-SELECT name, status, salary FROM members
-WHERE status IN ('retired', 'terminated')      -- set membership
-  AND date_of_birth BETWEEN '1950-01-01' AND '1969-12-31'
-  AND name ILIKE '%al%';                        -- ILIKE = case-insensitive LIKE`,
+        sql: `-- Just three columns, in this order
+SELECT name, employer, salary
+FROM members;`,
       },
+      {
+        sql: `-- AS gives a column a new name; math makes new columns
+SELECT name,
+       salary                AS annual_salary,
+       ROUND(salary / 12, 2) AS monthly_salary
+FROM members;`,
+      },
+    ],
+    tryIt:
+      "Show each member's name, province and employer — with employer renamed to hospital.",
+  },
+  {
+    title: "Filtering rows with WHERE",
+    level: "basics",
+    blurb:
+      "WHERE keeps only the rows where a condition is true, and drops the rest. Text values go in single quotes. The comparison operators are = (equals), <> (not equals), and the usual > < >= <=. Combine conditions with AND / OR, and group them with parentheses.",
+    snippets: [
+      {
+        sql: `-- Only rows where status is exactly 'active'
+SELECT name, status, salary
+FROM members
+WHERE status = 'active';`,
+      },
+      {
+        sql: `-- Comparison operators: =  <>  >  <  >=  <=
+SELECT name, salary FROM members WHERE salary >= 90000;
+
+-- AND / OR, with parentheses to control grouping
+SELECT name, status, salary
+FROM members
+WHERE (status = 'active' OR status = 'deferred')
+  AND salary > 75000;`,
+      },
+    ],
+    trap: "Single quotes for text values ('active') — double quotes mean a column name in Postgres. And text comparison is case-sensitive: 'Active' does not equal 'active'.",
+    tryIt:
+      "Find every member who is NOT active. Try it two ways: with <> and with NOT status = 'active'.",
+  },
+  {
+    title: "Sorting and limiting",
+    level: "basics",
+    blurb:
+      "ORDER BY sorts the result — smallest-first by default, add DESC for biggest-first. You can sort by several columns: ties on the first are broken by the second. LIMIT caps how many rows come back.",
+    snippets: [
+      {
+        sql: `-- Top 3 salaries: sort descending, keep 3 rows
+SELECT name, salary
+FROM members
+ORDER BY salary DESC
+LIMIT 3;`,
+      },
+      {
+        sql: `-- Two sort keys: status A→Z, then newest enrolment first within each status
+SELECT name, status, enrolled_at
+FROM members
+ORDER BY status, enrolled_at DESC;`,
+      },
+    ],
+    tip: "Clauses always appear in this order: SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT. But the database logically runs FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY — which is why WHERE can't see a SELECT alias but ORDER BY can. A favourite interview probe.",
+    tryIt:
+      "List the 3 youngest members. Hint: the latest date_of_birth belongs to the youngest person.",
+  },
+  {
+    title: "Matching text: LIKE and friends",
+    level: "basics",
+    blurb:
+      "LIKE matches patterns instead of exact values: % stands for any number of characters, _ for exactly one. ILIKE is the case-insensitive version (a Postgres nicety). UPPER, LOWER and LENGTH transform text, and || glues strings together.",
+    snippets: [
+      {
+        sql: `-- % = anything: employers containing the word Hospital
+SELECT name, employer FROM members WHERE employer LIKE '%Hospital%';
+
+-- ILIKE ignores case: names starting with a or A
+SELECT name FROM members WHERE name ILIKE 'a%';`,
+      },
+      {
+        sql: `-- Text tools, and || to build a label
+SELECT UPPER(name)               AS shouty,
+       LENGTH(name)              AS name_length,
+       name || ' — ' || employer AS label
+FROM members;`,
+      },
+    ],
+    tryIt: "Find every member whose employer name contains 'Health'.",
+  },
+  {
+    title: "Shortcuts: IN, BETWEEN, DISTINCT",
+    level: "basics",
+    blurb:
+      "Three small tools you'll use constantly: IN matches any value in a list (cleaner than chaining ORs), BETWEEN checks an inclusive range (numbers or dates), and DISTINCT collapses duplicate rows in the result.",
+    snippets: [
+      {
+        sql: `-- IN: any of these values
+SELECT name, status FROM members
+WHERE status IN ('retired', 'terminated');
+
+-- BETWEEN: inclusive range, works on dates too
+SELECT name, date_of_birth FROM members
+WHERE date_of_birth BETWEEN '1980-01-01' AND '1999-12-31';`,
+      },
+      {
+        sql: `-- DISTINCT: each employer once, not once per member
+SELECT DISTINCT employer FROM members ORDER BY employer;`,
+      },
+    ],
+    tryIt:
+      "What distinct relationship values exist in the beneficiaries table?",
+  },
+  {
+    title: "The truth about NULL",
+    level: "core",
+    blurb:
+      "NULL means \"unknown\" — it is never equal to anything, including itself. Comparisons with NULL don't return false, they return NULL, and the row silently drops out of your filter. In this dataset, retired and terminated members have NULL salaries.",
+    snippets: [
       {
         sql: `-- NULL demands IS NULL / IS NOT NULL, never = NULL
 SELECT name, status FROM members WHERE salary IS NULL;
@@ -75,6 +206,7 @@ SELECT name FROM members WHERE salary = NULL;`,
   },
   {
     title: "Aggregation: GROUP BY & HAVING",
+    level: "core",
     blurb:
       "Aggregates collapse many rows into one. WHERE filters rows before grouping; HAVING filters groups after.",
     snippets: [
@@ -112,6 +244,7 @@ GROUP BY status;`,
   },
   {
     title: "Joins: combining tables",
+    level: "core",
     blurb:
       "JOIN (inner) keeps only matching rows. LEFT JOIN keeps every row from the left table and fills the right side with NULLs when there's no match — which is exactly how you find missing data.",
     snippets: [
@@ -144,6 +277,7 @@ ORDER BY beneficiary_count, m.name;`,
   },
   {
     title: "Subqueries & CTEs",
+    level: "core",
     blurb:
       "A CTE (WITH ... AS) names an intermediate result so a query reads top-to-bottom. In interviews, reaching for a CTE instead of a nested subquery signals maturity.",
     snippets: [
@@ -190,6 +324,7 @@ ORDER BY lifetime_contrib DESC;`,
   },
   {
     title: "Window functions",
+    level: "advanced",
     blurb:
       "Aggregates that don't collapse rows: every row keeps its identity and gains a computed column over a \"window\" of related rows. The single highest-leverage topic for interview SQL.",
     snippets: [
@@ -240,6 +375,7 @@ ORDER BY month;`,
   },
   {
     title: "CASE, dates & strings",
+    level: "core",
     blurb:
       "CASE puts business rules inline; age/date_part/date_trunc cover most date questions; split_part shines on structured text like the audit log's actor format.",
     snippets: [
@@ -279,6 +415,7 @@ ORDER BY changed_at;`,
   },
   {
     title: "Changing data & defining tables",
+    level: "advanced",
     blurb:
       "Read-only queries win interviews, but you'll be asked to sketch DDL for modelling questions. Practice freely — Reset restores everything.",
     snippets: [

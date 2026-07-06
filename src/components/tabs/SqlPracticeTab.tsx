@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PGlite } from "@electric-sql/pglite";
-import { Play, RotateCcw, Database, Loader2, Table2, AlertCircle, Terminal, Network, ChevronDown, Lightbulb, BookOpen, ListChecks, Zap, ExternalLink } from "lucide-react";
+import { Play, RotateCcw, Database, Loader2, Table2, AlertCircle, Terminal, Network, ChevronDown, Lightbulb, BookOpen, ListChecks, Zap, ExternalLink, PenLine } from "lucide-react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/data/sql-practice";
 import {
   CHEAT_SECTIONS,
+  CHEAT_LEVELS,
   GOTCHAS,
   DRILLS,
   MODELLING_VOCAB,
@@ -369,14 +370,32 @@ function CheatSheetView({ onLoad }: { onLoad: (sql: string) => void }) {
     <div className="flex-1 overflow-auto bg-arch-bg">
       <div className="max-w-4xl mx-auto p-5 space-y-6">
         <p className="text-[12.5px] text-arch-text2 leading-relaxed">
-          A refresher from <span className="font-mono text-arch-purple">SELECT</span> to
-          window functions — every snippet runs against the seeded dataset, so hit{" "}
-          <span className="font-medium text-arch-text">Load into editor</span> and run it.
-          Work top to bottom, then move to the Drills tab.
+          A complete course from your very first{" "}
+          <span className="font-mono text-arch-purple">SELECT</span> to window functions —
+          no prior SQL assumed. Every snippet runs against the seeded dataset: hit{" "}
+          <span className="font-medium text-arch-text">Load into editor</span>, run it,
+          and do the <span className="font-medium text-arch-text">your turn</span>{" "}
+          exercise before moving on. Finish a level, then come back for the next; the
+          Drills tab is your exam.
         </p>
 
-        {CHEAT_SECTIONS.map((s, i) => (
-          <CheatSectionCard key={s.title} section={s} index={i + 1} onLoad={onLoad} />
+        {CHEAT_LEVELS.map((lvl) => (
+          <div key={lvl.key} className="space-y-4">
+            <div className="pt-2 border-t-2 border-arch-purple/40">
+              <h3 className="text-[13.5px] font-bold uppercase tracking-wider text-arch-purple">
+                {lvl.title}
+              </h3>
+              <p className="text-[12px] text-arch-text2 mt-0.5">{lvl.sub}</p>
+            </div>
+            {CHEAT_SECTIONS.filter((s) => s.level === lvl.key).map((s) => (
+              <CheatSectionCard
+                key={s.title}
+                section={s}
+                index={CHEAT_SECTIONS.indexOf(s) + 1}
+                onLoad={onLoad}
+              />
+            ))}
+          </div>
         ))}
 
         {/* Gotchas */}
@@ -480,6 +499,15 @@ function CheatSectionCard({
           <p className="text-[12px] text-arch-text2 leading-relaxed">
             <span className="font-semibold text-arch-text">Interview trap: </span>
             {section.trap}
+          </p>
+        </div>
+      )}
+      {section.tryIt && (
+        <div className="mt-2.5 flex items-start gap-2 rounded-md border border-arch-blue/30 bg-arch-blue/5 px-3 py-2">
+          <PenLine className="w-3.5 h-3.5 mt-0.5 shrink-0 text-arch-blue" />
+          <p className="text-[12px] text-arch-text2 leading-relaxed">
+            <span className="font-semibold text-arch-text">Your turn: </span>
+            {section.tryIt}
           </p>
         </div>
       )}
