@@ -342,3 +342,209 @@ GROUP BY m.id, m.name, m.status
 ORDER BY total_contributed DESC;`,
   },
 ];
+
+// ─── Data modelling ──────────────────────────────────────────────────────────
+
+/** Mermaid ER diagram of the seed schema, rendered in the Modelling view. */
+export const ER_DIAGRAM = `erDiagram
+    members {
+        int id PK
+        text name
+        text status
+        text employer
+        text province
+        date date_of_birth
+        date enrolled_at
+        numeric salary "nullable"
+        bool email_verified
+    }
+    beneficiaries {
+        int id PK
+        int member_id FK
+        text name
+        text relationship
+        numeric allocation_pct
+        bool is_primary
+        date effective_at
+    }
+    contributions {
+        int id PK
+        int member_id FK
+        numeric amount
+        date contributed_at
+    }
+    projections {
+        int id PK
+        int member_id FK
+        numeric projected_annual
+        date as_of
+        text assumptions
+    }
+    audit_log {
+        int id PK
+        int member_id FK
+        text entity
+        text action
+        text field
+        text old_value
+        text new_value
+        text changed_by
+        timestamp changed_at
+    }
+    members ||--o{ beneficiaries : "names"
+    members ||--o{ contributions : "makes"
+    members ||--o{ projections : "has"
+    members ||--o{ audit_log : "tracked by"`;
+
+/**
+ * Data-modelling exercises framed for the DISP / member-portal BSA role. Each
+ * `solution` is real, runnable DDL against the sandbox (safe to re-run; Reset
+ * restores the base schema). `interviewNote` is the one-liner you'd say to
+ * justify the modelling choice in the interview.
+ */
+export interface ModellingChallenge {
+  title: string;
+  concept: string;
+  prompt: string;
+  solution: string;
+  interviewNote: string;
+}
+
+export const MODELLING_CHALLENGES: ModellingChallenge[] = [
+  {
+    title: "Model beneficiary allocation history",
+    concept: "temporal modelling · SCD Type 2 · auditability",
+    prompt:
+      "Today `beneficiaries.allocation_pct` stores only the CURRENT value. The audit team needs to answer: “what was this member’s beneficiary split on any given past date?” Redesign so every change is preserved and any point-in-time state is reconstructable.",
+    solution: `-- Version every allocation with a validity window (valid_to = NULL = current).
+-- Point-in-time reads become deterministic — no reconstructing from the audit log.
+DROP TABLE IF EXISTS beneficiary_versions CASCADE;
+CREATE TABLE beneficiary_versions (
+  id             SERIAL PRIMARY KEY,
+  member_id      INT  NOT NULL REFERENCES members(id),
+  name           TEXT NOT NULL,
+  allocation_pct NUMERIC(5,2) NOT NULL,
+  valid_from     DATE NOT NULL,
+  valid_to       DATE            -- NULL = current version
+);
+
+INSERT INTO beneficiary_versions (member_id, name, allocation_pct, valid_from, valid_to) VALUES
+  (3, 'Arjun Nair', 60, '2023-02-11', '2024-06-01'),  -- superseded
+  (3, 'Arjun Nair', 50, '2024-06-01', NULL),           -- current
+  (3, 'Anaya Nair', 25, '2023-02-11', NULL);
+
+-- What was member 3's split on 2023-08-01?
+SELECT name, allocation_pct
+FROM beneficiary_versions
+WHERE member_id = 3
+  AND valid_from <= DATE '2023-08-01'
+  AND (valid_to IS NULL OR valid_to > DATE '2023-08-01');`,
+    interviewNote:
+      "History belongs in the model, not reconstructed after the fact. A valid_from/valid_to version table (SCD Type 2) gives the projection and audit APIs deterministic point-in-time reads.",
+  },
+  {
+    title: "Enforce “allocations must total 100%” in the schema",
+    concept: "invariant enforcement · CHECK vs trigger",
+    prompt:
+      "The rule “a member’s allocations must total 100%” is currently only catchable by a query AFTER bad data lands. Move enforcement as close to the data as possible so an invalid split can’t persist — and notice what happens to the members who already violate it.",
+    solution: `-- A per-row CHECK can't sum across rows. A cross-row invariant needs a trigger.
+CREATE OR REPLACE FUNCTION assert_allocations_total_100()
+RETURNS TRIGGER AS $$
+DECLARE
+  total NUMERIC;
+  mid   INT := COALESCE(NEW.member_id, OLD.member_id);
+BEGIN
+  SELECT SUM(allocation_pct) INTO total
+  FROM beneficiaries WHERE member_id = mid;
+  IF total IS DISTINCT FROM 100 THEN
+    RAISE EXCEPTION 'Member % allocations total %, must be 100', mid, total;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_alloc_100 ON beneficiaries;
+CREATE CONSTRAINT TRIGGER trg_alloc_100
+  AFTER INSERT OR UPDATE OR DELETE ON beneficiaries
+  DEFERRABLE INITIALLY DEFERRED
+  FOR EACH ROW EXECUTE FUNCTION assert_allocations_total_100();
+
+-- Try to touch member 3 (who totals 75) — the write is now REJECTED:
+UPDATE beneficiaries SET allocation_pct = allocation_pct WHERE member_id = 3;`,
+    interviewNote:
+      "A CHECK is per-row; this invariant spans rows, so it needs a trigger (or a summary table with a constraint). The real BSA point: name WHERE the rule lives — DB, orchestration API, or UI — because that defines what “guaranteed” means downstream. And enforcement instantly surfaces the data already in violation.",
+  },
+  {
+    title: "Model members ↔ funds (many-to-many)",
+    concept: "many-to-many · junction table",
+    prompt:
+      "Members can hold many investment funds, and a fund is held by many members — with a units balance for each member/fund pair. Model this cleanly.",
+    solution: `-- The relationship itself carries data (units), so it becomes its own table.
+-- Never a comma-separated list or repeated fund_1/fund_2 columns.
+DROP TABLE IF EXISTS holdings CASCADE;
+DROP TABLE IF EXISTS funds CASCADE;
+CREATE TABLE funds (
+  id          SERIAL PRIMARY KEY,
+  name        TEXT NOT NULL,
+  asset_class TEXT NOT NULL
+);
+CREATE TABLE holdings (
+  member_id INT NOT NULL REFERENCES members(id),
+  fund_id   INT NOT NULL REFERENCES funds(id),
+  units     NUMERIC(12,4) NOT NULL,
+  PRIMARY KEY (member_id, fund_id)   -- one row per member/fund pair
+);
+
+INSERT INTO funds (name, asset_class) VALUES
+  ('Canadian Equity', 'Equity'), ('Long Bond', 'Fixed Income');
+INSERT INTO holdings (member_id, fund_id, units) VALUES
+  (1, 1, 320.5), (1, 2, 110.0), (2, 1, 90.0);
+
+SELECT m.name, f.name AS fund, h.units
+FROM holdings h
+JOIN members m ON m.id = h.member_id
+JOIN funds   f ON f.id = h.fund_id
+ORDER BY m.name;`,
+    interviewNote:
+      "A composite-key junction table keeps the relationship queryable and lets attributes (units, cost basis) live on the relationship rather than being crammed into either entity.",
+  },
+  {
+    title: "Design tables from a requirements blurb",
+    concept: "requirements → schema · cardinality decisions",
+    prompt:
+      "Requirements: members receive secure documents (statements, tax slips) — each has a type and an issued date. Some documents are broadcast to MANY members. Read/unread state is tracked PER member. Design the tables.",
+    solution: `-- The tell: 'broadcast to many' + 'read state per member' means the DOCUMENT
+-- and its DELIVERY to a member are separate entities. Collapsing them would
+-- duplicate a document row per recipient.
+DROP TABLE IF EXISTS member_documents CASCADE;
+DROP TABLE IF EXISTS documents CASCADE;
+CREATE TABLE documents (
+  id        SERIAL PRIMARY KEY,
+  doc_type  TEXT NOT NULL,          -- statement | tax_slip | notice
+  title     TEXT NOT NULL,
+  issued_on DATE NOT NULL
+);
+CREATE TABLE member_documents (
+  member_id INT NOT NULL REFERENCES members(id),
+  doc_id    INT NOT NULL REFERENCES documents(id),
+  read_at   TIMESTAMP,             -- NULL = unread
+  PRIMARY KEY (member_id, doc_id)
+);
+
+INSERT INTO documents (doc_type, title, issued_on) VALUES
+  ('tax_slip',  '2025 T4A',          '2026-02-28'),   -- broadcast
+  ('statement', 'Q1 2026 Statement', '2026-04-01');
+INSERT INTO member_documents (member_id, doc_id, read_at) VALUES
+  (1, 1, NULL), (2, 1, '2026-03-02 10:00'), (1, 2, NULL);
+
+-- Unread documents per member:
+SELECT m.name, d.title, d.doc_type
+FROM member_documents md
+JOIN members   m ON m.id = md.member_id
+JOIN documents d ON d.id = md.doc_id
+WHERE md.read_at IS NULL
+ORDER BY m.name;`,
+    interviewNote:
+      "Spotting that 'broadcast' + 'per-member read state' forces two entities (document + delivery) is exactly the ambiguity a BSA surfaces before build — the wrong model here means duplicated documents and no clean unread count.",
+  },
+];
