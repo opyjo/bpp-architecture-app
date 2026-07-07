@@ -36,6 +36,6 @@ export const config = {
   // routes — otherwise the login page's own CSS/JS/icons would be blocked.
   // Note: `/api/*` is intentionally NOT excluded so API routes stay protected.
   matcher: [
-    "/((?!_next/static|_next/image|_next/data|favicon.ico|icon|apple-icon|manifest.webmanifest|robots.txt|sitemap.xml).*)",
+    "/((?!_next/static|_next/image|_next/data|pglite/|favicon.ico|icon|apple-icon|manifest.webmanifest|robots.txt|sitemap.xml).*)",
   ],
 };

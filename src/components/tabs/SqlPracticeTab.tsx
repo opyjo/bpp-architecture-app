@@ -76,7 +76,13 @@ export default function SqlPracticeTab() {
     let cancelled = false;
     (async () => {
       try {
-        const { PGlite } = await import("@electric-sql/pglite");
+        // Import the copy served from /public at runtime instead of the npm
+        // package: Turbopack's production build breaks PGlite's Emscripten
+        // loader ("instantiateWasm is not a function") when it bundles it.
+        // Files land in public/pglite/ via scripts/copy-pglite.mjs.
+        const pgliteUrl = "/pglite/index.js";
+        const { PGlite }: typeof import("@electric-sql/pglite") =
+          await import(/* webpackIgnore: true */ pgliteUrl);
         const db = new PGlite(); // in-memory: fresh sandbox per mount
         await db.exec(SEED_SQL);
         if (cancelled) {

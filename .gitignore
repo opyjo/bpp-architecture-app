@@ -41,3 +41,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# PGlite runtime copied from node_modules by scripts/copy-pglite.mjs
+/public/pglite/
