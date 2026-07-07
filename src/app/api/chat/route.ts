@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/system-prompt";
 import { toolDefinitions, executeTool, type ToolName } from "@/lib/ai/tools";
-import { getModel } from "@/lib/ai/models";
+import { getModel, DEFAULT_MODEL_ID } from "@/lib/ai/models";
 import type { ModelProvider } from "@/lib/types/chat";
 
 export const runtime = "nodejs";
@@ -558,7 +558,7 @@ export async function POST(request: Request) {
             typeof m.content === "string"
         )
       : [];
-  const selectedModelId: string = body.modelId ?? "claude-sonnet-4.6";
+  const selectedModelId: string = body.modelId ?? DEFAULT_MODEL_ID;
   const context: string | undefined = body.context;
 
   if (!incomingMessages.length) {
