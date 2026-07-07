@@ -22,11 +22,13 @@ import {
   PanelRightOpen,
   Sparkles,
   WandSparkles,
+  Eraser,
 } from "lucide-react";
 import CodeMirror, {
   EditorView,
   keymap,
   placeholder,
+  type ReactCodeMirrorRef,
 } from "@uiw/react-codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { sql, PostgreSQL } from "@codemirror/lang-sql";
@@ -205,10 +207,12 @@ function SqlEditor({
   value,
   onChange,
   onRun,
+  editorRef,
 }: {
   value: string;
   onChange: (v: string) => void;
   onRun: () => void;
+  editorRef: React.Ref<ReactCodeMirrorRef>;
 }) {
   // Intercept ⌘⏎/Ctrl+Enter before CodeMirror's own keymap sees it.
   const onKeyDownCapture = (e: React.KeyboardEvent) => {
@@ -222,6 +226,7 @@ function SqlEditor({
   return (
     <div className="flex-1 min-h-0 overflow-hidden" onKeyDownCapture={onKeyDownCapture}>
       <CodeMirror
+        ref={editorRef}
         value={value}
         onChange={onChange}
         extensions={CM_EXTENSIONS}
@@ -330,6 +335,7 @@ function SchemaSidebar({ onQuickQuery }: { onQuickQuery: (sql: string) => void }
 
 export default function SqlPracticeTab() {
   const dbRef = useRef<PGlite | null>(null);
+  const cmRef = useRef<ReactCodeMirrorRef>(null);
   const [dbReady, setDbReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
@@ -343,13 +349,30 @@ export default function SqlPracticeTab() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editorHeight, setEditorHeight] = useState(248);
 
-  // Load a challenge's reference SQL into the editor and jump to Query mode.
-  const loadIntoEditor = useCallback((sql: string) => {
-    setQuery(sql);
-    setError(null);
-    setResult(null);
-    setMode("query");
+  // Replace the whole document through the editor view as well as React
+  // state: react-codemirror's value-prop sync defers external updates while
+  // its typing latch is active, which can silently drop them. The view is
+  // absent when Query mode is unmounted — then the value prop covers it.
+  const setEditorText = useCallback((text: string) => {
+    setQuery(text);
+    const view = cmRef.current?.view;
+    if (view && view.state.doc.toString() !== text) {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: text },
+      });
+    }
   }, []);
+
+  // Load a challenge's reference SQL into the editor and jump to Query mode.
+  const loadIntoEditor = useCallback(
+    (sql: string) => {
+      setEditorText(sql);
+      setError(null);
+      setResult(null);
+      setMode("query");
+    },
+    [setEditorText]
+  );
 
   // Initialise a fresh in-memory Postgres and load the seed once on mount.
   useEffect(() => {
@@ -422,25 +445,32 @@ export default function SqlPracticeTab() {
 
   const runStarter = useCallback(
     (sql: string) => {
-      setQuery(sql);
+      setEditorText(sql);
       execSql(sql);
     },
-    [execSql]
+    [setEditorText, execSql]
   );
 
+  // Clears the editor text only — results stay until the next run.
+  const clearEditor = useCallback(() => {
+    setEditorText("");
+    cmRef.current?.view?.focus();
+  }, [setEditorText]);
+
   const formatQuery = useCallback(() => {
-    setQuery((q) => {
-      try {
-        return formatSql(q, {
+    const current = cmRef.current?.view?.state.doc.toString() ?? "";
+    try {
+      setEditorText(
+        formatSql(current, {
           language: "postgresql",
           keywordCase: "upper",
           tabWidth: 2,
-        });
-      } catch {
-        return q; // unparsable SQL mid-edit — leave the text untouched
-      }
-    });
-  }, []);
+        })
+      );
+    } catch {
+      // Unparsable SQL mid-edit — leave the text untouched.
+    }
+  }, [setEditorText]);
 
   const resetDatabase = useCallback(async () => {
     const db = dbRef.current;
@@ -536,6 +566,15 @@ export default function SqlPracticeTab() {
 
                 <div className="ml-auto flex items-center gap-1.5">
                   <button
+                    onClick={clearEditor}
+                    disabled={!query}
+                    title="Clear the editor"
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium text-[#9aa0b4] hover:text-white hover:bg-white/[0.07] disabled:opacity-40 transition-colors"
+                  >
+                    <Eraser className="w-3 h-3" />
+                    Clear
+                  </button>
+                  <button
                     onClick={formatQuery}
                     disabled={!query.trim()}
                     title="Pretty-print the SQL"
@@ -585,7 +624,12 @@ export default function SqlPracticeTab() {
                 </div>
               </div>
 
-              <SqlEditor value={query} onChange={setQuery} onRun={runQuery} />
+              <SqlEditor
+                value={query}
+                onChange={setQuery}
+                onRun={runQuery}
+                editorRef={cmRef}
+              />
             </div>
 
             {/* ── Divider (drag to resize) ────────────────────────────────── */}
