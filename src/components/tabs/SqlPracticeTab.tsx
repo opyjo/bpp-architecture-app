@@ -1,8 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PGlite } from "@electric-sql/pglite";
-import { Play, RotateCcw, Loader2, Table2, AlertCircle, Terminal, Network, ChevronDown, Lightbulb, BookOpen, ListChecks, Zap, PenLine } from "lucide-react";
+import {
+  Play,
+  RotateCcw,
+  Loader2,
+  Table2,
+  AlertCircle,
+  Terminal,
+  Network,
+  ChevronDown,
+  ChevronRight,
+  Lightbulb,
+  BookOpen,
+  ListChecks,
+  Zap,
+  PenLine,
+  Database,
+  PanelRightClose,
+  PanelRightOpen,
+  Sparkles,
+} from "lucide-react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
 import {
@@ -39,9 +58,165 @@ interface ResultSet {
   affectedRows?: number;
 }
 
-const DEFAULT_QUERY = "";
-
 const MAX_DISPLAY_ROWS = 500;
+
+// ─── Schema explorer data (mirrors SEED_SQL) ────────────────────────────────
+
+interface SchemaColumn {
+  name: string;
+  type: string;
+  key?: "pk" | "fk";
+}
+
+const SCHEMA_TABLES: { name: string; hint: string; columns: SchemaColumn[] }[] = [
+  {
+    name: "members",
+    hint: "Plan members",
+    columns: [
+      { name: "id", type: "serial", key: "pk" },
+      { name: "name", type: "text" },
+      { name: "status", type: "text" },
+      { name: "employer", type: "text" },
+      { name: "province", type: "text" },
+      { name: "date_of_birth", type: "date" },
+      { name: "enrolled_at", type: "date" },
+      { name: "salary", type: "numeric" },
+      { name: "email_verified", type: "bool" },
+    ],
+  },
+  {
+    name: "beneficiaries",
+    hint: "Payout allocations",
+    columns: [
+      { name: "id", type: "serial", key: "pk" },
+      { name: "member_id", type: "int", key: "fk" },
+      { name: "name", type: "text" },
+      { name: "relationship", type: "text" },
+      { name: "allocation_pct", type: "numeric" },
+      { name: "is_primary", type: "bool" },
+      { name: "effective_at", type: "date" },
+    ],
+  },
+  {
+    name: "contributions",
+    hint: "Payments into the plan",
+    columns: [
+      { name: "id", type: "serial", key: "pk" },
+      { name: "member_id", type: "int", key: "fk" },
+      { name: "amount", type: "numeric" },
+      { name: "contributed_at", type: "date" },
+    ],
+  },
+  {
+    name: "projections",
+    hint: "Pension projections",
+    columns: [
+      { name: "id", type: "serial", key: "pk" },
+      { name: "member_id", type: "int", key: "fk" },
+      { name: "projected_annual", type: "numeric" },
+      { name: "as_of", type: "date" },
+      { name: "assumptions", type: "text" },
+    ],
+  },
+  {
+    name: "audit_log",
+    hint: "Change history",
+    columns: [
+      { name: "id", type: "serial", key: "pk" },
+      { name: "member_id", type: "int", key: "fk" },
+      { name: "entity", type: "text" },
+      { name: "action", type: "text" },
+      { name: "field", type: "text" },
+      { name: "old_value", type: "text" },
+      { name: "new_value", type: "text" },
+      { name: "changed_by", type: "text" },
+      { name: "changed_at", type: "timestamp" },
+    ],
+  },
+];
+
+const STARTER_QUERIES: { label: string; sql: string }[] = [
+  {
+    label: "Browse members",
+    sql: "SELECT * FROM members LIMIT 10;",
+  },
+  {
+    label: "Contributions per member",
+    sql: `SELECT m.name, SUM(c.amount) AS total_contributed
+FROM members m
+JOIN contributions c ON c.member_id = m.id
+GROUP BY m.name
+ORDER BY total_contributed DESC;`,
+  },
+  {
+    label: "Find broken allocations",
+    sql: `-- Beneficiary allocations should total exactly 100%
+SELECT member_id, SUM(allocation_pct) AS total_pct
+FROM beneficiaries
+GROUP BY member_id
+HAVING SUM(allocation_pct) <> 100;`,
+  },
+];
+
+// ─── Lightweight SQL highlighter (one-dark palette, matches CodeBlock) ──────
+
+const SQL_KEYWORDS = new Set(
+  `select from where and or not null insert into values update set delete create
+   table drop alter add primary key foreign references unique check default
+   constraint index view as on join inner left right full outer cross group by
+   having order limit offset distinct union all except intersect case when then
+   else end exists in between like ilike is asc desc with recursive returning
+   cascade if using over partition window rows range unbounded preceding
+   following filter cast true false begin commit rollback truncate rename column
+   to type generated always identity`.split(/\s+/)
+);
+
+const SQL_TYPES = new Set(
+  `int integer serial bigserial text date numeric boolean bool timestamp
+   timestamptz varchar char bigint smallint real decimal float interval json
+   jsonb uuid bytea money`.split(/\s+/)
+);
+
+const SQL_FUNCS = new Set(
+  `count sum avg min max coalesce nullif round now age extract date_trunc rank
+   dense_rank row_number lag lead first_value last_value string_agg array_agg
+   upper lower length substring concat to_char to_date greatest least abs ceil
+   floor trim percentile_cont mode current_date current_timestamp`.split(/\s+/)
+);
+
+const SQL_TOKEN_RE =
+  /--[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^']|'')*'?|\b\d+(?:\.\d+)?\b|\b[a-zA-Z_][a-zA-Z0-9_]*\b|[^\sa-zA-Z0-9_]+|\s+/g;
+
+function highlightSql(sql: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let key = 0;
+  for (const match of sql.matchAll(SQL_TOKEN_RE)) {
+    const tok = match[0];
+    let cls: string | null = null;
+    if (tok.startsWith("--") || tok.startsWith("/*")) cls = "text-[#7f848e] italic";
+    else if (tok.startsWith("'")) cls = "text-[#98c379]";
+    else if (/^\d/.test(tok)) cls = "text-[#d19a66]";
+    else if (/^[a-zA-Z_]/.test(tok)) {
+      const w = tok.toLowerCase();
+      if (SQL_KEYWORDS.has(w)) cls = "text-[#c678dd]";
+      else if (SQL_TYPES.has(w)) cls = "text-[#e5c07b]";
+      else if (SQL_FUNCS.has(w)) cls = "text-[#61afef]";
+      else cls = "text-[#abb2bf]";
+    } else if (/^\s+$/.test(tok)) cls = null;
+    else cls = "text-[#56b6c2]";
+
+    out.push(
+      cls ? (
+        <span key={key++} className={cls}>
+          {tok}
+        </span>
+      ) : (
+        tok
+      )
+    );
+  }
+  return out;
+}
 
 function formatCell(value: unknown): string {
   if (value === null || value === undefined) return "∅";
@@ -50,18 +225,207 @@ function formatCell(value: unknown): string {
   return String(value);
 }
 
+// ─── Editor (highlighted overlay + line-number gutter) ──────────────────────
+
+const EDITOR_FONT =
+  "font-mono text-[13px] leading-[1.65] [font-variant-ligatures:none]";
+
+function SqlEditor({
+  value,
+  onChange,
+  onRun,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onRun: () => void;
+}) {
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const preRef = useRef<HTMLPreElement>(null);
+  const gutterRef = useRef<HTMLDivElement>(null);
+
+  const highlighted = useMemo(() => highlightSql(value), [value]);
+  const lineCount = Math.max(1, value.split("\n").length);
+
+  const syncScroll = () => {
+    const ta = taRef.current;
+    if (!ta) return;
+    if (preRef.current) {
+      preRef.current.scrollTop = ta.scrollTop;
+      preRef.current.scrollLeft = ta.scrollLeft;
+    }
+    if (gutterRef.current) {
+      gutterRef.current.style.transform = `translateY(-${ta.scrollTop}px)`;
+    }
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      onRun();
+      return;
+    }
+    if (e.key === "Tab") {
+      e.preventDefault();
+      // execCommand keeps the browser undo stack intact, unlike setRangeText.
+      document.execCommand("insertText", false, "  ");
+    }
+  };
+
+  return (
+    <div className="flex-1 min-h-0 flex bg-[#282c34]">
+      {/* Line numbers */}
+      <div className="w-11 shrink-0 overflow-hidden border-r border-white/[0.06] bg-[#21252b] select-none">
+        <div ref={gutterRef} className={`pt-3 pr-2.5 text-right ${EDITOR_FONT}`}>
+          {Array.from({ length: lineCount }, (_, i) => (
+            <div key={i} className="text-[#4b5263]">
+              {i + 1}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Code area: highlighted <pre> underneath, transparent textarea on top */}
+      <div className="relative flex-1 min-w-0">
+        <pre
+          ref={preRef}
+          aria-hidden
+          className={`absolute inset-0 m-0 overflow-hidden whitespace-pre px-3.5 pt-3 pb-6 pointer-events-none ${EDITOR_FONT}`}
+        >
+          {highlighted}
+          {"\n"}
+        </pre>
+        {value === "" && (
+          <div
+            className={`absolute left-3.5 top-3 pointer-events-none text-[#5c6370] ${EDITOR_FONT}`}
+          >
+            -- Write SQL here, then ⌘⏎ to run
+          </div>
+        )}
+        <textarea
+          ref={taRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onScroll={syncScroll}
+          onKeyDown={onKeyDown}
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          wrap="off"
+          className={`absolute inset-0 w-full h-full resize-none overflow-auto whitespace-pre bg-transparent px-3.5 pt-3 pb-6 text-transparent caret-[#528bff] selection:bg-[#3e4451]/80 outline-none ${EDITOR_FONT}`}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Schema sidebar ──────────────────────────────────────────────────────────
+
+function SchemaSidebar({ onQuickQuery }: { onQuickQuery: (sql: string) => void }) {
+  const [open, setOpen] = useState<Set<string>>(() => new Set(["members"]));
+
+  const toggle = (name: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+
+  return (
+    <aside className="w-60 shrink-0 border-l border-arch-border bg-arch-bg2 overflow-y-auto">
+      <div className="sticky top-0 z-10 flex items-center gap-1.5 px-3 h-9 border-b border-arch-border bg-arch-bg2">
+        <Database className="w-3.5 h-3.5 text-arch-teal" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-arch-text2">
+          Schema
+        </span>
+        <span className="ml-auto text-[10px] font-mono text-arch-text3">
+          {SCHEMA_TABLES.length} tables
+        </span>
+      </div>
+
+      <div className="p-1.5">
+        {SCHEMA_TABLES.map((t) => {
+          const isOpen = open.has(t.name);
+          return (
+            <div key={t.name} className="rounded-md">
+              <div className="group flex items-center gap-1.5 w-full px-1.5 py-1.5 rounded-md hover:bg-arch-bg3 transition-colors">
+                <button
+                  onClick={() => toggle(t.name)}
+                  className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+                >
+                  <ChevronRight
+                    className={`w-3 h-3 shrink-0 text-arch-text3 transition-transform ${
+                      isOpen ? "rotate-90" : ""
+                    }`}
+                  />
+                  <Table2 className="w-3.5 h-3.5 shrink-0 text-arch-blue" />
+                  <span className="text-[12px] font-mono font-medium text-arch-text truncate">
+                    {t.name}
+                  </span>
+                </button>
+                <button
+                  onClick={() => onQuickQuery(`SELECT * FROM ${t.name} LIMIT 10;`)}
+                  title={`SELECT * FROM ${t.name}`}
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-arch-purple hover:bg-arch-purple/10 transition-all"
+                >
+                  <Play className="w-3 h-3" />
+                </button>
+              </div>
+
+              {isOpen && (
+                <div className="ml-[22px] mb-1 border-l border-arch-border pl-2.5 py-0.5 space-y-px">
+                  {t.columns.map((c) => (
+                    <div key={c.name} className="flex items-center gap-1.5 py-[3px]">
+                      <span className="text-[11.5px] font-mono text-arch-text2 truncate">
+                        {c.name}
+                      </span>
+                      {c.key && (
+                        <span
+                          className={`shrink-0 text-[8.5px] font-mono font-bold px-1 rounded ${
+                            c.key === "pk"
+                              ? "bg-arch-amber/15 text-arch-amber"
+                              : "bg-arch-blue/15 text-arch-blue"
+                          }`}
+                        >
+                          {c.key.toUpperCase()}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-[10px] font-mono text-arch-text3">
+                        {c.type}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="px-3 pb-3 text-[10.5px] leading-relaxed text-arch-text3">
+        The seeded sandbox — Reset restores it. The full ER diagram lives in{" "}
+        <span className="text-arch-text2">Data modelling</span>.
+      </p>
+    </aside>
+  );
+}
+
+// ─── Main tab ────────────────────────────────────────────────────────────────
+
 export default function SqlPracticeTab() {
   const dbRef = useRef<PGlite | null>(null);
   const [dbReady, setDbReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
   const [mode, setMode] = useState<Mode>("query");
-  const [query, setQuery] = useState(DEFAULT_QUERY);
+  const [query, setQuery] = useState("");
   const [result, setResult] = useState<ResultSet | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [editorHeight, setEditorHeight] = useState(248);
 
   // Load a challenge's reference SQL into the editor and jump to Query mode.
   const loadIntoEditor = useCallback((sql: string) => {
@@ -102,38 +466,51 @@ export default function SqlPracticeTab() {
     };
   }, []);
 
-  const runQuery = useCallback(async () => {
-    const db = dbRef.current;
-    if (!db || running) return;
-    const sql = query.trim();
-    if (!sql) return;
+  const execSql = useCallback(
+    async (raw: string) => {
+      const db = dbRef.current;
+      if (!db || running) return;
+      const sql = raw.trim();
+      if (!sql) return;
 
-    setRunning(true);
-    setError(null);
-    const started = performance.now();
-    try {
-      const results = await db.exec(sql);
-      // Show the last statement that produced columns; else the last one
-      // (e.g. an UPDATE) so we can report affected rows.
-      const withFields = results.filter((r) => r.fields.length > 0);
-      const chosen = withFields.at(-1) ?? results.at(-1) ?? null;
-      setResult(
-        chosen
-          ? {
-              fields: chosen.fields,
-              rows: chosen.rows as Record<string, unknown>[],
-              affectedRows: chosen.affectedRows,
-            }
-          : null
-      );
-    } catch (e) {
-      setResult(null);
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setElapsedMs(Math.round(performance.now() - started));
-      setRunning(false);
-    }
-  }, [query, running]);
+      setRunning(true);
+      setError(null);
+      const started = performance.now();
+      try {
+        const results = await db.exec(sql);
+        // Show the last statement that produced columns; else the last one
+        // (e.g. an UPDATE) so we can report affected rows.
+        const withFields = results.filter((r) => r.fields.length > 0);
+        const chosen = withFields.at(-1) ?? results.at(-1) ?? null;
+        setResult(
+          chosen
+            ? {
+                fields: chosen.fields,
+                rows: chosen.rows as Record<string, unknown>[],
+                affectedRows: chosen.affectedRows,
+              }
+            : null
+        );
+      } catch (e) {
+        setResult(null);
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setElapsedMs(Math.round(performance.now() - started));
+        setRunning(false);
+      }
+    },
+    [running]
+  );
+
+  const runQuery = useCallback(() => execSql(query), [execSql, query]);
+
+  const runStarter = useCallback(
+    (sql: string) => {
+      setQuery(sql);
+      execSql(sql);
+    },
+    [execSql]
+  );
 
   const resetDatabase = useCallback(async () => {
     const db = dbRef.current;
@@ -151,11 +528,19 @@ export default function SqlPracticeTab() {
     }
   }, [resetting]);
 
-  const onEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      e.preventDefault();
-      runQuery();
-    }
+  // Drag the divider between editor and results to resize the editor pane.
+  const onDividerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = editorHeight;
+    const move = (ev: PointerEvent) =>
+      setEditorHeight(Math.min(520, Math.max(120, startH + ev.clientY - startY)));
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
   };
 
   // ── Init / error gates ────────────────────────────────────────────────────
@@ -174,120 +559,184 @@ export default function SqlPracticeTab() {
   }
 
   return (
-    <div className="h-full flex overflow-hidden">
-      {/* ── Main: editor + results ─────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-arch-border bg-arch-bg2">
-          {/* Mode segmented toggle */}
-          <div className="flex items-center rounded-md border border-arch-border p-0.5 bg-arch-bg3">
-            {MODE_TABS.map(({ key, label, Icon }) => (
-              <button
-                key={key}
-                onClick={() => setMode(key)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[12.5px] font-medium transition-colors ${
-                  mode === key
-                    ? "bg-arch-bg2 text-arch-text shadow-sm"
-                    : "text-arch-text2 hover:text-arch-text"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" /> {label}
-              </button>
-            ))}
-          </div>
-
-          {mode === "query" && (
-            <>
-              <button
-                onClick={runQuery}
-                disabled={!dbReady || running}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-arch-purple text-white text-[13px] font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-              >
-                {running ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Play className="w-3.5 h-3.5" />
-                )}
-                Run
-                <span className="ml-1 text-[10px] opacity-70 font-mono">⌘↵</span>
-              </button>
-
-              <button
-                onClick={resetDatabase}
-                disabled={!dbReady || resetting}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-arch-border text-arch-text2 text-[13px] hover:bg-arch-bg3 disabled:opacity-40 transition-colors"
-                title="Drop and reseed the database"
-              >
-                <RotateCcw className={`w-3.5 h-3.5 ${resetting ? "animate-spin" : ""}`} />
-                Reset
-              </button>
-            </>
-          )}
-
-          <div className="ml-auto flex items-center gap-2 text-[11px] font-mono">
-            {!dbReady && !initError ? (
-              <span className="flex items-center gap-1.5 text-arch-text3">
-                <Loader2 className="w-3 h-3 animate-spin" /> booting postgres…
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-arch-green">
-                <span className="w-1.5 h-1.5 rounded-full bg-arch-green" /> ready
-              </span>
-            )}
-            {mode === "query" && elapsedMs !== null && (
-              <span className="text-arch-text3">· {elapsedMs} ms</span>
-            )}
-          </div>
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* ── Top bar: mode switcher + db status ───────────────────────────── */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-arch-border bg-arch-bg2 shrink-0">
+        <div className="flex items-center gap-0.5 rounded-lg border border-arch-border bg-arch-bg3 p-0.5">
+          {MODE_TABS.map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => setMode(key)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors ${
+                mode === key
+                  ? "bg-arch-bg2 text-arch-text shadow-sm"
+                  : "text-arch-text2 hover:text-arch-text"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
         </div>
 
-        {mode === "query" ? (
-          <>
-            {/* Editor */}
-            <div className="border-b border-arch-border bg-[#282c34]">
-              <textarea
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={onEditorKeyDown}
-                spellCheck={false}
-                className="w-full h-52 resize-y px-4 py-3 bg-transparent text-[13px] leading-relaxed font-mono text-[#abb2bf] placeholder:text-[#5c6370] outline-none"
-                placeholder="Write SQL here — Cmd/Ctrl+Enter to run. New to SQL? Start in the Cheat sheet tab and load any snippet straight into this editor; the schema diagram lives in Data modelling."
-              />
+        <div className="ml-auto">
+          {!dbReady ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-arch-bg3 text-[11px] font-mono text-arch-text3">
+              <Loader2 className="w-3 h-3 animate-spin" /> booting postgres…
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-arch-green/10 text-[11px] font-mono text-arch-green">
+              <span className="w-1.5 h-1.5 rounded-full bg-arch-green animate-pulse" />
+              postgres ready
+            </span>
+          )}
+        </div>
+      </div>
+
+      {mode === "query" ? (
+        <div className="flex-1 min-h-0 flex">
+          <main className="flex-1 min-w-0 flex flex-col">
+            {/* ── Editor pane ─────────────────────────────────────────────── */}
+            <div
+              className="flex flex-col shrink-0 bg-[#282c34]"
+              style={{ height: editorHeight }}
+            >
+              <div className="flex items-center gap-2 px-3 h-10 shrink-0 border-b border-white/[0.06] bg-[#21252b]">
+                <Terminal className="w-3.5 h-3.5 text-[#5c6370]" />
+                <span className="text-[11px] font-mono text-[#9aa0b4]">query.sql</span>
+
+                <div className="ml-auto flex items-center gap-1.5">
+                  <button
+                    onClick={resetDatabase}
+                    disabled={!dbReady || resetting}
+                    title="Drop and reseed the database"
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium text-[#9aa0b4] hover:text-white hover:bg-white/[0.07] disabled:opacity-40 transition-colors"
+                  >
+                    <RotateCcw
+                      className={`w-3 h-3 ${resetting ? "animate-spin" : ""}`}
+                    />
+                    Reset
+                  </button>
+                  <button
+                    onClick={runQuery}
+                    disabled={!dbReady || running}
+                    className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md bg-arch-purple text-white text-[12px] font-semibold shadow-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    {running ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Play className="w-3 h-3 fill-current" />
+                    )}
+                    Run
+                    <kbd className="text-[9px] font-mono px-1 py-px rounded bg-white/20">
+                      ⌘⏎
+                    </kbd>
+                  </button>
+                  <div className="w-px h-4 bg-white/10 mx-0.5" />
+                  <button
+                    onClick={() => setSidebarOpen((v) => !v)}
+                    title={sidebarOpen ? "Hide schema" : "Show schema"}
+                    className="p-1.5 rounded-md text-[#9aa0b4] hover:text-white hover:bg-white/[0.07] transition-colors"
+                  >
+                    {sidebarOpen ? (
+                      <PanelRightClose className="w-3.5 h-3.5" />
+                    ) : (
+                      <PanelRightOpen className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <SqlEditor value={query} onChange={setQuery} onRun={runQuery} />
             </div>
 
-            {/* Results */}
-            <div className="flex-1 overflow-auto bg-arch-bg">
-              {error ? (
-                <div className="m-4 rounded-lg border border-arch-red/40 bg-arch-red/5 p-4">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-arch-red" />
-                    <span className="text-[12px] font-semibold text-arch-red">
-                      Query error
-                    </span>
-                  </div>
-                  <pre className="text-[12px] font-mono text-arch-text2 whitespace-pre-wrap break-words">
-                    {error}
-                  </pre>
-                </div>
-              ) : result ? (
-                <ResultsTable result={result} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-center">
-                  <div className="text-arch-text3">
-                    <Table2 className="w-7 h-7 mx-auto mb-2 opacity-50" />
-                    <p className="text-[13px]">Run a query to see results</p>
-                  </div>
-                </div>
-              )}
+            {/* ── Divider (drag to resize) ────────────────────────────────── */}
+            <div
+              onPointerDown={onDividerDown}
+              className="h-1.5 -my-[3px] z-10 shrink-0 cursor-row-resize group flex items-center justify-center"
+            >
+              <div className="h-[3px] w-full group-hover:bg-arch-purple/40 transition-colors" />
             </div>
-          </>
-        ) : mode === "learn" ? (
-          <CheatSheetView onLoad={loadIntoEditor} />
-        ) : mode === "drills" ? (
-          <DrillsView onLoad={loadIntoEditor} />
-        ) : (
-          <ModellingView onLoad={loadIntoEditor} />
-        )}
-      </main>
+
+            {/* ── Results pane ────────────────────────────────────────────── */}
+            <div className="flex-1 min-h-0 flex flex-col bg-arch-bg">
+              <div className="flex items-center gap-2 px-4 h-9 shrink-0 border-b border-arch-border bg-arch-bg2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-arch-text2">
+                  Results
+                </span>
+                {result && result.fields.length > 0 && (
+                  <span className="text-[11px] font-mono px-1.5 py-px rounded bg-arch-bg3 text-arch-text2">
+                    {result.rows.length} row{result.rows.length === 1 ? "" : "s"}
+                  </span>
+                )}
+                {result && result.rows.length > MAX_DISPLAY_ROWS && (
+                  <span className="text-[10.5px] font-mono text-arch-amber">
+                    showing first {MAX_DISPLAY_ROWS}
+                  </span>
+                )}
+                {elapsedMs !== null && (
+                  <span className="ml-auto text-[11px] font-mono text-arch-text3">
+                    {elapsedMs} ms
+                  </span>
+                )}
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-auto">
+                {error ? (
+                  <div className="m-4 rounded-lg border border-arch-red/40 bg-arch-red/5 p-4">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-arch-red" />
+                      <span className="text-[12px] font-semibold text-arch-red">
+                        Query error
+                      </span>
+                    </div>
+                    <pre className="text-[12px] font-mono text-arch-text2 whitespace-pre-wrap break-words">
+                      {error}
+                    </pre>
+                  </div>
+                ) : result ? (
+                  <ResultsTable result={result} />
+                ) : (
+                  <div className="h-full flex items-center justify-center p-6">
+                    <div className="text-center max-w-md">
+                      <div className="w-11 h-11 mx-auto mb-3 rounded-xl bg-arch-purple/10 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-arch-purple" />
+                      </div>
+                      <p className="text-[13.5px] font-semibold text-arch-text mb-1">
+                        Run your first query
+                      </p>
+                      <p className="text-[12px] text-arch-text2 leading-relaxed mb-4">
+                        A real Postgres runs in your browser, seeded with pension-plan
+                        data. New to SQL? The Cheat sheet tab teaches it from zero.
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-1.5">
+                        {STARTER_QUERIES.map((s) => (
+                          <button
+                            key={s.label}
+                            onClick={() => runStarter(s.sql)}
+                            disabled={!dbReady}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-arch-border bg-arch-bg2 text-[11.5px] font-medium text-arch-text2 hover:text-arch-purple hover:border-arch-purple/40 disabled:opacity-40 transition-colors"
+                          >
+                            <Play className="w-2.5 h-2.5" />
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
+
+          {sidebarOpen && <SchemaSidebar onQuickQuery={runStarter} />}
+        </div>
+      ) : mode === "learn" ? (
+        <CheatSheetView onLoad={loadIntoEditor} />
+      ) : mode === "drills" ? (
+        <DrillsView onLoad={loadIntoEditor} />
+      ) : (
+        <ModellingView onLoad={loadIntoEditor} />
+      )}
     </div>
   );
 }
@@ -668,6 +1117,8 @@ function ChallengeCard({
   );
 }
 
+// ─── Results table ───────────────────────────────────────────────────────────
+
 function ResultsTable({ result }: { result: ResultSet }) {
   const { fields, rows } = result;
 
@@ -688,60 +1139,47 @@ function ResultsTable({ result }: { result: ResultSet }) {
   const shown = rows.slice(0, MAX_DISPLAY_ROWS);
 
   return (
-    <div className="p-4">
-      <div className="mb-2 flex items-center gap-2 text-[11px] font-mono text-arch-text3">
-        <span className="text-arch-text2">{rows.length}</span> row
-        {rows.length === 1 ? "" : "s"}
-        {rows.length > MAX_DISPLAY_ROWS && (
-          <span className="text-arch-amber">
-            · showing first {MAX_DISPLAY_ROWS}
-          </span>
-        )}
-      </div>
-      <div className="rounded-lg border border-arch-border overflow-x-auto bg-arch-bg2">
-        <table className="w-full border-collapse text-[12.5px]">
-          <thead>
-            <tr className="border-b border-arch-border">
-              {fields.map((f) => (
-                <th
+    <table className="w-full border-collapse text-[12.5px]">
+      <thead>
+        <tr>
+          {fields.map((f) => (
+            <th
+              key={f.name}
+              className="sticky top-0 z-10 text-left px-3.5 py-2 font-mono font-semibold text-[11.5px] text-arch-text2 whitespace-nowrap bg-arch-bg2 border-b border-arch-border shadow-[0_1px_0_var(--arch-border)]"
+            >
+              {f.name}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {shown.map((row, i) => (
+          <tr
+            key={i}
+            className="border-b border-arch-border/50 last:border-0 even:bg-arch-bg3/25 hover:bg-arch-purple/[0.045] transition-colors"
+          >
+            {fields.map((f) => {
+              const v = row[f.name];
+              const isNull = v === null || v === undefined;
+              const isNum = typeof v === "number";
+              return (
+                <td
                   key={f.name}
-                  className="text-left px-3 py-2 font-mono font-semibold text-arch-text whitespace-nowrap bg-arch-bg3"
+                  className={`px-3.5 py-1.5 font-mono whitespace-nowrap ${
+                    isNull
+                      ? "text-arch-text3 italic"
+                      : isNum
+                      ? "text-arch-blue tabular-nums text-right"
+                      : "text-arch-text2"
+                  }`}
                 >
-                  {f.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((row, i) => (
-              <tr
-                key={i}
-                className="border-b border-arch-border/60 last:border-0 hover:bg-arch-bg3/50"
-              >
-                {fields.map((f) => {
-                  const v = row[f.name];
-                  const isNull = v === null || v === undefined;
-                  const isNum = typeof v === "number";
-                  return (
-                    <td
-                      key={f.name}
-                      className={`px-3 py-1.5 font-mono whitespace-nowrap ${
-                        isNull
-                          ? "text-arch-text3 italic"
-                          : isNum
-                          ? "text-arch-blue tabular-nums text-right"
-                          : "text-arch-text2"
-                      }`}
-                    >
-                      {formatCell(v)}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+                  {formatCell(v)}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
