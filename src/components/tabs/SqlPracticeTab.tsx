@@ -23,6 +23,10 @@ import {
   Sparkles,
   WandSparkles,
   Eraser,
+  ListTree,
+  CheckCircle2,
+  XCircle,
+  ArrowUpDown,
 } from "lucide-react";
 import CodeMirror, {
   EditorView,
@@ -175,6 +179,85 @@ function formatCell(value: unknown): string {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
+}
+
+// ─── Drill answer checking ──────────────────────────────────────────────────
+
+type DrillVerdict = "match" | "ordering" | "mismatch" | "empty" | "error";
+
+interface DrillCheckResult {
+  status: DrillVerdict;
+  message?: string;
+  userRows?: number;
+  refRows?: number;
+  userCols?: number;
+  refCols?: number;
+}
+
+// Turn a result set into per-row value signatures (column NAMES ignored, so a
+// different alias still counts as correct; column ORDER and values matter).
+function rowSignatures(rs: ResultSet | null): string[] {
+  if (!rs) return [];
+  return rs.rows.map((row) =>
+    rs.fields.map((f) => formatCell(row[f.name])).join("")
+  );
+}
+
+// Compare the learner's result against the reference solution's result.
+//  match     → same rows in the same order
+//  ordering  → same rows as a set, but a different order
+//  mismatch  → different column count, row count, or values
+function compareResults(
+  user: ResultSet | null,
+  ref: ResultSet | null
+): DrillVerdict {
+  if (!user || !ref) return "mismatch";
+  if (user.fields.length !== ref.fields.length) return "mismatch";
+
+  const u = rowSignatures(user);
+  const r = rowSignatures(ref);
+  if (u.length !== r.length) return "mismatch";
+
+  if (u.every((v, i) => v === r[i])) return "match";
+
+  const us = [...u].sort();
+  const rs = [...r].sort();
+  return us.every((v, i) => v === rs[i]) ? "ordering" : "mismatch";
+}
+
+// ─── EXPLAIN plan colouring ─────────────────────────────────────────────────
+
+// Highlight the interview-relevant bits of an EXPLAIN line: scan strategy
+// (seq scans in amber as a talking point, index scans in green), and the
+// planner's cost/row estimates.
+function highlightPlanLine(line: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const re =
+    /(Seq Scan|Index Only Scan|Index Scan|Bitmap Heap Scan|Bitmap Index Scan|Hash Join|Merge Join|Nested Loop|Hash|Sort|Aggregate|HashAggregate|GroupAggregate|Materialize|Limit|Gather|Append)|(\(cost=[^)]*\))|(rows=\d+)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = re.exec(line))) {
+    if (m.index > last) parts.push(line.slice(last, m.index));
+    const [tok, node, cost, rows] = m;
+    let cls = "text-[#61afef]";
+    if (node) {
+      cls = /Seq Scan/.test(node)
+        ? "text-[#e5c07b]" // seq scan — worth calling out
+        : /Index/.test(node)
+        ? "text-[#98c379]" // index scan — the good path
+        : "text-[#c678dd]"; // joins/sorts/aggregates
+    } else if (cost) cls = "text-[#7f848e]";
+    else if (rows) cls = "text-[#56b6c2]";
+    parts.push(
+      <span key={key++} className={cls}>
+        {tok}
+      </span>
+    );
+    last = m.index + tok.length;
+  }
+  if (last < line.length) parts.push(line.slice(last));
+  return parts;
 }
 
 // ─── Editor (CodeMirror: highlighting + schema-aware autocomplete) ──────────
@@ -342,12 +425,18 @@ export default function SqlPracticeTab() {
   const [mode, setMode] = useState<Mode>("query");
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<ResultSet | null>(null);
+  const [plan, setPlan] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [resetting, setResetting] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editorHeight, setEditorHeight] = useState(248);
+  // Remembers the pre-format text so Format can toggle back to it.
+  const [formatMemo, setFormatMemo] = useState<{
+    raw: string;
+    pretty: string;
+  } | null>(null);
 
   // Replace the whole document through the editor view as well as React
   // state: react-codemirror's value-prop sync defers external updates while
@@ -369,6 +458,7 @@ export default function SqlPracticeTab() {
       setEditorText(sql);
       setError(null);
       setResult(null);
+      setPlan(null);
       setMode("query");
     },
     [setEditorText]
@@ -414,6 +504,7 @@ export default function SqlPracticeTab() {
 
       setRunning(true);
       setError(null);
+      setPlan(null);
       const started = performance.now();
       try {
         const results = await db.exec(sql);
@@ -443,6 +534,87 @@ export default function SqlPracticeTab() {
 
   const runQuery = useCallback(() => execSql(query), [execSql, query]);
 
+  // Run EXPLAIN (planner estimate only — the query is NOT executed) and show
+  // the plan in place of the results table.
+  const explainQuery = useCallback(async () => {
+    const db = dbRef.current;
+    if (!db || running) return;
+    const sql = query.trim();
+    if (!sql) return;
+
+    setRunning(true);
+    setError(null);
+    setResult(null);
+    const started = performance.now();
+    try {
+      const results = await db.exec(`EXPLAIN ${sql}`);
+      const chosen = results.filter((r) => r.fields.length > 0).at(-1) ?? null;
+      const lines = chosen
+        ? (chosen.rows as Record<string, unknown>[]).map((r) =>
+            String(r["QUERY PLAN"])
+          )
+        : [];
+      setPlan(lines);
+    } catch (e) {
+      setPlan(null);
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setElapsedMs(Math.round(performance.now() - started));
+      setRunning(false);
+    }
+  }, [running, query]);
+
+  // Run SQL purely to obtain its result set, without disturbing the main
+  // results pane — backs the drill answer check.
+  const execForResult = useCallback(
+    async (sql: string): Promise<ResultSet | null> => {
+      const db = dbRef.current;
+      if (!db) throw new Error("Database not ready");
+      const results = await db.exec(sql);
+      const withFields = results.filter((r) => r.fields.length > 0);
+      const chosen = withFields.at(-1) ?? results.at(-1) ?? null;
+      return chosen
+        ? {
+            fields: chosen.fields,
+            rows: chosen.rows as Record<string, unknown>[],
+            affectedRows: chosen.affectedRows,
+          }
+        : null;
+    },
+    []
+  );
+
+  // Compare the query currently in the editor against a drill's reference
+  // solution by running both and diffing their result sets.
+  const checkAnswer = useCallback(
+    async (solution: string): Promise<DrillCheckResult> => {
+      const userSql = query.trim();
+      if (!userSql) return { status: "empty" };
+      if (!dbRef.current)
+        return {
+          status: "error",
+          message: "Database is still booting — try again in a moment.",
+        };
+      try {
+        const userRes = await execForResult(userSql);
+        const refRes = await execForResult(solution);
+        return {
+          status: compareResults(userRes, refRes),
+          userRows: userRes?.rows.length ?? 0,
+          refRows: refRes?.rows.length ?? 0,
+          userCols: userRes?.fields.length ?? 0,
+          refCols: refRes?.fields.length ?? 0,
+        };
+      } catch (e) {
+        return {
+          status: "error",
+          message: e instanceof Error ? e.message : String(e),
+        };
+      }
+    },
+    [query, execForResult]
+  );
+
   const runStarter = useCallback(
     (sql: string) => {
       setEditorText(sql);
@@ -457,20 +629,30 @@ export default function SqlPracticeTab() {
     cmRef.current?.view?.focus();
   }, [setEditorText]);
 
+  // Format toggles: the first click pretty-prints and remembers the original;
+  // a second click (while the text is still what we produced) reverts to it.
   const formatQuery = useCallback(() => {
-    const current = cmRef.current?.view?.state.doc.toString() ?? "";
+    const current = cmRef.current?.view?.state.doc.toString() ?? query;
+
+    if (formatMemo && current === formatMemo.pretty) {
+      setEditorText(formatMemo.raw);
+      return;
+    }
+
     try {
-      setEditorText(
-        formatSql(current, {
-          language: "postgresql",
-          keywordCase: "upper",
-          tabWidth: 2,
-        })
-      );
+      const pretty = formatSql(current, {
+        language: "postgresql",
+        keywordCase: "upper",
+        tabWidth: 2,
+      });
+      if (pretty !== current) {
+        setFormatMemo({ raw: current, pretty });
+        setEditorText(pretty);
+      }
     } catch {
       // Unparsable SQL mid-edit — leave the text untouched.
     }
-  }, [setEditorText]);
+  }, [setEditorText, query, formatMemo]);
 
   const resetDatabase = useCallback(async () => {
     const db = dbRef.current;
@@ -480,6 +662,7 @@ export default function SqlPracticeTab() {
     try {
       await db.exec(SEED_SQL);
       setResult(null);
+      setPlan(null);
       setElapsedMs(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -502,6 +685,10 @@ export default function SqlPracticeTab() {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
+
+  // True when the editor still holds exactly what Format produced, so the next
+  // click should undo rather than reformat.
+  const canUndoFormat = !!formatMemo && query === formatMemo.pretty;
 
   // ── Init / error gates ────────────────────────────────────────────────────
   if (initError) {
@@ -577,11 +764,15 @@ export default function SqlPracticeTab() {
                   <button
                     onClick={formatQuery}
                     disabled={!query.trim()}
-                    title="Pretty-print the SQL"
+                    title={
+                      canUndoFormat
+                        ? "Revert to the pre-format text"
+                        : "Pretty-print the SQL"
+                    }
                     className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium text-[#9aa0b4] hover:text-white hover:bg-white/[0.07] disabled:opacity-40 transition-colors"
                   >
                     <WandSparkles className="w-3 h-3" />
-                    Format
+                    {canUndoFormat ? "Unformat" : "Format"}
                   </button>
                   <button
                     onClick={resetDatabase}
@@ -593,6 +784,15 @@ export default function SqlPracticeTab() {
                       className={`w-3 h-3 ${resetting ? "animate-spin" : ""}`}
                     />
                     Reset
+                  </button>
+                  <button
+                    onClick={explainQuery}
+                    disabled={!dbReady || running || !query.trim()}
+                    title="Show the query plan without running the query"
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium text-[#9aa0b4] hover:text-white hover:bg-white/[0.07] disabled:opacity-40 transition-colors"
+                  >
+                    <ListTree className="w-3 h-3" />
+                    Explain
                   </button>
                   <button
                     onClick={runQuery}
@@ -644,8 +844,13 @@ export default function SqlPracticeTab() {
             <div className="flex-1 min-h-0 flex flex-col bg-arch-bg">
               <div className="flex items-center gap-2 px-4 h-9 shrink-0 border-b border-arch-border bg-arch-bg2">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-arch-text2">
-                  Results
+                  {plan ? "Query plan" : "Results"}
                 </span>
+                {plan && (
+                  <span className="inline-flex items-center gap-1 text-[10.5px] font-mono px-1.5 py-px rounded bg-arch-teal/10 text-arch-teal">
+                    <ListTree className="w-3 h-3" /> estimate · not executed
+                  </span>
+                )}
                 {result && result.fields.length > 0 && (
                   <span className="text-[11px] font-mono px-1.5 py-px rounded bg-arch-bg3 text-arch-text2">
                     {result.rows.length} row{result.rows.length === 1 ? "" : "s"}
@@ -676,6 +881,8 @@ export default function SqlPracticeTab() {
                       {error}
                     </pre>
                   </div>
+                ) : plan ? (
+                  <QueryPlanView lines={plan} />
                 ) : result ? (
                   <ResultsTable result={result} />
                 ) : (
@@ -716,7 +923,7 @@ export default function SqlPracticeTab() {
       ) : mode === "learn" ? (
         <CheatSheetView onLoad={loadIntoEditor} />
       ) : mode === "drills" ? (
-        <DrillsView onLoad={loadIntoEditor} />
+        <DrillsView onLoad={loadIntoEditor} onCheck={checkAnswer} />
       ) : (
         <ModellingView onLoad={loadIntoEditor} />
       )}
@@ -878,20 +1085,90 @@ function CheatSectionCard({
 
 // ─── Drills ──────────────────────────────────────────────────────────────────
 
-function DrillsView({ onLoad }: { onLoad: (sql: string) => void }) {
+function DrillsView({
+  onLoad,
+  onCheck,
+}: {
+  onLoad: (sql: string) => void;
+  onCheck: (solution: string) => Promise<DrillCheckResult>;
+}) {
   return (
     <div className="flex-1 overflow-auto bg-arch-bg">
       <div className="max-w-4xl mx-auto p-5 space-y-3">
         <p className="text-[12.5px] text-arch-text2 leading-relaxed">
-          Ten drills, easiest to hardest. Write each one in the Query tab{" "}
-          <span className="font-medium text-arch-text">before</span> revealing the
-          solution — if your result matches but your SQL differs, that&apos;s fine; there
-          are many right answers. The drills hunt the data problems planted in the seed.
+          Ten drills, easiest to hardest. Write your answer in the Query tab, then come
+          back and hit{" "}
+          <span className="font-medium text-arch-text">Check my answer</span> — it runs
+          your query and the reference against the sandbox and compares the results, so a
+          different query that returns the same rows still counts. Stuck? Reveal the
+          solution. The drills hunt the data problems planted in the seed.
         </p>
         {DRILLS.map((d, i) => (
-          <DrillCard key={d.skill} drill={d} index={i + 1} onLoad={onLoad} />
+          <DrillCard
+            key={d.skill}
+            drill={d}
+            index={i + 1}
+            onLoad={onLoad}
+            onCheck={onCheck}
+          />
         ))}
       </div>
+    </div>
+  );
+}
+
+function DrillVerdictBanner({ check }: { check: DrillCheckResult }) {
+  const map = {
+    match: {
+      Icon: CheckCircle2,
+      cls: "border-arch-green/40 bg-arch-green/5 text-arch-green",
+      title: "Correct",
+      body: `Your result matches the reference — ${check.refRows} row${
+        check.refRows === 1 ? "" : "s"
+      }, same order.`,
+    },
+    ordering: {
+      Icon: ArrowUpDown,
+      cls: "border-arch-amber/40 bg-arch-amber/5 text-arch-amber",
+      title: "Right rows, different order",
+      body: "You returned exactly the right rows, but in a different order. If the task specified an ordering, add or adjust ORDER BY.",
+    },
+    mismatch: {
+      Icon: XCircle,
+      cls: "border-arch-red/40 bg-arch-red/5 text-arch-red",
+      title: "Not a match yet",
+      body: `Your query returned ${check.userRows} row${
+        check.userRows === 1 ? "" : "s"
+      } / ${check.userCols} column${
+        check.userCols === 1 ? "" : "s"
+      }; the reference has ${check.refRows} row${
+        check.refRows === 1 ? "" : "s"
+      } / ${check.refCols} column${
+        check.refCols === 1 ? "" : "s"
+      }. Compare, tweak, and check again.`,
+    },
+    empty: {
+      Icon: PenLine,
+      cls: "border-arch-border bg-arch-bg3/50 text-arch-text2",
+      title: "Nothing to check",
+      body: "Write your answer in the Query tab first, then come back and check it here.",
+    },
+    error: {
+      Icon: AlertCircle,
+      cls: "border-arch-red/40 bg-arch-red/5 text-arch-red",
+      title: "Your query errored",
+      body: check.message ?? "The query couldn't run.",
+    },
+  }[check.status];
+
+  const { Icon } = map;
+  return (
+    <div className={`mt-2.5 flex items-start gap-2 rounded-md border px-3 py-2 ${map.cls}`}>
+      <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+      <p className="text-[12px] leading-relaxed">
+        <span className="font-semibold">{map.title}. </span>
+        <span className="text-arch-text2">{map.body}</span>
+      </p>
     </div>
   );
 }
@@ -900,12 +1177,26 @@ function DrillCard({
   drill,
   index,
   onLoad,
+  onCheck,
 }: {
   drill: Drill;
   index: number;
   onLoad: (sql: string) => void;
+  onCheck: (solution: string) => Promise<DrillCheckResult>;
 }) {
   const [open, setOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [check, setCheck] = useState<DrillCheckResult | null>(null);
+
+  const runCheck = async () => {
+    setChecking(true);
+    try {
+      setCheck(await onCheck(drill.solution));
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border border-arch-border bg-arch-bg2 overflow-hidden">
       <div className="px-4 py-3">
@@ -920,15 +1211,32 @@ function DrillCard({
         <p className="text-[13px] font-medium text-arch-text mt-1 leading-relaxed">
           {drill.task}
         </p>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-arch-purple hover:opacity-80"
-        >
-          <ChevronDown
-            className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`}
-          />
-          {open ? "Hide solution" : "Reveal solution"}
-        </button>
+
+        <div className="mt-2.5 flex items-center gap-2">
+          <button
+            onClick={runCheck}
+            disabled={checking}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-arch-green/10 text-arch-green text-[12px] font-medium hover:bg-arch-green/15 disabled:opacity-50 transition-colors"
+          >
+            {checking ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            )}
+            Check my answer
+          </button>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex items-center gap-1 px-2 py-1.5 text-[12px] font-medium text-arch-purple hover:opacity-80"
+          >
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+            />
+            {open ? "Hide solution" : "Reveal solution"}
+          </button>
+        </div>
+
+        {check && <DrillVerdictBanner check={check} />}
       </div>
 
       {open && (
@@ -1096,6 +1404,42 @@ function ChallengeCard({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Query plan (EXPLAIN) ────────────────────────────────────────────────────
+
+function QueryPlanView({ lines }: { lines: string[] }) {
+  return (
+    <div className="p-4">
+      <div className="rounded-lg border border-arch-border overflow-hidden bg-[#282c34]">
+        <div className="flex items-center gap-1.5 px-4 h-9 border-b border-white/[0.06]">
+          <ListTree className="w-3.5 h-3.5 text-arch-teal" />
+          <span className="text-[11px] font-mono text-[#9aa0b4]">
+            EXPLAIN — the planner&apos;s estimate
+          </span>
+        </div>
+        <pre className="px-4 py-3 overflow-x-auto text-[12px] leading-[1.75] font-mono text-[#abb2bf] [font-variant-ligatures:none]">
+          {lines.map((line, i) => (
+            <div key={i}>{highlightPlanLine(line)}</div>
+          ))}
+        </pre>
+      </div>
+      <div className="mt-2 flex items-start gap-2 rounded-md border border-arch-blue/30 bg-arch-blue/5 px-3 py-2">
+        <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0 text-arch-blue" />
+        <p className="text-[12px] text-arch-text2 leading-relaxed">
+          <span className="font-semibold text-arch-text">Reading it: </span>
+          each line is a step, indented children feed their parent. The{" "}
+          <span className="font-mono text-arch-text">cost=</span> and{" "}
+          <span className="font-mono text-arch-text">rows=</span> figures are the
+          planner&apos;s estimates. A{" "}
+          <span className="text-[#e5c07b] font-mono">Seq Scan</span> reads the whole
+          table — fine here since the seed is tiny, but on a large table it&apos;s the
+          cue to reach for an index and get an{" "}
+          <span className="text-[#98c379] font-mono">Index Scan</span> instead.
+        </p>
+      </div>
     </div>
   );
 }
