@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PGlite } from "@electric-sql/pglite";
 import {
   Play,
@@ -21,7 +21,17 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Sparkles,
+  WandSparkles,
 } from "lucide-react";
+import CodeMirror, {
+  EditorView,
+  keymap,
+  placeholder,
+} from "@uiw/react-codemirror";
+import { indentWithTab } from "@codemirror/commands";
+import { sql, PostgreSQL } from "@codemirror/lang-sql";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { format as formatSql } from "sql-formatter";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
 import {
@@ -158,66 +168,6 @@ HAVING SUM(allocation_pct) <> 100;`,
   },
 ];
 
-// ─── Lightweight SQL highlighter (one-dark palette, matches CodeBlock) ──────
-
-const SQL_KEYWORDS = new Set(
-  `select from where and or not null insert into values update set delete create
-   table drop alter add primary key foreign references unique check default
-   constraint index view as on join inner left right full outer cross group by
-   having order limit offset distinct union all except intersect case when then
-   else end exists in between like ilike is asc desc with recursive returning
-   cascade if using over partition window rows range unbounded preceding
-   following filter cast true false begin commit rollback truncate rename column
-   to type generated always identity`.split(/\s+/)
-);
-
-const SQL_TYPES = new Set(
-  `int integer serial bigserial text date numeric boolean bool timestamp
-   timestamptz varchar char bigint smallint real decimal float interval json
-   jsonb uuid bytea money`.split(/\s+/)
-);
-
-const SQL_FUNCS = new Set(
-  `count sum avg min max coalesce nullif round now age extract date_trunc rank
-   dense_rank row_number lag lead first_value last_value string_agg array_agg
-   upper lower length substring concat to_char to_date greatest least abs ceil
-   floor trim percentile_cont mode current_date current_timestamp`.split(/\s+/)
-);
-
-const SQL_TOKEN_RE =
-  /--[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^']|'')*'?|\b\d+(?:\.\d+)?\b|\b[a-zA-Z_][a-zA-Z0-9_]*\b|[^\sa-zA-Z0-9_]+|\s+/g;
-
-function highlightSql(sql: string): React.ReactNode[] {
-  const out: React.ReactNode[] = [];
-  let key = 0;
-  for (const match of sql.matchAll(SQL_TOKEN_RE)) {
-    const tok = match[0];
-    let cls: string | null = null;
-    if (tok.startsWith("--") || tok.startsWith("/*")) cls = "text-[#7f848e] italic";
-    else if (tok.startsWith("'")) cls = "text-[#98c379]";
-    else if (/^\d/.test(tok)) cls = "text-[#d19a66]";
-    else if (/^[a-zA-Z_]/.test(tok)) {
-      const w = tok.toLowerCase();
-      if (SQL_KEYWORDS.has(w)) cls = "text-[#c678dd]";
-      else if (SQL_TYPES.has(w)) cls = "text-[#e5c07b]";
-      else if (SQL_FUNCS.has(w)) cls = "text-[#61afef]";
-      else cls = "text-[#abb2bf]";
-    } else if (/^\s+$/.test(tok)) cls = null;
-    else cls = "text-[#56b6c2]";
-
-    out.push(
-      cls ? (
-        <span key={key++} className={cls}>
-          {tok}
-        </span>
-      ) : (
-        tok
-      )
-    );
-  }
-  return out;
-}
-
 function formatCell(value: unknown): string {
   if (value === null || value === undefined) return "∅";
   if (value instanceof Date) return value.toISOString().slice(0, 10);
@@ -225,10 +175,31 @@ function formatCell(value: unknown): string {
   return String(value);
 }
 
-// ─── Editor (highlighted overlay + line-number gutter) ──────────────────────
+// ─── Editor (CodeMirror: highlighting + schema-aware autocomplete) ──────────
 
-const EDITOR_FONT =
-  "font-mono text-[13px] leading-[1.65] [font-variant-ligatures:none]";
+// Table → columns map so autocomplete suggests real schema objects.
+const CM_SCHEMA = Object.fromEntries(
+  SCHEMA_TABLES.map((t) => [t.name, t.columns.map((c) => c.name)])
+);
+
+const CM_FONT_THEME = EditorView.theme({
+  "&": { fontSize: "13px", height: "100%" },
+  ".cm-scroller": {
+    fontFamily:
+      '"JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    lineHeight: "1.65",
+    padding: "6px 0",
+  },
+  ".cm-gutters": { paddingLeft: "4px" },
+  "&.cm-focused": { outline: "none" },
+});
+
+const CM_EXTENSIONS = [
+  sql({ dialect: PostgreSQL, schema: CM_SCHEMA, upperCaseKeywords: true }),
+  keymap.of([indentWithTab]),
+  placeholder("-- Write SQL here — autocomplete as you type, ⌘⏎ to run"),
+  CM_FONT_THEME,
+];
 
 function SqlEditor({
   value,
@@ -239,81 +210,26 @@ function SqlEditor({
   onChange: (v: string) => void;
   onRun: () => void;
 }) {
-  const taRef = useRef<HTMLTextAreaElement>(null);
-  const preRef = useRef<HTMLPreElement>(null);
-  const gutterRef = useRef<HTMLDivElement>(null);
-
-  const highlighted = useMemo(() => highlightSql(value), [value]);
-  const lineCount = Math.max(1, value.split("\n").length);
-
-  const syncScroll = () => {
-    const ta = taRef.current;
-    if (!ta) return;
-    if (preRef.current) {
-      preRef.current.scrollTop = ta.scrollTop;
-      preRef.current.scrollLeft = ta.scrollLeft;
-    }
-    if (gutterRef.current) {
-      gutterRef.current.style.transform = `translateY(-${ta.scrollTop}px)`;
-    }
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  // Intercept ⌘⏎/Ctrl+Enter before CodeMirror's own keymap sees it.
+  const onKeyDownCapture = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
+      e.stopPropagation();
       onRun();
-      return;
-    }
-    if (e.key === "Tab") {
-      e.preventDefault();
-      // execCommand keeps the browser undo stack intact, unlike setRangeText.
-      document.execCommand("insertText", false, "  ");
     }
   };
 
   return (
-    <div className="flex-1 min-h-0 flex bg-[#282c34]">
-      {/* Line numbers */}
-      <div className="w-11 shrink-0 overflow-hidden border-r border-white/[0.06] bg-[#21252b] select-none">
-        <div ref={gutterRef} className={`pt-3 pr-2.5 text-right ${EDITOR_FONT}`}>
-          {Array.from({ length: lineCount }, (_, i) => (
-            <div key={i} className="text-[#4b5263]">
-              {i + 1}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Code area: highlighted <pre> underneath, transparent textarea on top */}
-      <div className="relative flex-1 min-w-0">
-        <pre
-          ref={preRef}
-          aria-hidden
-          className={`absolute inset-0 m-0 overflow-hidden whitespace-pre px-3.5 pt-3 pb-6 pointer-events-none ${EDITOR_FONT}`}
-        >
-          {highlighted}
-          {"\n"}
-        </pre>
-        {value === "" && (
-          <div
-            className={`absolute left-3.5 top-3 pointer-events-none text-[#5c6370] ${EDITOR_FONT}`}
-          >
-            -- Write SQL here, then ⌘⏎ to run
-          </div>
-        )}
-        <textarea
-          ref={taRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onScroll={syncScroll}
-          onKeyDown={onKeyDown}
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
-          wrap="off"
-          className={`absolute inset-0 w-full h-full resize-none overflow-auto whitespace-pre bg-transparent px-3.5 pt-3 pb-6 text-transparent caret-[#528bff] selection:bg-[#3e4451]/80 outline-none ${EDITOR_FONT}`}
-        />
-      </div>
+    <div className="flex-1 min-h-0 overflow-hidden" onKeyDownCapture={onKeyDownCapture}>
+      <CodeMirror
+        value={value}
+        onChange={onChange}
+        extensions={CM_EXTENSIONS}
+        theme={oneDark}
+        height="100%"
+        basicSetup={{ foldGutter: false, searchKeymap: false }}
+        className="h-full"
+      />
     </div>
   );
 }
@@ -512,6 +428,20 @@ export default function SqlPracticeTab() {
     [execSql]
   );
 
+  const formatQuery = useCallback(() => {
+    setQuery((q) => {
+      try {
+        return formatSql(q, {
+          language: "postgresql",
+          keywordCase: "upper",
+          tabWidth: 2,
+        });
+      } catch {
+        return q; // unparsable SQL mid-edit — leave the text untouched
+      }
+    });
+  }, []);
+
   const resetDatabase = useCallback(async () => {
     const db = dbRef.current;
     if (!db || resetting) return;
@@ -605,6 +535,15 @@ export default function SqlPracticeTab() {
                 <span className="text-[11px] font-mono text-[#9aa0b4]">query.sql</span>
 
                 <div className="ml-auto flex items-center gap-1.5">
+                  <button
+                    onClick={formatQuery}
+                    disabled={!query.trim()}
+                    title="Pretty-print the SQL"
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium text-[#9aa0b4] hover:text-white hover:bg-white/[0.07] disabled:opacity-40 transition-colors"
+                  >
+                    <WandSparkles className="w-3 h-3" />
+                    Format
+                  </button>
                   <button
                     onClick={resetDatabase}
                     disabled={!dbReady || resetting}
