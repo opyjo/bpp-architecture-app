@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PGlite } from "@electric-sql/pglite";
-import { Play, RotateCcw, Database, Loader2, Table2, AlertCircle, Terminal, Network, ChevronDown, Lightbulb, BookOpen, ListChecks, Zap, ExternalLink, PenLine } from "lucide-react";
+import { Play, RotateCcw, Loader2, Table2, AlertCircle, Terminal, Network, ChevronDown, Lightbulb, BookOpen, ListChecks, Zap, PenLine } from "lucide-react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
 import {
   SEED_SQL,
-  SCHEMA_TABLES,
-  EXAMPLE_QUERIES,
   ER_DIAGRAM,
   MODELLING_CHALLENGES,
   type ModellingChallenge,
@@ -171,84 +169,6 @@ export default function SqlPracticeTab() {
 
   return (
     <div className="h-full flex overflow-hidden">
-      {/* ── Sidebar: schema + examples (Query mode only — the learning views
-             use the full width and cover the examples themselves) ──────────── */}
-      {mode === "query" && (
-      <aside className="w-72 shrink-0 border-r border-arch-border bg-arch-bg2 overflow-y-auto">
-        <div className="px-4 py-3.5 border-b border-arch-border sticky top-0 bg-arch-bg2 z-10">
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-arch-purple" />
-            <h2 className="text-sm font-semibold text-arch-text">SQL Playground</h2>
-            <a
-              href="/sql"
-              target="_blank"
-              rel="noopener"
-              title="Open the playground in a new browser tab — e.g. cheat sheet here, queries there"
-              className="ml-auto p-1 rounded text-arch-text3 hover:text-arch-purple hover:bg-arch-bg3 transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-          <p className="text-[11px] text-arch-text2 mt-1 leading-relaxed">
-            Real Postgres in your browser · HOOPP member-portal / DISP dataset
-          </p>
-        </div>
-
-        {/* Example queries */}
-        <div className="px-3 py-3">
-          <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-arch-text3 mb-1.5">
-            Example queries
-          </h3>
-          <div className="space-y-0.5">
-            {EXAMPLE_QUERIES.map((ex) => (
-              <button
-                key={ex.label}
-                onClick={() => setQuery(ex.sql)}
-                className="group w-full text-left px-2.5 py-1.5 rounded-md hover:bg-arch-bg3 transition-colors"
-              >
-                <div className="text-[12.5px] text-arch-text group-hover:text-arch-purple transition-colors">
-                  {ex.label}
-                </div>
-                <div className="text-[10px] font-mono text-arch-text3">{ex.concept}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Schema reference */}
-        <div className="px-3 py-3 border-t border-arch-border">
-          <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-arch-text3 mb-2">
-            Schema
-          </h3>
-          <div className="space-y-3">
-            {SCHEMA_TABLES.map((t) => (
-              <div key={t.name} className="rounded-lg border border-arch-border overflow-hidden">
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-arch-bg3 border-b border-arch-border">
-                  <Table2 className="w-3 h-3 text-arch-teal" />
-                  <span className="text-[12px] font-mono font-medium text-arch-text">
-                    {t.name}
-                  </span>
-                </div>
-                <div className="px-2.5 py-1.5 space-y-0.5">
-                  {t.columns.map((c) => (
-                    <div key={c.name} className="flex items-baseline gap-2 text-[11px]">
-                      <span className="font-mono text-arch-text2">{c.name}</span>
-                      <span className="font-mono text-arch-text3">{c.type}</span>
-                      {c.note && (
-                        <span className="ml-auto text-[9.5px] font-mono text-arch-blue/80">
-                          {c.note}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
-      )}
-
       {/* ── Main: editor + results ─────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0">
         {/* Toolbar */}
@@ -324,7 +244,7 @@ export default function SqlPracticeTab() {
                 onKeyDown={onEditorKeyDown}
                 spellCheck={false}
                 className="w-full h-52 resize-y px-4 py-3 bg-transparent text-[13px] leading-relaxed font-mono text-[#abb2bf] placeholder:text-[#5c6370] outline-none"
-                placeholder="Write SQL here — e.g. find members whose beneficiary allocations don't total 100%. Cmd/Ctrl+Enter to run. Pick an example on the left to get started."
+                placeholder="Write SQL here — Cmd/Ctrl+Enter to run. New to SQL? Start in the Cheat sheet tab and load any snippet straight into this editor; the schema diagram lives in Data modelling."
               />
             </div>
 

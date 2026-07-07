@@ -25,6 +25,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   apigee: "Apigee gateway concepts",
   openapi: "OpenAPI 3.0 spec reference",
   coach: "Interview practice coach",
+  sql: "Learn & practice SQL on a real in-browser Postgres",
   teleprompter: "Scrolling talking-point cards",
   impact: "Assess a change's blast radius",
   systemmap: "Interactive dependency map",
@@ -132,11 +133,13 @@ export default function HomeHub() {
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {group.tabs.map((tab) => {
-                      const external = !!tab.href;
+                      const external = !!tab.href || !!tab.newTab;
                       return (
                         <Link
                           key={tab.id}
                           href={hrefFor(tab)}
+                          target={tab.newTab ? "_blank" : undefined}
+                          rel={tab.newTab ? "noopener" : undefined}
                           className={`group flex items-start justify-between gap-3 rounded-xl border border-arch-border bg-arch-bg2 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${accent.hoverBorder}`}
                         >
                           <div className="min-w-0">

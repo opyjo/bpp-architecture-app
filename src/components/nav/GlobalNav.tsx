@@ -110,6 +110,8 @@ function TabDropdown({
               <Link
                 key={tab.id}
                 href={href}
+                target={tab.newTab ? "_blank" : undefined}
+                rel={tab.newTab ? "noopener" : undefined}
                 onClick={() => setOpen(false)}
                 className={`dropdown-item block w-full text-left px-3.5 py-2 text-xs font-medium transition-colors duration-150 ${
                   isTabActive
@@ -119,6 +121,24 @@ function TabDropdown({
                 style={{ animationDelay: `${i * 30}ms` }}
               >
                 {tab.label}
+                {tab.newTab && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="inline-block ml-1.5 opacity-40"
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                )}
               </Link>
             );
           })}

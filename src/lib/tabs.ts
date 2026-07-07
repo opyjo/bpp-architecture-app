@@ -2,6 +2,8 @@ export interface TabItem {
   id: string;
   label: string;
   href?: string;
+  /** Open in a new browser tab (e.g. the SQL playground, used side-by-side). */
+  newTab?: boolean;
 }
 
 export interface TabGroup {
@@ -46,7 +48,7 @@ export const tabGroups: TabGroup[] = [
       { id: "apigee", label: "Apigee" },
       { id: "openapi", label: "OpenAPI 3.0" },
       { id: "coach", label: "Interview Coach" },
-      { id: "sql", label: "SQL Practice" },
+      { id: "sql", label: "SQL Practice", newTab: true },
       { id: "teleprompter", label: "Teleprompter" },
     ],
   },
