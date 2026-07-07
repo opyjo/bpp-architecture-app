@@ -37,6 +37,7 @@ import CodeMirror, {
 import { indentWithTab } from "@codemirror/commands";
 import { sql, PostgreSQL } from "@codemirror/lang-sql";
 import { oneDark } from "@codemirror/theme-one-dark";
+import type { Completion, CompletionSource } from "@codemirror/autocomplete";
 import { format as formatSql } from "sql-formatter";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import CodeBlock from "@/components/ui/CodeBlock";
@@ -262,10 +263,41 @@ function highlightPlanLine(line: string): React.ReactNode {
 
 // ─── Editor (CodeMirror: highlighting + schema-aware autocomplete) ──────────
 
-// Table → columns map so autocomplete suggests real schema objects.
+// Table → columns map so autocomplete suggests real schema objects. This
+// drives QUALIFIED completion (`members.` → its columns) and table names.
 const CM_SCHEMA = Object.fromEntries(
   SCHEMA_TABLES.map((t) => [t.name, t.columns.map((c) => c.name)])
 );
+
+// lang-sql only offers columns once you qualify with a table (`members.`).
+// For a small fixed teaching schema it's far friendlier to suggest every
+// column name unqualified too — so this second source lists all columns
+// (deduped), tagged with the table(s) they belong to.
+const ALL_COLUMN_COMPLETIONS: Completion[] = (() => {
+  const tablesByColumn = new Map<string, string[]>();
+  for (const t of SCHEMA_TABLES) {
+    for (const c of t.columns) {
+      const owners = tablesByColumn.get(c.name) ?? [];
+      owners.push(t.name);
+      tablesByColumn.set(c.name, owners);
+    }
+  }
+  return [...tablesByColumn.entries()].map(([name, tables]) => ({
+    label: name,
+    type: "property",
+    detail: tables.join(", "),
+  }));
+})();
+
+const columnCompletionSource: CompletionSource = (context) => {
+  const word = context.matchBefore(/\w+/);
+  if (!word || (word.from === word.to && !context.explicit)) return null;
+  // Skip qualified positions (`members.sal`) — the schema source owns those,
+  // and we don't want the full unqualified list polluting them.
+  if (context.state.sliceDoc(Math.max(0, word.from - 1), word.from) === ".")
+    return null;
+  return { from: word.from, options: ALL_COLUMN_COMPLETIONS, validFor: /^\w*$/ };
+};
 
 const CM_FONT_THEME = EditorView.theme({
   "&": { fontSize: "13px", height: "100%" },
@@ -281,6 +313,9 @@ const CM_FONT_THEME = EditorView.theme({
 
 const CM_EXTENSIONS = [
   sql({ dialect: PostgreSQL, schema: CM_SCHEMA, upperCaseKeywords: true }),
+  // Register the unqualified-column source alongside lang-sql's own schema and
+  // keyword sources (all merged since none set an autocomplete `override`).
+  PostgreSQL.language.data.of({ autocomplete: columnCompletionSource }),
   keymap.of([indentWithTab]),
   placeholder("-- Write SQL here — autocomplete as you type, ⌘⏎ to run"),
   CM_FONT_THEME,
