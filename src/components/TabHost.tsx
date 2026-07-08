@@ -34,6 +34,7 @@ const ChangePackageTab = dynamic(() => import("@/components/tabs/ChangePackageTa
 const SystemMapTab = dynamic(() => import("@/components/tabs/SystemMapTab"), { ssr: false });
 const RepoInsightsTab = dynamic(() => import("@/components/tabs/RepoInsightsTab"), { ssr: false });
 const ApoartStoriesTab = dynamic(() => import("@/components/tabs/ApoartStoriesTab"), { ssr: false });
+const KickoutTab = dynamic(() => import("@/components/tabs/KickoutTab"), { ssr: false });
 const SubscriptionFlowTab = dynamic(() => import("@/components/tabs/SubscriptionFlowTab"), { ssr: false });
 
 // Tab id → component. Keys must match the non-href ids in `src/lib/tabs.ts`.
@@ -66,6 +67,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   systemmap: SystemMapTab,
   insights: RepoInsightsTab,
   apoart: ApoartStoriesTab,
+  kickout: KickoutTab,
   subflow: SubscriptionFlowTab,
 };
 

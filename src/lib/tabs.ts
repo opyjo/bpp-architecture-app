@@ -33,6 +33,7 @@ export const tabGroups: TabGroup[] = [
       { id: "ref", label: "Reference" },
       { id: "subflow", label: "Subscription Flow" },
       { id: "apoart", label: "APOART Stories" },
+      { id: "kickout", label: "Kickout Status" },
       { id: "flags", label: "Feature Flags" },
       { id: "learnings", label: "Learnings" },
     ],
