@@ -169,7 +169,8 @@ What they're screening for: 8+ years BA/BSA experience with 5+ years on API-firs
   },
   {
     id: "fe-practice-manager",
-    label: "FE Practice Mgr",
+    label: "Canadian Tire",
+    company: "Canadian Tire Corporation",
     title: "Manager, Front-End Development Practice",
     badge: "FE",
     badgeGradient: "from-arch-coral to-arch-purple",

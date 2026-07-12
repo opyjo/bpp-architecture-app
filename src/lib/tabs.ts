@@ -46,6 +46,7 @@ export const tabGroups: TabGroup[] = [
       { id: "mock", label: "Mock Interview" },
       { id: "bsa", label: "BSA Cheatsheet" },
       { id: "hoopp", label: "HOOPP Prep" },
+      { id: "canadian-tire", label: "Canadian Tire Prep" },
       { id: "apigee", label: "Apigee" },
       { id: "openapi", label: "OpenAPI 3.0" },
       { id: "coach", label: "Interview Coach" },
