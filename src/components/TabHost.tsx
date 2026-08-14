@@ -19,6 +19,7 @@ const ServicesTab = dynamic(() => import("@/components/tabs/ServicesTab"), { ssr
 const BsaCheatsheetTab = dynamic(() => import("@/components/tabs/BsaCheatsheetTab"), { ssr: false });
 const HoopPrepTab = dynamic(() => import("@/components/tabs/HoopPrepTab"), { ssr: false });
 const CanadianTirePrepTab = dynamic(() => import("@/components/tabs/CanadianTirePrepTab"), { ssr: false });
+const MastercardPrepTab = dynamic(() => import("@/components/tabs/MastercardPrepTab"), { ssr: false });
 const CanadaLifeTab = dynamic(() => import("@/components/tabs/CanadaLifeTab"), { ssr: false });
 const MockInterviewTab = dynamic(() => import("@/components/tabs/MockInterviewTab"), { ssr: false });
 const InterviewCoachTab = dynamic(() => import("@/components/tabs/InterviewCoachTab"), { ssr: false });
@@ -55,6 +56,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   bsa: BsaCheatsheetTab,
   hoopp: HoopPrepTab,
   "canadian-tire": CanadianTirePrepTab,
+  mastercard: MastercardPrepTab,
   apigee: ApigeeTab,
   openapi: OpenApiTab,
   coach: InterviewCoachTab,

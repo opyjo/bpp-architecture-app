@@ -9,7 +9,7 @@ import AssistantSidebar from "@/components/ai/AssistantSidebar";
 
 // Routes that render WITHOUT the app chrome — no header, nav, command palette,
 // or "Ask AI" sidebar. The login screen must show none of these.
-const BARE_ROUTES = new Set<string>(["/login"]);
+const BARE_ROUTES = new Set<string>(["/login", "/adejoke"]);
 
 export default function AppChrome({
   children,

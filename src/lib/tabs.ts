@@ -42,11 +42,13 @@ export const tabGroups: TabGroup[] = [
     label: "Interview Prep",
     tintClass: "tab-group-interview",
     tabs: [
+      { id: "adejoke", label: "Adejoke · Hamilton", href: "/adejoke" },
       { id: "canadalife", label: "Canada Life Cheatsheet" },
       { id: "mock", label: "Mock Interview" },
       { id: "bsa", label: "BSA Cheatsheet" },
       { id: "hoopp", label: "HOOPP Prep" },
       { id: "canadian-tire", label: "Canadian Tire Prep" },
+      { id: "mastercard", label: "Mastercard Prep" },
       { id: "apigee", label: "Apigee" },
       { id: "openapi", label: "OpenAPI 3.0" },
       { id: "coach", label: "Interview Coach" },
