@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { RefreshCcw, Target } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
+import { Check, RefreshCcw, Target } from "lucide-react";
 import SectionLayout from "@/components/ui/SectionLayout";
 import {
   anchorMindset,
@@ -16,6 +16,7 @@ import {
   l6BehavioralQuestions,
   levelCards,
   numbersCaution,
+  passChecklistGroups,
   positioningScripts,
   questionAnchorMap,
   readinessDimensions,
@@ -38,7 +39,7 @@ const sidebarGroups = [
   { label: "Stage 1", items: [{ id: "mc-stage1-tech", label: "Technical focus" }, { id: "mc-anchors", label: "Five core anchors" }, { id: "mc-anchor-map", label: "Question → anchor map" }, { id: "mc-case", label: "Business Identity case" }, { id: "mc-mindset", label: "Anchors over scripts" }, { id: "mc-technical", label: "Technical Q&A" }] },
   { label: "The Role", items: [{ id: "mc-role", label: "Role & JD breakdown" }, { id: "mc-domain", label: "Business Identity primer" }] },
   { label: "Evidence", items: [{ id: "mc-evidence", label: "Resume evidence map" }, { id: "mc-stars", label: "STAR stories" }, { id: "mc-l6-behavior", label: "L6 behavioural bank" }, { id: "mc-numbers", label: "Numbers cheat-sheet" }] },
-  { label: "Practice", items: [{ id: "mc-readiness", label: "Readiness scorecard" }, { id: "mc-drill", label: "Stage 1 rehearsal drill" }] },
+  { label: "Practice", items: [{ id: "mc-pass-checklist", label: "Pass checklist" }, { id: "mc-readiness", label: "Readiness scorecard" }, { id: "mc-drill", label: "Stage 1 rehearsal drill" }] },
   { label: "Reference", items: [{ id: "mc-pitch", label: "Answer skeletons" }, { id: "mc-screen", label: "Screening Q&A (complete)" }] },
   { label: "Logistics", items: [{ id: "mc-logistics", label: "Scheduling & role details" }, { id: "mc-close", label: "Compensation & close" }] },
 ];
@@ -52,6 +53,31 @@ const colorClasses: Record<PrepColor, string> = {
   coral: "border-l-arch-coral",
   gray: "border-l-arch-gray",
 };
+
+const CHECKLIST_STORAGE_KEY = "mastercard-pass-checklist-v1";
+const CHECKLIST_CHANGE_EVENT = "mastercard-pass-checklist-change";
+const EMPTY_CHECKLIST_SNAPSHOT = "{}";
+
+function subscribeToChecklist(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(CHECKLIST_CHANGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(CHECKLIST_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+function getChecklistSnapshot() {
+  try {
+    return window.localStorage.getItem(CHECKLIST_STORAGE_KEY) ?? EMPTY_CHECKLIST_SNAPSHOT;
+  } catch {
+    return EMPTY_CHECKLIST_SNAPSHOT;
+  }
+}
+
+function getChecklistServerSnapshot() {
+  return EMPTY_CHECKLIST_SNAPSHOT;
+}
 
 function Title({ children }: { children: React.ReactNode }) {
   return <h1 className="text-xl font-semibold tracking-tight text-arch-text mb-1.5">{children}</h1>;
@@ -120,6 +146,45 @@ function L6BehaviorBank() {
   return <div><Title>L6 behavioural question bank</Title><Intro>These questions test judgment, influence, self-awareness, and people leadership. “Evidence gap” means preparation is required; it is not permission to manufacture a story.</Intro><div className="space-y-3">{l6BehavioralQuestions.map((item, i) => <article key={item.question} className="rounded-xl border border-arch-border bg-arch-bg2 p-4"><div className="flex items-start gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-arch-purple/10 text-[10px] font-bold text-arch-purple">{i + 1}</span><div><h2 className="text-[12.5px] font-semibold text-arch-text">{item.question}</h2><div className="mt-1 text-[9.5px] uppercase tracking-wider text-arch-text3">{item.audience}</div></div></div><p className="mt-3 text-[11px] leading-[1.75] text-arch-text2">{item.answer}</p><div className="mt-3 rounded-md bg-arch-bg px-2.5 py-2 text-[10.5px] font-medium text-arch-amber">Recall cue: {item.cue}</div></article>)}</div></div>;
 }
 
+function PassChecklist() {
+  const serialized = useSyncExternalStore(subscribeToChecklist, getChecklistSnapshot, getChecklistServerSnapshot);
+  let checked: Record<string, boolean> = {};
+  try {
+    checked = JSON.parse(serialized) as Record<string, boolean>;
+  } catch {
+    checked = {};
+  }
+
+  const allItems = passChecklistGroups.flatMap((group) => group.items);
+  const completed = allItems.filter((item) => checked[item.id]).length;
+  const percent = Math.round((completed / allItems.length) * 100);
+  const status = percent === 100 ? "Checklist complete — run one final mock" : percent >= 80 ? "Final stretch" : percent >= 50 ? "Building readiness" : "Preparation in progress";
+
+  const save = (next: Record<string, boolean>) => {
+    try {
+      window.localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(next));
+      window.dispatchEvent(new Event(CHECKLIST_CHANGE_EVENT));
+    } catch {
+      // Leave saved state unchanged when browser storage is unavailable.
+    }
+  };
+
+  const reset = () => {
+    try {
+      window.localStorage.removeItem(CHECKLIST_STORAGE_KEY);
+      window.dispatchEvent(new Event(CHECKLIST_CHANGE_EVENT));
+    } catch {
+      // Ignore unavailable storage; no interview-prep data is affected.
+    }
+  };
+
+  return <div><Title>Interview pass checklist</Title><Intro>Work through this in order. Completion means you have met a strong readiness standard; it cannot guarantee an interview outcome.</Intro>
+    <div className="mb-5 rounded-xl border border-arch-border bg-arch-bg2 p-4"><div className="flex flex-wrap items-end justify-between gap-3"><div><div className="text-[10px] font-bold uppercase tracking-widest text-arch-text3">Overall progress</div><div className="mt-1 text-2xl font-semibold text-arch-text">{completed}<span className="text-sm font-normal text-arch-text3"> / {allItems.length}</span></div><div className="mt-1 text-[10.5px] font-medium text-arch-green">{status}</div></div><button type="button" onClick={reset} disabled={completed === 0} className="flex items-center gap-2 rounded-lg border border-arch-border px-3 py-2 text-[10.5px] font-medium text-arch-text2 transition-colors hover:bg-arch-bg disabled:cursor-not-allowed disabled:opacity-40"><RefreshCcw className="h-3.5 w-3.5" />Reset progress</button></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-arch-bg" role="progressbar" aria-label="Interview checklist progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><div className="h-full rounded-full bg-arch-green transition-[width] duration-300" style={{ width: `${percent}%` }} /></div><div className="mt-2 text-right text-[9.5px] font-medium text-arch-text3">{percent}%</div></div>
+    <div className="space-y-5">{passChecklistGroups.map((group) => { const groupDone = group.items.filter((item) => checked[item.id]).length; return <section key={group.title}><div className="mb-2 flex items-end justify-between gap-3"><div><h2 className="text-[12.5px] font-semibold text-arch-text">{group.title}</h2><p className="mt-1 text-[10.5px] text-arch-text3">{group.description}</p></div><div className="shrink-0 text-[10px] font-semibold text-arch-amber">{groupDone}/{group.items.length}</div></div><div className="space-y-2">{group.items.map((item) => { const isChecked = Boolean(checked[item.id]); return <button key={item.id} type="button" aria-pressed={isChecked} onClick={() => save({ ...checked, [item.id]: !isChecked })} className={`flex w-full gap-3 rounded-xl border p-3.5 text-left transition-colors ${isChecked ? "border-arch-green/35 bg-arch-green/5" : "border-arch-border bg-arch-bg2 hover:border-arch-blue/40"}`}><span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${isChecked ? "border-arch-green bg-arch-green text-white" : "border-arch-border2 bg-arch-bg"}`}>{isChecked && <Check className="h-3.5 w-3.5" />}</span><span><span className={`block text-[11px] font-medium leading-5 ${isChecked ? "text-arch-text3 line-through" : "text-arch-text"}`}>{item.task}</span><span className="mt-1 block text-[10px] leading-5 text-arch-text3"><strong className="font-semibold text-arch-amber">Done when:</strong> {item.evidence}</span></span></button>; })}</div></section>; })}</div>
+    <Callout label="Use it honestly">Check an item only when you can produce the stated evidence without reading. If a mock exposes a weakness, uncheck the item and repair it.</Callout>
+  </div>;
+}
+
 function ReadinessScorecard() {
   const [scores, setScores] = useState<Record<string, number>>({});
   const scoredCount = readinessDimensions.filter((dimension) => scores[dimension.id]).length;
@@ -171,6 +236,7 @@ export default function MastercardPrepTab() {
     if (activeId === "mc-screen") return <ScreeningBank />;
     if (activeId === "mc-numbers") return <NumbersSheet />;
     if (activeId === "mc-technical") return <TechnicalBank />;
+    if (activeId === "mc-pass-checklist") return <PassChecklist />;
     if (activeId === "mc-readiness") return <ReadinessScorecard />;
     if (activeId === "mc-logistics") return <div><Title>Scheduling &amp; role details</Title><Intro>The recruiter screen is complete. Watch for Stage 1 scheduling and keep the confirmed role details in one place.</Intro><Cards cards={recruiterCallLogistics} columns={1} /></div>;
     if (activeId === "mc-drill") return <Drill />;

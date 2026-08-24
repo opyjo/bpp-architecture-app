@@ -44,6 +44,16 @@ export interface ReadinessDimension {
   description: string;
 }
 
+export interface PassChecklistGroup {
+  title: string;
+  description: string;
+  items: Array<{
+    id: string;
+    task: string;
+    evidence: string;
+  }>;
+}
+
 export const interviewStages: InterviewStage[] = [
   { stage: "Screening", format: "30 min recruiter call", focus: "Background, compensation, role fit", status: "Complete" },
   { stage: "Stage 1", format: "Hiring Manager + Technical", focus: "Technical depth, leadership, delivery", status: "Upcoming" },
@@ -142,6 +152,64 @@ export const readinessDimensions: ReadinessDimension[] = [
   { id: "tradeoff", label: "Real trade-off", description: "I name alternatives, constraints, downstream risk, and why the selected option was appropriate." },
   { id: "outcome", label: "Credible outcome", description: "The result is specific, defensible, and connected to the original problem without inflated claims." },
   { id: "delivery", label: "Concise & conversational", description: "The answer leaves room for follow-ups and sounds responsive rather than memorized." },
+];
+
+export const passChecklistGroups: PassChecklistGroup[] = [
+  {
+    title: "1. Lock the evidence",
+    description: "Every important claim must survive detailed follow-up without exaggeration.",
+    items: [
+      { id: "verify-facts", task: "Verify every metric, date, title, and ownership claim against the resume and lived experience.", evidence: "No number or ownership verb needs qualification after you say it." },
+      { id: "anchor-depth", task: "Prepare a two-minute version and ten-minute evidence depth for all five core anchors.", evidence: "For each: problem, ownership, options, trade-off, stakeholders, validation, result, lesson." },
+      { id: "failure-story", task: "Prepare one genuine decision that went wrong or product outcome that underperformed.", evidence: "You can name the consequence, correction, learning, and changed behaviour without disguising a success." },
+      { id: "coaching-story", task: "Prepare one specific coaching or colleague-development example.", evidence: "A real person, your intervention, and observable before/after behaviour are clear." },
+      { id: "disagreement-proof", task: "Confirm the real engineering disagreement and Flow Runner delivery evidence you will use.", evidence: "You can explain both sides fairly and state the verified outcome." },
+    ],
+  },
+  {
+    title: "2. Prove technical product depth",
+    description: "Practise the decisions and diagrams, not implementation trivia.",
+    items: [
+      { id: "aeroplan-diagram", task: "Draw and narrate the Aeroplan flow from client through BFF/token exchange to the vendor boundary.", evidence: "You cover contract, trust boundaries, failure paths, security decision, and validation in under five minutes." },
+      { id: "api-lifecycle", task: "Explain your API lifecycle approach: discovery, contract, review, compatibility, errors, release, monitoring, and change.", evidence: "You can answer versioning and breaking-change follow-ups without drifting into code." },
+      { id: "contingency-state", task: "Draw Contingency Management's state model and explain invalid transitions, audit evidence, and recovery.", evidence: "Every important state has an owner, entry rule, exit rule, and failure path." },
+      { id: "identity-case", task: "Complete the Business Identity practice case on a blank page in 15 minutes.", evidence: "You clarify scope, identify users, draw the flow, define decisions, name risks, and select metrics." },
+      { id: "identity-tradeoffs", task: "Practise the core identity trade-offs and how you would make each decision.", evidence: "You can reason through friction vs fraud, automation vs review, privacy vs data coverage, and speed vs depth." },
+    ],
+  },
+  {
+    title: "3. Demonstrate the L6 bar",
+    description: "Show leadership, judgment, and influence—not only strong documentation.",
+    items: [
+      { id: "catalog-influence", task: "Deliver the Catalog conflict story with the competing interests and decision process explicit.", evidence: "The answer shows influence without authority and written alignment before build." },
+      { id: "say-no", task: "Prepare a clear example of saying no, challenging a mechanism, or negotiating scope.", evidence: "You protected the business outcome while refusing an unsafe or low-value path." },
+      { id: "ambiguity", task: "Deliver the Contingency ambiguity story starting with what was unknown—not with the finished artifacts.", evidence: "Observation, assumptions, discovery, decision, and outcome form a clear chain." },
+      { id: "dq-behaviour", task: "Prepare two examples that demonstrate Mastercard DQ through behaviour.", evidence: "Listening, inclusion, transparency, customer protection, integrity, or shared credit are visible without reciting values." },
+      { id: "manager-questions", task: "Prepare three manager-level questions about outcomes, decision rights, team friction, and L6 success.", evidence: "The questions help the interviewer imagine you operating in the role." },
+    ],
+  },
+  {
+    title: "4. Pass the mock-interview bar",
+    description: "Readiness is demonstrated in recorded, unrehearsed answers.",
+    items: [
+      { id: "technical-mock", task: "Complete one recorded technical-PM mock interview.", evidence: "It includes APIs, system boundaries, state/data flow, risk, and measurement." },
+      { id: "behavioural-mock", task: "Complete one recorded L6 behavioural mock interview.", evidence: "It covers conflict, failure, ambiguity, prioritization, coaching, and reflection." },
+      { id: "pressure-followups", task: "Complete one pressure round with at least three follow-ups per anchor.", evidence: "You remain inside the lived example and answer the new angle without switching to a script." },
+      { id: "five-scores", task: "Score five recorded answers with the readiness scorecard.", evidence: "All five average at least 4.0/5, with no dimension consistently below 3." },
+      { id: "timing", task: "Trim every unprompted answer that regularly exceeds two minutes.", evidence: "The direct answer arrives in the opening sentence and the interviewer has room to probe." },
+    ],
+  },
+  {
+    title: "5. Final 24-hour readiness",
+    description: "Protect clarity and energy once preparation is complete.",
+    items: [
+      { id: "confirm-format", task: "Confirm the Stage 1 format, participants, duration, and whether a case or whiteboard is included when the information is available.", evidence: "No preventable format surprise remains." },
+      { id: "final-cues", task: "Review only anchor cues, verified numbers, the question map, and your interviewer questions.", evidence: "You are recalling decisions rather than rereading paragraphs." },
+      { id: "logistics", task: "Test audio/video, meeting link, camera framing, notes setup, and a backup connection.", evidence: "The interview can start on time without troubleshooting." },
+      { id: "stop-content", task: "Stop adding new preparation material at least 24 hours before the interview.", evidence: "The final day is rehearsal, rest, and retrieval—not new research." },
+      { id: "delivery-state", task: "Protect sleep, food, water, and ten quiet minutes before joining.", evidence: "You enter calm enough to listen, pause, and adapt." },
+    ],
+  },
 ];
 
 export const roleCards: PrepCard[] = [
