@@ -1,0 +1,112 @@
+Manager, Product Management – Technical
+Mastercard
+Toronto, ON · Hybrid · Full-time · Req R-281813
+
+
+
+Our Purpose
+Mastercard powers economies and empowers people in 200+ countries and territories worldwide.
+Together with our customers, we’re helping build a sustainable economy where everyone can prosper.
+We support a wide range of digital payments choices, making transactions secure, simple, smart and
+accessible. Our technology and innovation, partnerships and networks combine to deliver a unique set of
+products and services that help people, businesses and governments realize their greatest potential.
+
+
+Title and Summary
+The Services team and solutions fuel growth for partners globally by providing cutting-edge capabilities in
+Customer Acquisition and Engagement, Security Solutions, Business and Market Insights, and Open
+Banking. Operating in a fast-paced, agile environment, our teams deliver end-to-end solutions for a
+diverse global customer base including retailers, airlines, hotels, tourism agencies, public sector entities,
+restaurants, consumer goods, and telecom companies.
+
+Mastercard Identity, within the Security Solutions organization, leads the development of products and
+services that enable global commerce, advance financial inclusion, prevent fraud, and power seamless
+digital experiences. As part of Mastercard Identity, the Business Identity team is responsible for building
+and managing products, programs, and services focused on risk assessment and business entity
+verification. The team delivers critical value across the ecosystem, helping to combat emerging fraud
+threats and ensure trusted, secure commerce across the network.
+
+The Manager, Product Management – Technical, plays a key role in delivering scalable, interoperable
+solutions that enable businesses to be securely identified and trusted across digital ecosystems. This role
+is responsible for translating product strategy into well-defined technical requirements and driving
+execution across cross-functional teams including engineering, data science, commercialization, and
+legal. The Manager partners closely with internal stakeholders and external customers to refine
+requirements, prioritize the product backlog, and deliver high-quality Business Identity capabilities that
+enhance onboarding, reduce fraud, and support regulatory compliance. With a strong focus on execution,
+technical rigor, and customer impact, the Manager ensures timely delivery of features and continuous
+improvement of product capabilities aligned with Mastercard’s broader vision for digital trust infrastructure.
+
+
+Role
+The Manager, Product Manager - Technical will provide detailed technical analysis of product or
+application hardware and software to ensure that business and functional requirements can be met.
+
+• Translate product roadmap from high-level strategy into detailed technical requirements, planning, and
+   prioritization.
+• Analyze system requirements and elaborate them into features, user stories, and clear acceptance
+   criteria within an Agile framework.
+• Quickly develop a strong understanding of complex platform systems and contribute effectively.
+• Elicit and define customer needs and business requirements, bringing clarity, structured thinking, and
+    measurable product KPIs and metrics.
+• Design features through prototypes and experiments, decompose requirements into user stories, and
+    prioritize the product backlog.
+• Collaborate closely with engineering and product teams to assess feasibility, align dependencies, and
+    drive delivery of high-quality solutions.
+• Continuously monitor feature development at the feature and epic levels to ensure progress and
+    alignment.
+•   Review product demos with development teams against defined acceptance criteria.
+•   Identify gaps in requirements and manage dependencies across teams.
+•   Understand and evaluate technical implications and impacts of product requirements.
+•   Lead joint application design sessions and technical story reviews.
+•   Collaborate with software engineers to ensure strong user story comprehension and execution.
+•   Partner with quality engineering teams to validate expected outcomes and product quality.
+•   Work closely with stakeholders and product partners to gather requirements and maintain a
+    well-prioritized backlog.
+• Regularly engage stakeholders to understand evolving needs and incorporate feedback into the
+    backlog.
+•   Facilitate product demos, handoffs, and post-launch reviews with stakeholders.
+•   Drive continuous improvement by incorporating learnings from releases and feedback loops.
+•   Clearly document requirements using rules, workflows, diagrams, and state transition models.
+•   Ensure timely identification and remediation of vulnerabilities and technical risks.
+•   Support regulatory and compliance requirements, including audit evidence preparation and product risk
+    assessments.
+
+
+All About You / Experience
+• Successfully launched complex projects as product owner, working closely with engineering teams
+    from ideation to production.
+• Excellent written and verbal communication skills, especially when leading technical discussions,
+    trade-off decisions, and communicating and mitigating risks.
+• Extensive experience as a product owner managing feature backlog and roadmap.
+• Strong analytical and problem-solving skills to simplify complex requirements with detailed and clear
+    documentation, including functional and non-functional requirements and API specifications.
+•   Experience with agile development methodologies; SAFe Agile methodology is a plus.
+•   Strong attention to detail, self-motivated, and operates with a sense of urgency.
+•   Experience with estimating work deliverables and managing project status is a plus.
+•   Working knowledge of identity, digital payments, and the security landscape is an advantage.
+•   Bachelor’s degree or equivalent experience; advanced or master’s degree is an advantage.
+•   Flexible work hours to accommodate teams in different time zones across the globe.
+•   Ability to travel up to 15%.
+Corporate Security Responsibility
+All activities involving access to Mastercard assets, information, and networks comes with an inherent risk
+to the organization and, therefore, it is expected that every person working for, or on behalf of, Mastercard
+is responsible for information security and must:
+
+•   Abide by Mastercard’s security policies and practices;
+•   Ensure the confidentiality and integrity of the information being accessed;
+•   Report any suspected information security violation or breach, and
+•   Complete all periodic mandatory security trainings in accordance with Mastercard’s guidelines.
+
+
+Compensation
+In line with Mastercard’s total compensation philosophy and assuming that the job will be performed in
+Canada, the successful candidate will be offered a competitive pay based on location, experience and
+other qualifications for the role and may be eligible to participate in a discretionary annual incentive
+program. This posting reflects one or more current openings on our team.
+
+Pay Range — Toronto, Canada: $121,000 – $169,000 CAD
+
+
+Source: LinkedIn job posting (Manager, Product Management – Technical, Mastercard, Toronto, ON). Req R-281813.
+Screening call scheduled Thursday, 12:30 PM ET.
+

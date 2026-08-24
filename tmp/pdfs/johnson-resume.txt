@@ -1,0 +1,216 @@
+                                               Johnson Ojo
+                                   Senior Technical Product Manager
+                                  johnsonoojo@gmail.com | (437) 778-5339 | Toronto, ON
+
+
+
+PROFESSIONAL SUMMARY
+
+Senior Technical Product Manager with 7+ years of hands-on experience driving end-to-end delivery of SaaS platforms,
+API integrations, AI-powered workflows, and data products across enterprise environments. Uniquely positioned at the
+intersection of product ownership, software engineering, and cross-functional program leadership — having personally
+defined product vision, owned backlogs, written acceptance criteria, managed vendor SOW deliverables, and shipped
+production systems at Bell Canada and the Canada Revenue Agency serving millions of users. Proven ability to
+translate complex technical requirements into structured roadmaps, coordinate distributed engineering and operations
+teams, and manage multiple concurrent workstreams — including hands-on experience with MCP (Model Context
+Protocol), AI workflow automation, GraphQL and REST APIs, and microfrontend platform architecture. Brings a
+governance-first approach to AI product development and a track record of building scalable internal tools, eliminating
+operational bottlenecks, and delivering zero-regression launches on schedule. Eager to partner with Guidepoint's
+Product and Engineering leadership to accelerate execution across AI Platform and Data Products initiatives.
+
+
+HIGHLIGHTS OF QUALIFICATIONS
+
+'   7+ years of technical product ownership experience spanning AI workflows, MCP (Model Context Protocol),
+    REST and GraphQL APIs, SaaS platforms, and internal data products at Bell Canada and Canada Revenue
+    Agency
+'   Hands-on experience defining product scope, writing acceptance criteria, and managing delivery for AI-powered
+    tools including an MR Review Automation system (AI flags, human decides governance model) and an AI
+    Playwright MCP Testing assistant — reducing review cycles and accelerating E2E test coverage
+'   Demonstrated program delivery leadership across 6+ concurrent workstreams at Bell Canada, maintaining
+    roadmap alignment across front-end, back-end, billing, operations, marketing, compliance, and vendor teams
+'   Deep experience with API product management including REST, GraphQL (AWS AppSync), tRPC,
+    OAuth/token-based authentication flows, OpenAPI type generation, and vendor integration — directly mapping to
+    Guidepoint's API and data platform priorities
+'   Proven stakeholder management across Product, Engineering, Operations, Compliance, and Sales — including
+    executive status reporting, SOW management, SLA tracking, and cross-functional launch coordination
+'   Experience with Agile/Scrum methodologies, Jira, Confluence, and CI/CD pipeline coordination across
+    multi-environment deployments (dev, UAT, production) using Docker and GitLab CI
+'   Track record of building scalable internal tools that eliminate engineering escalations, empower non-technical
+    users, and create single systems of record — core capabilities for Guidepoint's data products mandate
+'   Operational readiness and go-to-market launch experience across consumer-facing platforms, internal admin tools,
+    and strategic third-party integrations — including Bell's Aeroplan loyalty partnership and a co-branded card
+    launch
+'   Background in financial controls, regulatory compliance, and data integrity — enabling credible engagement with
+    Guidepoint's Compliance and Client Service stakeholders
+'   CPA (CPA Ontario) and ACCA-qualified — providing structured analytical rigour and risk-prioritisation
+    discipline that strengthens product decision-making and executive communication
+
+
+SKILLS
+
+Product Management & Roadmap Planning: Product Roadmap Development, Backlog Ownership & Prioritisation,
+Acceptance Criteria Definition, Release Planning, Launch Readiness,
+Go-to-Market Coordination, Success Metrics Definition, Feature
+Sequencing, Scope Management
+Program & Project Delivery: Cross-Functional Program Management, Dependency & Risk Tracking,
+Multi-Workstream Execution, Milestone Management, Agile/Scrum, Sprint Planning,
+Jira, Confluence, CI/CD Pipeline Coordination
+AI & Platform Products: AI Workflow Automation, MCP (Model Context Protocol), AI-Assisted QA (Playwright),
+AI Governance Frameworks, Microfrontend Architecture, Module Federation, SaaS Platform
+Delivery, Feature Flag Management (Unleash/OpenFeature)
+API & Integration Management: REST API Product Management, GraphQL (AWS AppSync), tRPC, OAuth &
+Token-Based Authentication, OpenAPI / Type Generation, Vendor Integration
+Management, SOW Management, Third-Party Onboarding & UAT
+Data Products & Analytics: Data Integrity & Reconciliation, Adobe Analytics / Omniture, PostgreSQL, Prisma ORM,
+Drizzle ORM, State Machine Architecture, Reporting & Export Workflows
+Stakeholder Management & Communication: Executive Status Reporting, Cross-Functional Alignment, Vendor &
+Partner Coordination, Compliance Stakeholder Engagement, Decision
+Documentation, Roadmap Reviews
+Technical Proficiencies: TypeScript, React / Next.js, Node.js, Docker, GitLab CI, AWS ECS, Zod (API Validation),
+Jest, Playwright (E2E), WCAG 2.1 AA, Axe-core
+Financial & Regulatory Acumen: Financial Controls, Regulatory Compliance, Risk Assessment & Prioritisation,
+Settlement & Reconciliation, Chargeback Lifecycle Management, Data Validation
+Standards
+
+
+PROFESSIONAL EXPERIENCE
+
+Bell Canada — Mississauga, ON
+Senior Technical Product Manager                                                                        Jan 2023 – Present
+• Defined and owned the product vision for the Subscription Manager platform — identifying call-centre volume as
+   the core business problem and positioning self-serve subscription control as the solution. Managed the full backlog
+   across marketing and operations stakeholders, authored acceptance criteria for every sprint, coordinated
+   multi-environment deployments (dev, UAT 1–5, production) across Dockerised AWS ECS infrastructure, and
+   tracked post-launch adoption through custom Adobe Analytics event tracking utilities — delivering measurable
+   call-centre deflection and establishing Analytics dashboards as marketing's primary behavioural intelligence tool,
+   serving millions of Canadian subscribers across Netflix, Disney+, and Crave partnerships.
+• Scoped and delivered an AI MR Review Automation system to address reviewer fatigue and inconsistent quality
+   gates across 6 concurrent engineering workstreams. Defined the product boundary — what the AI should flag
+   versus ignore — and established a non-negotiable governance principle: AI flags, human decides. Managed
+   stakeholder alignment across engineering leads, built an iterative feedback loop so reviewer signal continuously
+   improved the model, and tracked round-trip review cycle time as the primary success metric. The tool was adopted
+   organically post-launch, reducing time-to-first-review and eliminating redundant review cycles without mandating
+   usage.
+• Owned the AI Playwright MCP Testing product — framing E2E test coverage deprioritisation under sprint pressure
+   as a systemic product quality risk. Scoped the AI assistant's role (accelerator, not replacement), identified which
+   high-value user journeys to prioritise, enforced a human review gate as a launch non-negotiable, and tracked
+   AI-generated test flakiness rate against manually written benchmarks. Delivered an MCP-integrated QA capability
+   that produced comparable flakiness rates to human-authored tests while accelerating coverage of critical journeys
+   without increasing sprint load.
+• Delivered the Membership Management integration product — a strategically critical Bell–Aeroplan loyalty
+   partnership with direct revenue and retention implications. Owned the full integration product scope: seamless
+   loyalty account linking, security token-exchange architecture (mitigating query-param fraud), vendor delivery
+   against SOW, and TypeScript type contracts auto-generated from OpenAPI YAML spec as a quality gate. Tracked
+   SLA performance throughout delivery and launched with zero post-launch integration regressions.
+• Managed the Contingency Management internal operations tool — eliminating a structural dependency where
+   operations teams escalated every failed subscription order to engineering. Defined the product as a self-serve
+   diagnostic platform, owned both MFE and backend API scope (RESTful Node.js/Express with PostgreSQL via
+   Drizzle ORM), prioritised data integrity edge cases, and established server-side state machine validation as the
+    quality standard for transaction status transitions. Outcome: operations teams independently investigate and resolve
+    order failures without developer involvement.
+•   Coordinated delivery of the UPCM Dashboard — Bell's single system of record for all promotional code and
+    marketing operations. As the full-stack platform hosting Catalog Management, Policy Rules, and Contract Manager
+    MFEs via Module Federation, this initiative required managing dependencies across four microfrontend teams
+    simultaneously, aligning on tRPC end-to-end type safety standards, and sequencing database schema migrations
+    (Prisma/PostgreSQL) alongside feature releases. The decoupled state machine architecture delivered to marketing
+    gave them flexibility to stage promotional codes in advance — a direct operational efficiency gain.
+•   Established scalable Agile delivery processes across 6+ concurrent product workstreams at Bell, facilitating sprint
+    planning, dependency mapping, cross-functional stand-ups, and retrospectives. Coordinated front-end, back-end,
+    billing, operations, marketing, and compliance stakeholders throughout the development lifecycle — aligning teams
+    on roadmap priorities, documenting decisions, and driving action items to resolution. Mentored 3 junior developers
+    in product quality standards, acceptance criteria interpretation, and testing discipline.
+
+Canada Revenue Agency — Hamilton, ON
+Technical Product Analyst                                                                           Oct 2020 – Dec 2022
+• Defined the product vision and requirements for the Hamilton Intranet Application — a self-serve publishing
+   platform designed to eliminate a structural bottleneck where non-technical CRA staff raised developer tickets for
+   routine content updates. Authored security acceptance criteria to meet government-grade standards, validated that
+   the headless CMS architecture addressed real user needs, and coordinated delivery across distributed teams using
+   Jira and Confluence. Delivered a platform where non-technical staff publish content independently without
+   developer involvement — removing a recurring operational dependency.
+• Framed WCAG 2.1 AA compliance as a product quality problem rather than a compliance checkbox — the users
+   unable to access CRA's public-facing properties were Canadians relying on assistive technology, creating both legal
+   and ethical obligations. Defined the audit scope, prioritised remediation items by severity and user impact, and
+   embedded Axe-core into the CI/CD pipeline to transform accessibility from a periodic audit into a continuous
+   product quality standard. Achieved WCAG AA compliance across all public-facing properties with regression
+   prevention built into CI — eliminating the need for manual accessibility audits.
+• Led the Enterprise Client Portal Redesign — identifying mobile users as an underserved and growing segment
+   experiencing a broken product experience. Defined measurable redesign goals (mobile engagement, page speed,
+   accessibility compliance), prioritised mobile-first architecture decisions, established WCAG AA as a hard launch
+   requirement, and validated outcomes against tracked improvement figures. Delivered a 40% increase in mobile
+   engagement, 35% improvement on Google PageSpeed Insights, and full WCAG AA compliance — demonstrating
+   a product-led approach to platform modernisation.
+• Collaborated with a globally distributed engineering team across time zones using Slack, Jira, and Confluence —
+   coordinating sprint planning, feature delivery, and release readiness across multiple concurrent projects. Led
+   bi-weekly sprint planning meetings that produced a 20% increase in team productivity by aligning sprint
+   commitments to clearly defined acceptance criteria and roadmap priorities. Applied CI/CD pipeline coordination
+   and modular deployment practices to improve code quality and deployment efficiency across all delivered projects.
+
+Genpact — Mississauga, ON
+Technical Product Associate                                                                           Jan 2018 – Sept 2020
+• Defined the product vision for the Insurance Claims Dashboard — diagnosing claims agent context-switching
+   across multiple disconnected systems as a product fragmentation problem with measurable productivity cost.
+   Worked with operations stakeholders to prioritise which systems to consolidate first, set async state management
+   requirements as a technical quality standard, and validated success through user retention tracking. Replaced
+   multiple disconnected systems with a unified agent interface that delivered a 20% increase in user retention.
+• Scoped and executed a Cross-Browser Compatibility Audit — framing the absence of a systematic cross-browser
+   QA process as a product quality gate gap that allowed defects to reach end users undetected. Prioritised IE11 fixes
+   by user impact, defined the QA gate criteria that would prevent regressions, and embedded the gate into the release
+   process for all future releases. Delivered a repeatable, auditable quality standard that protected cross-browser
+   experience across major browser versions.
+•   Spearheaded the responsive redesign of the main web application, reworking CSS and JavaScript architecture to
+    deliver optimal viewing across devices — resulting in a 40% increase in mobile user engagement and a 35%
+    improvement in Google PageSpeed Insights score through image compression, minification, and lazy loading.
+    Developed and integrated multiple RESTful APIs with AJAX for asynchronous data loading, improving application
+    interactivity and contributing to a 20% increase in user retention rates.
+
+CIBC — Ontario, Canada
+Technical Product Developer                                                                          Mar 2017 – Dec 2017
+• Defined the scope of a Financial Controls Gap Analysis around regulatory requirements and risk severity —
+   producing a prioritised remediation plan (not a compliance checklist) that directed the finance team lead to the
+   highest-risk gaps first. Structured findings in a decision-enabling format that categorised risk gaps by severity,
+   ensuring the output drove action rather than sitting as a report.
+• Designed and delivered a Regulatory Reconciliation Tool to eliminate a two-day manual reconciliation cycle
+   generating recurring errors. Scoped the tool as a semi-automated Excel solution targeting the specific class of errors
+   causing rework, validated success by measuring cycle time reduction, and delivered a process that reduced the
+   reconciliation cycle from 2 days to half a day — eliminating the targeted error class entirely.
+• Owned the process documentation workstream for a Financial Reporting System Migration — treating
+   documentation not as a deliverable but as the baseline configuration for the new system. Coordinated across teams
+   to capture workflow variations, defined 'done' for each workflow, and ensured templates were directly usable by
+   system configurators. Supported on-time cutover with standardised templates adopted as the new system baseline.
+
+Skye Bank Plc — Nigeria
+IT Systems & Technical Support Analyst                                                                 Jan 2014 – Feb 2017
+• Owned the daily settlement and reconciliation process as a zero-tolerance operational product — where a missed
+    discrepancy compounds into material financial exposure. Defined process standards, enforced cut-off deadlines, and
+    investigated every discrepancy as a data integrity problem with an identified root cause. Achieved zero missed
+    deadlines across the full settlement cycle and established zero-defect operational discipline as the team standard.
+• Managed the full chargeback dispute lifecycle across Visa and Mastercard networks — where mandatory response
+    windows make a missed deadline a permanent forfeiture of recovery rights. Prioritised the case queue by deadline
+    proximity and recovery value, maintained documentation standards for both networks, and achieved zero missed
+    dispute deadlines across the full programme tenure.
+• Led operational readiness for a co-branded card launch — identifying gaps between product design and what
+    operations could execute on day one, coordinating IT system parameter changes before go-live, and documenting
+    post-launch operating procedures. Owned the issuance process as a zero-error standard (cardholder data errors
+    create fraud and regulatory exposure), delivered the launch on time with zero issuance errors, and was selected to
+    represent the organisation at the Mastercard Dubai conference.
+
+
+EDUCATION
+
+Diploma in Computer Programming
+Algonquin College, Ottawa, ON
+Bachelor of Science
+Obafemi Awolowo University, Nigeria
+
+
+PROFESSIONAL DESIGNATIONS
+
+Chartered Professional Accountant (CPA)
+CPA Ontario, Ontario, Canada
+Association of Chartered Certified Accountants (ACCA)
+ACCA, UK / Global
+Advanced Diploma in Accounting and Business
+ACCA Pathway
+
