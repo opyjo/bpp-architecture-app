@@ -8,6 +8,7 @@ export interface PrepCard {
 }
 
 export interface InterviewQuestion {
+  key?: string;
   question: string;
   audience: string;
   answer: string;
@@ -69,13 +70,13 @@ export interface StarStory {
 export const interviewStages: InterviewStage[] = [
   { stage: "Recruiter screen", format: "Recruiter conversation", focus: "Background, motivation, compensation, and role fit", status: "Complete" },
   { stage: "Stage 1", format: "Hiring manager chat", focus: "Résumé, past projects, motivations, and behavioural judgment", status: "Complete" },
-  { stage: "Stage 2", format: "Techno-managerial deep dive", focus: "Agile methods, Jira, product delivery, and technical fluency", status: "Upcoming" },
+  { stage: "Stage 2", format: "Confirmed 45-minute Teams interview", focus: "Michael Cacho; Identity Verification product development, fraud/data products, and technical delivery", status: "Upcoming" },
   { stage: "Stage 3", format: "Bar raiser: leadership", focus: "Feature-launch scenario, prioritisation, and cross-functional alignment", status: "Upcoming" },
   { stage: "Stage 4", format: "Bar raiser: program leadership", focus: "Resume depth, capacity, PI planning, metrics, and resilience", status: "Upcoming" },
 ];
 
 export const focusCards: PrepCard[] = [
-  { title: "Current interview position", body: "The recruiter screen and Stage 1 hiring-manager chat are complete. The remaining virtual stages are the techno-managerial deep dive, leadership bar raiser, and program-leadership bar raiser. Expect the same résumé stories to be tested at greater depth each time.", cue: "Next: Stage 2 technical craft → Stage 3 leadership → Stage 4 depth", color: "blue" },
+  { title: "Stage 1 complete — Stage 2 confirmed", body: "The recruiter screen and Stage 1 hiring-manager chat are done. Stage 2 is confirmed for 28 August 2026, 11:30 a.m.–12:15 p.m. Toronto time with Michael Cacho on Teams. His supplied professional profile makes Identity Verification product development, fraud/data products, microservices, testing, latency, security, and product adoption especially relevant—but the invitation still does not prescribe exact questions.", cue: "Verified interviewer themes; exact interview questions remain unknown", color: "blue" },
   { title: "One résumé, four levels of depth", body: "Do not find a new story for every question. Know the problem, your ownership, stakeholders, trade-offs, technical decisions, measures, and lesson for each anchor story. The bar-raiser stages will probe until the detail either holds up or does not.", cue: "Problem → decision → trade-off → result → lesson", color: "purple" },
   { title: "Keep every answer résumé-true", body: "Use only examples and results you can defend from your submitted résumé and lived experience. Prepare genuine examples for a failure, setback, difficult stakeholder, and difficult manager conversation before the interview; do not turn a success into invented conflict.", cue: "Credibility beats a polished story", color: "coral" },
   { title: "Clarify team-specific Agile language", body: "Agile, Scrum, Kanban, Jira, capacity planning, and PI planning are fair preparation areas. But terms such as “3-3-5” are not universal Agile standards. If asked, clarify the team’s meaning first, then explain the principles and delivery mechanics you use.", cue: "Clarify context before answering a non-standard term", color: "amber" },
@@ -99,8 +100,8 @@ export const mastercardIntelligenceCards: PrepCard[] = [
   },
   {
     title: "What the culture signals mean in practice",
-    body: "Mastercard grounds ethical operations in decency, integrity, and respect, supported by trust, partnership, agility, and initiative. Demonstrate them through behaviour: make risks transparent, share credit, listen to constraints, move with evidence, and protect customers even when it creates delivery friction.",
-    cue: "Show values through choices, not a memorised list", color: "purple",
+    body: "The Mastercard Way is Create value, Grow together, and Move fast, grounded in doing the right thing. Demonstrate those principles through choices: build scalable outcomes, bring in different perspectives, prioritise what matters, learn and pivot, own the result, and make customer or fraud risk transparent.",
+    cue: "Create value · Grow together · Move fast · Do the right thing", color: "purple",
   },
   {
     title: "What the company says it assesses",
@@ -132,11 +133,265 @@ export const mastercardQuestionsToAsk: PrepCard[] = [
 ];
 
 export const mastercardReferences: ReferenceLink[] = [
-  { label: "About Mastercard", href: "https://www.mastercard.com/global/en/for-the-world/about-us.html", note: "Purpose, global reach, payments, and value-added services." },
-  { label: "Mastercard Identity", href: "https://www.mastercard.com/global/en/business/cybersecurity-fraud-prevention/identity.html", note: "Identity, fraud, customer experience, and trust." },
+  { label: "2025 Form 10-K · official filing", href: "https://www.sec.gov/Archives/edgar/data/1141391/000114139126000013/ma-20251231.htm", note: "Business model, strategy, revenue mix, metrics, competitors, risks, and regulation." },
+  { label: "Q2 2026 earnings review · official", href: "https://www.mastercard.com/global/en/news-and-trends/stories/2026/earnings-review-q2-2026.html", note: "Current signals: agentic commerce, digital assets, and merchant trust." },
+  { label: "About Mastercard · official", href: "https://www.mastercard.com/global/en/for-the-world/about-us.html", note: "Purpose, global reach, and the Mastercard Way." },
+  { label: "Mastercard Identity · official", href: "https://www.mastercard.com/global/en/business/cybersecurity-fraud-prevention/identity.html", note: "Identity, fraud, customer experience, and trust." },
+  { label: "Identity Insights for Transactions · official", href: "https://www.mastercard.com/us/en/business/cybersecurity-fraud-prevention/identity/insights/identity-insights-for-transactions.html", note: "Single-API identity, device, and payment insights for risk decisions." },
+  { label: "Identity Review 360 · official", href: "https://www.mastercard.com/us/en/business/cybersecurity-fraud-prevention/identity/solutions/identity-review-360.html", note: "Explainable signals, manual review, false positives, and workflow integration." },
+  { label: "Mastercard Developers · official", href: "https://developer.mastercard.com/products", note: "Public product catalogue, API documentation, and sandbox entry points." },
+  { label: "2024 Impact Report · official", href: "https://www.mastercard.com/content/dam/mccom/shared/for-the-world/corporate-impact/pdfs/mastercard-2024-impact-report.pdf", note: "Mastercard Way behaviours and culture expectations." },
+  { label: "Brand history · official", href: "https://www.mastercard.com/brandcenter/us/en/brand-history.html", note: "From the 1966 Interbank Card Association to a global technology platform." },
+  { label: "Management Committee · official", href: "https://investor.mastercard.com/corporate-governance/management-committee/default.aspx", note: "Current leadership and Michael Miebach’s role in the platform strategy." },
+  { label: "Michael Cacho · professional profile", href: "https://ca.linkedin.com/in/mcacho", note: "Interviewer context supplied by the candidate: Director, Product Development; Identity Verification, fraud/data products, microservices, testing, latency, and security." },
+  { label: "Glassdoor culture signals · outside source", href: "https://www.glassdoor.ca/Reviews/Mastercard-Reviews-E3677.htm", note: "Anonymous employee reviews; useful as directional evidence, never as universal truth." },
+  { label: "Indeed culture signals · outside source", href: "https://www.indeed.com/cmp/Mastercard/reviews?fcountry=ALL&ftopic=culture", note: "Anonymous employee reviews on learning, flexibility, management, and advancement." },
   { label: "Mastercard hiring process", href: "https://careers.mastercard.com/us/en/mastercards-hiring-process", note: "Official interview expectations and stages." },
   { label: "Interview tips", href: "https://careers.mastercard.com/us/en/interview-tips", note: "Official guidance for preparation and interview conduct." },
-  { label: "Culture and values", href: "https://www.mastercard.com/global/en/for-the-world/about-us/mastercard-human-rights-statement.html", note: "Decency, integrity, respect, trust, partnership, agility, and initiative." },
+];
+
+export const mastercardProductResearch: PrepCard[] = [
+  {
+    title: "Product map: three connected layers",
+    body: "1) Payment network: authorisation, clearing, settlement, tokenisation, and related network capabilities. 2) New flows: commercial payments, Mastercard Move, account-to-account and real-time payments. 3) Services and other solutions: identity, cybersecurity, fraud/risk, authentication, data insights, consulting, processing, and gateways. The layers reinforce one another rather than operating as isolated products.",
+    cue: "Network → new flows → services", color: "blue",
+  },
+  {
+    title: "Customers and users: do not call Mastercard a bank",
+    body: "Mastercard’s direct customers are mainly issuers, acquirers, merchants, governments, fintechs, digital partners, and businesses. Consumers experience Mastercard through those partners. Mastercard generally does not issue cards, set consumer interest rates, or own the cardholder account. For Business Identity, likely users include onboarding, risk, fraud, compliance, operations, and developer teams at customer organisations.",
+    cue: "B2B/B2B2C platform; cardholders are usually not the direct customer", color: "teal",
+  },
+  {
+    title: "Revenue model and scale",
+    body: "For 2025, Mastercard reported $32.8B in net revenue: $19.5B from its payment network and $13.3B from value-added services and solutions. Network revenue is driven by payment volume, cross-border activity, and switched transactions; services are sold through transaction-based or fixed fees. Mastercard also reported $10.6T in gross dollar volume and 175.5B switched transactions.",
+    cue: "$32.8B revenue · 59% network / 41% services · 175.5B switched transactions", color: "green",
+  },
+  {
+    title: "Competitors and differentiation",
+    body: "Card-network competitors include Visa, American Express, UnionPay, JCB, and Discover. Broader competition includes domestic debit networks, real-time account-to-account systems, wallets, fintechs, government-backed digital infrastructure, and digital currencies. Mastercard differentiates through global acceptance, trusted infrastructure, multi-rail capabilities, partner distribution, and a data-and-services portfolio that can improve fraud, identity, and approval decisions.",
+    cue: "Competes with networks and alternative rails—not only Visa", color: "purple",
+  },
+  {
+    title: "What customers value—and where friction appears",
+    body: "The value proposition is global reach, reliability, fraud intelligence, richer decisions, and APIs that augment existing workflows. The recurring product tensions are false declines versus fraud loss, fast onboarding versus sufficient verification, automation versus explainability, and global scale versus local data/regulation. Integration effort, manual-review queues, unclear reason codes, and inconsistent geographic coverage are useful discovery hypotheses—not facts to assert about this product.",
+    cue: "Trust, conversion, loss, explainability, integration", color: "amber",
+  },
+  {
+    title: "Use the product before the interview",
+    body: "Business Identity is an enterprise product, so a cardholder-style free trial may not exist. Instead: create a Mastercard Developers account, inspect the product catalogue and Identity API documentation, use an available sandbox or Postman collection, trace the request/response and error model, and compare that experience with the public Identity Review 360 workflow. Record one thing that builds developer confidence and one question about onboarding or observability.",
+    cue: "Developer portal → API docs → sandbox → evidence-based observation", color: "coral",
+  },
+  {
+    title: "Current news worth knowing · August 2026",
+    body: "Mastercard’s current strategic signals include Agent Pay and agentic commerce, Merchant Trust Services, digital assets and stablecoin infrastructure, and continued identity/fraud investment. Your point of view: autonomous agents, machines, and new rails increase the need to verify which business or actor is legitimate, what it is authorised to do, and how a decision can be audited.",
+    cue: "New commerce models increase the value of trusted identity", color: "blue",
+  },
+];
+
+export const mastercardStrategyResearch: PrepCard[] = [
+  {
+    title: "Purpose and strategic architecture",
+    body: "Mastercard’s stated purpose is to power economies and empower people. Its 2025 filing describes three priorities: consumer payments; commercial and new payment flows; and services and other solutions. The corporate strategy is to grow the core, diversify customers and geographies, and build for the future, enabled by technology, Data & AI, brand, people, and franchise trust.",
+    cue: "Grow core · diversify · build the future", color: "blue",
+  },
+  {
+    title: "Your interview-ready strategic thesis",
+    body: "Mastercard’s moat is not only the card rail. Network scale generates trusted interactions and data; that data improves identity, security, authentication, and insights; those services help win customer relationships and additional volume; and the resulting activity improves the network and services again. Business Identity extends that trust loop from people and transactions to business entities.",
+    cue: "Network → data → services → customer value → more network activity", color: "teal",
+  },
+  {
+    title: "Strengths",
+    body: "Global network scale and acceptance; a trusted brand and franchise model; large proprietary datasets and AI capabilities; strong partner distribution; resilient infrastructure; and a services business that grew faster than the network in 2025. The combination gives Mastercard several ways to create value around a payment, not only during switching.",
+    cue: "Scale + trust + data + distribution + resilient technology", color: "green",
+  },
+  {
+    title: "Weaknesses and internal challenges",
+    body: "A large B2B platform can have long sales, integration, and decision cycles; Mastercard has less direct control over the end-user experience than a consumer platform; local data quality and regulation complicate global identity products; acquisitions and product lines must be integrated coherently; and its five largest customers represented 21% of 2025 net revenue. Treat these as structural constraints to manage, not interview criticism.",
+    cue: "Complex ecosystem, indirect UX ownership, local variation, concentration", color: "amber",
+  },
+  {
+    title: "Opportunities",
+    body: "Digitisation of cash and commercial flows; KYB and business onboarding; AI-assisted and agentic commerce; account-to-account and real-time payments; tokenised deposits, stablecoins, and digital assets; cybersecurity; and services sold beyond Mastercard-card transactions. Business Identity can become reusable trust infrastructure across several of these flows.",
+    cue: "Trust layer across cards, accounts, agents, and digital assets", color: "purple",
+  },
+  {
+    title: "Threats",
+    body: "Visa and other global networks; domestic and real-time rails such as UPI- or Pix-like systems; wallets and fintech disintermediation; government-backed digital infrastructure or currencies; cyberattacks and outages; privacy and AI regulation; merchant-fee and interchange scrutiny; pricing pressure; and geopolitical or cross-border volatility.",
+    cue: "Competition + regulation + resiliency + trust", color: "coral",
+  },
+  {
+    title: "Where the company is heading",
+    body: "Expect Mastercard to remain a network while becoming more rail-agnostic and service-led: securing identities and devices, orchestrating movement across cards and accounts, enabling commercial and machine-to-machine flows, and monetising decision intelligence. A sensible product direction is portable, explainable business trust that can be consumed through APIs and operational tools across channels.",
+    cue: "From card network to trusted commerce platform", color: "blue",
+  },
+];
+
+export const mastercardCultureResearch: PrepCard[] = [
+  {
+    title: "The Mastercard Way",
+    body: "Create value: think big and bold, innovate with intention, deliver scalable solutions. Grow together: say what you mean, bring different perspectives, help others be great. Move fast: prioritise what matters, learn and pivot, own the outcome. The foundation is doing the right thing through decency, inclusion, and being a force for good.",
+    cue: "Use one behaviour in each story; do not merely recite the labels", color: "blue",
+  },
+  {
+    title: "Culture ↔ strategy connection",
+    body: "A global network and identity business depends on partner trust, cross-border collaboration, secure execution, and consistent standards. Grow together fits an ecosystem company; Move fast supports competition with fintechs and new rails; Create value and scalable solutions fit a platform economics model; doing the right thing is foundational when products influence fraud, access, and privacy.",
+    cue: "Culture is an operating system for trust and scale", color: "teal",
+  },
+  {
+    title: "Outside perspective · directional, not definitive",
+    body: "Recent anonymous Glassdoor and Indeed summaries are broadly positive on colleagues, culture, learning, flexibility, benefits, and work-life balance. Recurring cautions include corporate layers, slower decisions, uneven advancement or management experiences, and team-dependent workload. Reviews are self-selected anecdotes; use them to ask neutral questions, not to state that a problem exists.",
+    cue: "Ask: How does this team preserve speed across a large organisation?", color: "amber",
+  },
+  {
+    title: "History in one line",
+    body: "The business traces its roots to the Interbank Card Association formed in 1966, evolved through global card and debit-network expansion, became a public company in 2006, and has broadened from a consumer-card network into a multi-rail technology and services platform. That evolution explains today’s emphasis on real-time payments, open banking, cybersecurity, data, and identity.",
+    cue: "1966 network → 2006 public company → multi-rail services platform", color: "purple",
+  },
+  {
+    title: "Key leader to know",
+    body: "Michael Miebach has been CEO since 2021. His background includes product leadership and expanding Mastercard beyond a card-centric model into real-time payments, open banking, digital identity, and services. In the interview, the useful point is the strategic direction—not biographical trivia.",
+    cue: "CEO: Michael Miebach · platform expansion and digital trust", color: "green",
+  },
+  {
+    title: "Your interviewer · Michael Cacho",
+    body: "The profile you supplied shows Michael is now Director, Product Development at Mastercard, with skills in data science and fraud detection. His earlier Mastercard roles covered Identity Verification product development plus roadmap and delivery ownership for database microservices and data-visualisation products in Fraud and Identity. His stated outcomes include higher dashboard adoption, lower latency through simpler data structures, and stronger product security.",
+    cue: "Expect product craft to be tested through data, architecture, adoption, testing, security, and measurable outcomes", color: "coral",
+  },
+];
+
+export const michaelCachoProfileCards: PrepCard[] = [
+  {
+    title: "Verified current context",
+    body: "Director, Product Development at Mastercard since December 2025. The supplied profile associates the role with data science and fraud detection. Immediately before that, Michael led new-product-development initiatives for Identity Verification as a Manager, Product Development.",
+    cue: "Identity Verification + product development + fraud/data science", color: "blue",
+  },
+  {
+    title: "His strongest product signals",
+    body: "Roadmap and delivery ownership; database microservices; data-visualisation products; product testing and prototyping; reducing latency by simplifying data structures; improving security; and doubling a fraud dashboard’s daily active users. These are profile facts. The inference is that he may probe how you connect technical decisions to user adoption and measurable product value.",
+    cue: "Technical decision → product outcome → measurable evidence", color: "teal",
+  },
+  {
+    title: "Relevant TELUS background",
+    body: "Before Mastercard, Michael managed TELUS SmartHome app work involving an ADT/TELUS monitoring integration, self-install UI, firmware requirements, technician-installation automation, and a regression-testing process. He also held roaming, TV-software, growth, pricing, and referral-platform roles. This suggests a broad product lens spanning customer experience, platform integration, operations, quality, and commercial outcomes.",
+    cue: "He understands telecom platforms, integration complexity, and product operations", color: "purple",
+  },
+  {
+    title: "Your strongest common ground",
+    body: "Telecom product platforms: Bell Subscription Management maps naturally to his TELUS app and software experience. Microservices and data structures: use Flow Runner and Bell’s 60-plus-service platform. Identity/security: use Aeroplan’s token exchange and API contract. Product testing: use OpenAPI-generated types and UAT. Operations: use Contingency Management. Adoption and metrics: explain how you choose a primary outcome and guardrails without inventing results not present on your résumé.",
+    cue: "Bell platform · Flow Runner · Aeroplan · Contingency Management", color: "green",
+  },
+  {
+    title: "Likely evaluation lens · inference",
+    body: "Can you own product discovery and delivery, reason credibly about microservices and data, simplify a technical design, build security and testing into the product, partner with data science, and prove adoption or risk outcomes? These are preparation hypotheses derived from his role history—not a claim that he will ask a fixed script.",
+    cue: "Discovery · architecture · quality · fraud · adoption", color: "amber",
+  },
+  {
+    title: "How to engage him",
+    body: "Answer at product-and-system altitude: user/problem, baseline, decision, architecture or workflow implication, trade-off, validation, metric, and learning. Use technical detail when it explains a product decision. Do not recite his résumé, mention that you researched him, or force similarities; let relevant Bell and TELUS overlap emerge naturally from the work.",
+    cue: "Problem → decision → technical implication → measure", color: "coral",
+  },
+];
+
+export const michaelCachoStageTwoQuestions: InterviewQuestion[] = [
+  {
+    question: "Walk me through a technical product you took from an ambiguous problem to a production outcome.",
+    audience: "Michael Cacho preparation · product development",
+    answer: "I would use Contingency Management. Operations agents were manually triaging failed subscription orders across several systems, but the initial ask focused only on displaying failures. I shadowed agents and traced a common root cause to invalid address data from an upstream feed. I reframed the product around resolution: agents needed to correct the address, resubmit the transaction, and retain a complete audit trail. I specified the data mapping, API endpoints, validation rules, acceptance criteria, and an automated Lambda resubmission path with operations and engineering before build. The outcome was a tool that resolved the common failure class directly instead of requiring multi-system escalation. The product lesson was to investigate the real workflow before freezing the solution scope.",
+    cue: "Contingency: observe → find root cause → reshape scope → API/workflow → operational outcome",
+  },
+  {
+    question: "How do you decide whether a technical simplification is valuable enough to prioritise?",
+    audience: "Michael Cacho preparation · architecture and latency",
+    answer: "I start with the user or operating cost of the complexity: inconsistent decisions, latency, defects, change effort, or support burden. In Flow Runner, qualification logic was duplicated across reseller-service, catalog-api, and merchant adapters, so the same promotion could behave differently and every rule change required several deployments. I helped define a central service boundary that executed—but did not own—the rules, supported legacy and new formats, and proved parity against real catalog data before cutover. The value was consistent qualification and faster rule changes without disrupting existing integrations. I would prioritise a simplification when the measurable reduction in risk or recurring cost exceeds the migration cost and the team can validate behaviour safely.",
+    cue: "Cost of complexity → clear boundary → safe migration → measurable recurring value",
+  },
+  {
+    question: "How do you build testing and security into product development rather than adding them at the end?",
+    audience: "Michael Cacho preparation · product testing and security",
+    answer: "For Bell’s Aeroplan integration, the original design placed customer information in URL query parameters. I raised the privacy and fraud risk and aligned engineering and security on a one-time token exchange through an API and BFF. I then made the OpenAPI contract the source for generated TypeScript types, wrote acceptance criteria for every integration flow, and ran UAT across the deployment pipeline. The type generation exposed two contract mismatches before production, and the launch had zero post-launch integration regressions. My approach is to turn security and compatibility expectations into architecture decisions and executable delivery gates.",
+    cue: "Aeroplan: threat → safer design → contract quality gate → UAT → zero regressions",
+  },
+  {
+    question: "How would you measure adoption and quality for an internal fraud or identity product?",
+    audience: "Michael Cacho preparation · dashboards and metrics",
+    answer: "I would first define the job the user is trying to complete and baseline the current workflow. Adoption could include eligible-user activation, weekly or daily active use, repeat use, task completion, and coverage of relevant decisions—but activity alone is not success. I would pair it with time-to-decision, manual-review queue time, decision consistency, false-positive and false-negative rates, fraud or loss prevented, API latency and availability, and user confidence. I would segment by customer, workflow, and geography, then use qualitative sessions to understand why users do or do not act on the signals. The metric set must show both value and risk guardrails.",
+    cue: "Adoption + task outcome + decision quality + reliability + user evidence",
+  },
+  {
+    question: "How would you partner with data science on an Identity Verification product?",
+    audience: "Michael Cacho preparation · data science and fraud",
+    answer: "I would begin with the decision the product must support, the ground-truth label, and the cost of each error. With data science, risk, and operations, I would agree on input availability and freshness, threshold behaviour, explainability, monitoring, drift, privacy, and the human-review path. I would translate that into API contracts, workflows, reason codes, acceptance criteria, and launch guardrails, then validate performance by segment rather than relying only on an aggregate score. I would be candid that my direct experience is stronger in rules, APIs, controls, and technical product delivery than in owning a data-science team, while showing exactly how I would make the partnership effective.",
+    cue: "Decision → labels/errors → signals/threshold → product contract → monitoring and review",
+  },
+  {
+    question: "Tell me about a time you improved a product by working directly with its operational users.",
+    audience: "Michael Cacho preparation · workflow and operations",
+    answer: "I would again use Contingency Management, but emphasise the discovery method. The documented requirement was to help agents see failed orders. By shadowing the real exception-handling workflow, I learned that visibility alone would leave the root cause and manual reprocessing untouched. That evidence led to address correction, API-boundary validation, resubmission, and audit logging. The lesson is that operational users often reveal hidden system states and exception paths that stakeholders or process documents miss.",
+    cue: "Shadow real work → expose hidden failure path → change product scope",
+  },
+];
+
+export const mastercardRoleResearch: PrepCard[] = [
+  {
+    title: "Role mission",
+    body: "Turn Business Identity strategy into engineering-ready product execution: requirements, APIs, non-functional constraints, state and workflow models, acceptance criteria, prioritised backlog, dependency management, demos, launch validation, audit evidence, and post-launch learning. Success is both a correct product decision and a buildable, testable specification.",
+    cue: "Strategy → technical clarity → controlled delivery → measured outcome", color: "blue",
+  },
+  {
+    title: "Likely operating model · validate in the interview",
+    body: "The strategic direction is likely top-down at portfolio level, while PMs identify customer problems, shape options, test feasibility, and prioritise execution with engineering, data science, commercialisation, legal, and risk. Mastercard’s public materials do not prove the exact team decision model, so ask how discovery, roadmap authority, and technical trade-offs are divided.",
+    cue: "Fact: cross-functional remit · inference: decision mechanics", color: "amber",
+  },
+  {
+    title: "Product metrics to discuss",
+    body: "Coverage and match rate; verification completion and time-to-decision; good-business approval rate; false-positive and false-negative rates; fraud or loss prevented; manual-review rate and queue time; onboarding conversion and abandonment; API availability, latency, and error rate; geographic/data-source coverage; customer adoption, retention, and revenue. Always name the guardrail metric beside the target metric.",
+    cue: "Approval speed + fraud accuracy + operational cost + reliability", color: "teal",
+  },
+  {
+    title: "Why you fit",
+    body: "Bell gives you platform, API, backlog, acceptance-criteria, security, vendor, and cross-functional delivery evidence. CIBC and CRA add controls, auditability, and translating standards into testable outcomes. Skye Bank adds direct card-operations and payment-risk context. Your strongest positioning is an experienced technical PM with adjacent identity skills—not a candidate claiming years of direct KYB product ownership.",
+    cue: "Technical product craft + payments + controls", color: "green",
+  },
+  {
+    title: "Gaps to address honestly",
+    body: "The submitted résumé does not establish direct Business Identity/KYB ownership, formal data-science leadership, or SAFe/PI-planning leadership. Close the gap by showing how you learn a risk domain, partner with specialists, define measurable decision quality, and turn model/rule behaviour into API requirements and acceptance criteria. Ask for the team’s exact vocabulary before claiming equivalence.",
+    cue: "Adjacent experience + disciplined ramp plan; no overstatement", color: "coral",
+  },
+  {
+    title: "Improvement hypothesis 1 · explainable decisions",
+    body: "Explore a decision API and review experience that returns ordered reason codes, evidence freshness and lineage, confidence, and the policy/model version used. The goal would be faster manual review, easier customer explanation, safer threshold changes, and stronger audit evidence. First validate whether these capabilities already exist and which user struggles most.",
+    cue: "Hypothesis, not criticism: evidence → reason → action → audit", color: "purple",
+  },
+  {
+    title: "Improvement hypothesis 2 · adaptive onboarding",
+    body: "Explore risk-tiered orchestration: approve low-risk businesses with minimal friction, request only the missing evidence for uncertain cases, and route high-risk cases to specialised review. Test success through conversion, time-to-decision, false positives, fraud capture, and review cost by segment and geography. First ask where customers currently control policy and workflow.",
+    cue: "Right friction for the risk; measure both growth and loss", color: "blue",
+  },
+];
+
+export const mastercardResearchQuestions: PrepCard[] = [
+  { title: "Useful · first six months", body: "What customer or product outcome would make you say this hire had an excellent first six months, and what is currently making that outcome difficult?", cue: "Gets success criteria and the real constraint", color: "blue" },
+  { title: "Useful · decision rights", body: "When product, engineering, data science, commercialisation, and legal see a risk trade-off differently, how does this team make the decision and who owns the final call?", cue: "Reveals the actual operating model", color: "teal" },
+  { title: "Passion · strategy", body: "As Mastercard expands into agentic commerce and new payment flows, how is the Business Identity team thinking about verifying the business or agent behind an interaction, not only the payment credential?", cue: "Connects current strategy to the team", color: "purple" },
+  { title: "Expertise · product quality", body: "Which metric is hardest to improve without damaging another—coverage, onboarding conversion, false positives, fraud detection, manual-review load, or decision latency—and how does the team set its guardrails?", cue: "Shows mature decision-quality thinking", color: "green" },
+  { title: "Expertise · global scale", body: "How does the product handle differences in business registries, data freshness, and regulatory expectations across markets while keeping the API and customer experience coherent?", cue: "Shows awareness of global identity constraints", color: "amber" },
+  { title: "For Michael Cacho · product development", body: "You have worked across Identity Verification, fraud-data products, microservices, and dashboards. In this team, where is the hardest product-development trade-off today: data coverage, decision accuracy, explainability, latency, workflow adoption, or integration effort?", cue: "Uses the supplied professional profile without repeating personal details", color: "coral" },
+  { title: "Avoid", body: "Do not ask for facts available on the website, frame ideas as ‘why haven’t you built this?’, interrogate anonymous employee-review complaints, or lead with vacation and benefits. Ask neutral, open questions and let the interviewer teach you how this team works.", cue: "Curious, informed, and non-accusatory", color: "gray" },
+];
+
+export const mastercardResearchChecklist: string[] = [
+  "Explain Mastercard as a technology and services platform—not a bank or card issuer.",
+  "Describe the network → data → services → more-volume strategy in your own words.",
+  "Know the 2025 scale anchors: $32.8B revenue, $10.6T GDV, and 175.5B switched transactions.",
+  "Name competitors across card networks, local/real-time rails, wallets, fintechs, and public infrastructure.",
+  "Connect Business Identity to onboarding, fraud, compliance, new flows, and agentic commerce.",
+  "Explain the central product trade-off using one target metric and at least one guardrail metric.",
+  "Use one Mastercard Way behaviour naturally in each relevant STAR story.",
+  "State one product-improvement hypothesis as a discovery question, not as a claim about a missing feature.",
+  "Prepare three questions: one useful, one passion, and one expertise question.",
+  "Review the developer portal or sandbox and record one evidence-based observation.",
+  "Keep the direct-KYB, data-science, and SAFe gaps honest and explain the ramp plan.",
+  "Close this prep app before joining Teams; answer the live interview without AI assistance, as requested by Mastercard.",
 ];
 
 export const jobDescriptionCards: PrepCard[] = [
@@ -211,11 +466,11 @@ export const roundPlaybooks: RoundPlaybook[] = [
   },
   {
     round: "Stage 2",
-    title: "Techno-managerial deep dive",
-    objective: "Show product-manager technical fluency: how you turn ambiguity into a delivery plan and work credibly with engineering.",
-    interviewerFocus: "Agile versus Waterfall; Scrum and Kanban; Jira; requirements, backlog prioritisation, dependencies, quality, risk, and technical trade-offs.",
-    evidence: "Bell backlog and acceptance-criteria ownership; API and state-transition scope; multi-environment delivery; CRA CI/CD accessibility control.",
-    preparation: "Practise concise answers first, then a deeper example. Explain systems at product altitude: workflow, rules, interfaces, failure paths, acceptance criteria, and measures—not implementation trivia.",
+    title: "Product-development and technical deep dive",
+    objective: "Show how you turn a fraud, identity, data, or platform problem into a technically credible product decision and measurable production outcome.",
+    interviewerFocus: "Verified interviewer themes include Identity Verification, data science, fraud detection, product testing and prototyping, database microservices, data visualisation, adoption, latency, and security. Agile/Jira remain possible, but should no longer dominate preparation solely because of the Reddit post.",
+    evidence: "Contingency Management for operational discovery and APIs; Flow Runner for microservice simplification; Aeroplan for security, contracts, testing, and UAT; Bell platform metrics and backlog ownership for adoption and delivery.",
+    preparation: "Practise the dedicated Michael Cacho question set. For each example, explain the baseline problem, your decision, the technical implication, trade-off, validation method, outcome measure, and lesson. Be candid about adjacent—not direct—data-science ownership.",
     color: "teal",
   },
   {
@@ -240,24 +495,28 @@ export const roundPlaybooks: RoundPlaybook[] = [
 
 export const coreQuestions: InterviewQuestion[] = [
   {
+    key: "tell-me-about-yourself",
     question: "Tell me about yourself.",
     audience: "All interview rounds",
-    answer: "I am a Senior Technical Product Manager at Bell, where I own products from problem definition through backlog, acceptance criteria, delivery, and post-launch measurement. Before that, at the CRA, I worked on security and accessibility standards for public-facing platforms. Earlier, at Skye Bank, I managed the Visa and Mastercard chargeback lifecycle and supported a co-branded card launch. That combination of technical product delivery, compliance discipline, and direct payments operations is why this Business Identity role is a strong fit.",
-    cue: "Bell product ownership → CRA compliance → Visa/Mastercard operations → role fit",
+    answer: "I'm a Senior Technical Product Manager with over seven years of experience translating product strategy into well-defined technical requirements and driving execution across cross-functional teams—from ideation through to production.\n\nFor the past four years, I've been the Technical Product Manager for Bell Canada's Subscription Management platform: a Go-based backend with more than 60 microservices, integrated with a Next.js micro-frontend. The platform enables Bell's residential customers to subscribe to streaming services such as Netflix, Disney+, and Crave through their Bell accounts.\n\nI own the product scope end to end. I translate roadmaps into features, user stories, and acceptance criteria; prioritise backlogs and decompose epics; identify gaps and manage cross-team dependencies; evaluate the technical implications of requirements; and review demos against acceptance criteria. I also document workflows, diagrams, and state-transition models, gather requirements from stakeholders and partners, and facilitate demos, handoffs, and post-launch reviews.\n\nA lot of my value comes from sitting between business stakeholders—such as product, legal, and billing—and engineering teams, and asking the questions that expose edge cases before they become production issues.\n\nWhat draws me to this Mastercard role is that the core challenge is the same one I've been solving at Bell: translating high-level product strategy into technical requirements and API contracts that engineering can execute against—but here it supports business identity verification and fraud prevention, where accuracy and auditability carry even higher stakes. I would bring that same technical-requirements discipline, cross-functional delivery, and mentoring experience to Mastercard's Business Identity product team.",
+    cue: "7+ years → Bell's 60+ service platform → end-to-end scope → bridge business and engineering → Business Identity fit",
   },
   {
+    key: "why-mastercard",
     question: "Why do you want to work for Mastercard?",
     audience: "All interview rounds",
     answer: "Mastercard brings together two parts of my background that have usually been separate: technical product ownership and payments-risk operations. I started in Visa and Mastercard chargeback and card-issuance work, where accuracy, deadlines, and auditability mattered every day. Since then, I have built products at Bell and the CRA by turning complex requirements into secure, measurable delivery. Business Identity is compelling because it applies that same discipline to trust, onboarding, fraud prevention, and compliance at a global scale.",
     cue: "Payments foundation + technical product craft + digital trust",
   },
   {
+    key: "cross-functional-team",
     question: "Tell me about a time you worked as part of a cross-functional team.",
     audience: "Hiring manager or panel",
     answer: "For Bell's Aeroplan membership-management integration, I coordinated Bell engineering, an external loyalty vendor, and security stakeholders. I owned the product scope for account linking, made the secure token-exchange approach explicit, tracked vendor SOW and SLA delivery, and used generated type contracts as a quality gate. The result was a production launch with zero post-launch integration regressions. The key was making the risks and handoffs visible early, so each group could make the right decision in its area.",
     cue: "Aeroplan: engineering + vendor + security → clear contracts → zero regressions",
   },
   {
+    key: "why-hire-you",
     question: "Why should we hire you?",
     audience: "All interview rounds",
     answer: "I offer three directly relevant strengths. First, I have seven-plus years of technical product ownership, including backlog management, acceptance criteria, platform delivery, and measurable launch outcomes. Second, I bring direct Visa and Mastercard chargeback and card-launch experience, so the payments-risk context is familiar rather than abstract. Third, my CPA and ACCA background, together with controls and compliance work at CIBC and the CRA, helps me build products that are not only useful but also auditable and risk-aware.",
@@ -267,83 +526,101 @@ export const coreQuestions: InterviewQuestion[] = [
 
 export const behaviouralQuestions: InterviewQuestion[] = [
   {
+    key: "role-suitability",
     question: "Why are you suitable for this role?",
     audience: "Motivation and fit",
-    answer: "Connect the job's requirements to three examples: Bell for roadmap-to-delivery and cross-functional execution; Aeroplan for secure API and vendor integration; and Skye Bank, CIBC, and the CRA for payments, controls, and compliance. Be candid that Business Identity is a new product domain for you, while the core execution and risk disciplines are established strengths.",
+    answer: "I am a strong fit because the role needs someone who can translate strategy into technical requirements and carry those requirements through delivery. At Bell, I own backlogs, acceptance criteria, API and platform requirements, dependencies, and launch validation. The Aeroplan integration demonstrates secure API and vendor delivery, while my Skye Bank, CIBC, and CRA experience gives me direct payments, controls, and compliance discipline. Business Identity is a new product domain for me, but the execution, integration, and risk disciplines are established strengths.",
     cue: "Execution + integration + risk/compliance; do not claim direct KYB ownership",
   },
   {
+    key: "leaving-bell",
     question: "Why are you leaving Bell?",
     audience: "Motivation and professionalism",
     answer: "Bell has been a strong place to deepen my technical product-management experience, and I am proud of what I have built there. This move is a pull toward a specific opportunity: Mastercard lets me apply the product craft I have developed at Bell to the payments and trust domain where I began my career. It is about the fit and impact of this role, not dissatisfaction with my current employer.",
     cue: "Move toward Mastercard; never move away from Bell",
   },
   {
+    key: "significant-challenge",
     question: "Tell me about a significant challenge and how you overcame it.",
     audience: "Resilience and execution",
-    answer: "Use the CRA accessibility example. The challenge was treating WCAG gaps as a recurring product and user-impact issue, rather than a one-time compliance exercise. You defined the audit scope, prioritised remediation by severity and user impact, wrote acceptance criteria, and embedded Axe-core into CI/CD. The outcome was WCAG AA compliance with regression prevention built into the delivery process.",
-    cue: "CRA: recurring risk → prioritised remediation → CI gate",
+    answer: "A significant challenge was Bell's manual handling of failed subscription orders. Operations agents worked across several systems, escalated common failures to engineering, and customers waited for resolution. I shadowed agents and found that invalid upstream address data caused a large share of failures. I reframed the product from a screen that displayed failures into a tool that let agents correct the address and resubmit, with automatic resubmission after correction. I then defined the API contract, validation rules, audit logging, and acceptance criteria with operations and engineering. Agents could resolve the common failure without engineering escalation, and corrected transactions no longer required manual reprocessing.",
+    cue: "Contingency: observe workflow → find root cause → redefine product → self-service",
   },
   {
+    key: "project-off-plan",
     question: "Tell me about a project that did not go according to plan. What did you do?",
     audience: "Judgment and recovery",
-    answer: "Prepare a real example before using this answer. State what changed, the impact, the signal you missed or constraint that emerged, how you reset scope or the delivery plan, and the operating change you made afterward. Do not reuse a successful project unless there was a genuine, defensible recovery moment within it.",
-    cue: "Real miss → ownership → recovery → changed behaviour",
+    answer: "Contingency Management did not follow the original product assumption. The initial concept focused on giving agents visibility into failed orders, but shadowing operations showed that visibility alone would preserve the same escalation bottleneck. Invalid address data from the upstream feed was a recurring root cause. I paused the requirement direction, brought the evidence back to operations and engineering, and reset the scope around correcting and resubmitting the transaction, including API validation and auditability. That changed the delivery plan, but it prevented us from building a diagnostic screen that did not solve the operational problem. The lesson was to validate the real workflow before locking the solution boundary.",
+    cue: "Wrong initial assumption → discovery evidence → reset scope → better product",
   },
   {
+    key: "mastercard-values",
     question: "What are Mastercard's values, and how do they align with you?",
     audience: "Culture and values",
-    answer: "Mastercard describes a culture of decency, integrity, and respect, supported by trust, partnership, agility, and initiative. Choose two values and make them concrete. For trust, discuss the documentation and deadline discipline behind Visa/Mastercard chargebacks or the security controls in the Aeroplan integration. For partnership, describe how you made engineering, vendor, and security handoffs explicit. Avoid reciting values without a lived example.",
+    answer: "Mastercard grounds its culture in decency, integrity, and respect, supported by trust, partnership, agility, and initiative. Trust and partnership align particularly strongly with how I work. In the Aeroplan integration, I made the security risk, API contract, vendor milestones, and handoffs visible so engineering, security, and the vendor could make decisions from the same facts. Integrity also means raising an uncomfortable risk early: I challenged the proposal to put customer data in URL parameters and helped the team agree on a token-exchange design before implementation.",
     cue: "Choose two values; prove each with behaviour",
   },
   {
+    key: "biggest-weakness",
     question: "What is your biggest weakness?",
     audience: "Self-awareness",
-    answer: "A precise answer is that you have not yet partnered with a formally titled data-science team. Your relevant foundation is working through rules, state transitions, quality signals, and AI-governance boundaries at Bell. Explain that you would close the gap by learning the team's model, decision thresholds, error trade-offs, and monitoring metrics before translating them into requirements. Keep it narrow, factual, and paired with an action.",
+    answer: "I have not yet partnered with a formally titled data-science team, which is relevant to this role. My adjacent experience includes defining AI-governance boundaries, quality signals, business rules, and state transitions at Bell. To close the gap, I would first learn the model's purpose, input signals, decision thresholds, false-positive and false-negative trade-offs, monitoring, and human-review path before translating them into product requirements. I am comfortable being transparent about what I know and systematic about learning what I do not.",
     cue: "Name the gap plainly, then show the learning plan",
   },
   {
+    key: "setback",
     question: "Tell me about a setback and how you reacted.",
     audience: "Resilience and self-awareness",
-    answer: "Prepare a different genuine example from the project-off-track answer if possible. Describe the setback without minimising it, your immediate response, the support or information you sought, the corrected action, and the lesson that changed how you work. Never invent a setback from a successful launch.",
-    cue: "Setback → response → correction → learning",
+    answer: "During Aeroplan UAT, OpenAPI-generated TypeScript types exposed two contract mismatches between the vendor payload and our implementation. That was a setback because the flows could not safely progress toward production. I treated the generated types as the evidence, brought the vendor and engineering owners together, traced each mismatch to the contract, corrected both sides, and reran the affected UAT flows before release. We launched with zero post-launch integration regressions. The experience reinforced why contracts and automated compatibility checks must be delivery gates, not documentation added after implementation.",
+    cue: "UAT mismatch → align owners → correct contract → revalidate → strengthen quality gate",
   },
   {
+    key: "take-charge",
     question: "Tell me about a time you stepped in and took charge.",
     audience: "Initiative and ownership",
-    answer: "Use Contingency Management at Bell. Operations depended on engineering whenever a subscription order failed. You framed that as a structural product problem, defined a self-serve diagnostic platform, owned the front-end and API scope, prioritised data-integrity edge cases, and set state-transition validation as the quality standard. Operations could then investigate and resolve failures without developer involvement.",
-    cue: "Contingency: recurring escalation → self-serve product → operational independence",
+    answer: "On Bell's subscription platform, qualification logic was duplicated across reseller-service, catalog-api, and merchant adapters. No single team owned solving the inconsistency across the platform, so I stepped in to audit the rules, align product, catalog, billing, and partner engineering, and define a central Flow Runner service. I clarified that the new service would execute rules without owning them, specified the API and declarative flow format, supported both legacy and new rule formats, and required a parity pilot before cutover. The platform gained a clear execution boundary without disrupting existing integrations.",
+    cue: "Flow Runner: ambiguous ownership → define boundary → prove parity → platform consistency",
   },
   {
+    key: "five-year-direction",
     question: "Where do you see yourself in five years?",
     audience: "Career direction",
     answer: "I want to be a product leader trusted with increasingly complex platform and trust problems: setting product direction, helping cross-functional teams make sound decisions, and developing other product talent. Mastercard is attractive because Business Identity sits at the intersection of technology, risk, and global commerce. I am focused on growing through impact and scope, not on chasing a title on a fixed timetable.",
     cue: "Growth through trusted scope and impact",
   },
   {
+    key: "difficult-stakeholder",
     question: "Tell me about a time you influenced a difficult stakeholder.",
     audience: "Influence without authority",
-    answer: "Use a real example in which a stakeholder initially disagreed or had competing constraints. Aeroplan may work only if you can truthfully describe the disagreement. Explain their concern fairly, make the trade-offs visible, use evidence or a risk framing to align on the decision, document the agreement, and state the result. Do not label someone difficult merely because they asked questions.",
-    cue: "Fairly describe the concern → surface trade-offs → agree and document",
+    answer: "In Catalog Management, marketing, product, and billing interpreted promotion rules differently. The hardest conflict was whether expiring and cancelling a promotion were interchangeable: marketing viewed them that way, but billing depended on the distinction. I met each group separately to understand its constraint, then mapped the downstream pricing and billing consequences and brought the groups together around the evidence. Once the impact was visible, we agreed on the rule, documented it, and secured written sign-off. The feature launched without requirement-driven defects, and the rules document became a template for later work.",
+    cue: "Catalog: competing interpretations → map downstream impact → joint decision → sign-off",
   },
   {
+    key: "three-differentiators",
     question: "What three things set you apart from other candidates?",
     audience: "Differentiation",
     answer: "First, technical product delivery: I can turn ambiguous business problems into backlogs, acceptance criteria, platform requirements, and measured launches. Second, direct payments operations: I have owned Visa/Mastercard chargebacks and supported a co-branded card launch. Third, risk and controls rigor: CPA/ACCA designations plus CIBC and CRA experience help me create products that are usable, secure, and auditable.",
     cue: "Build + payments + controls",
   },
   {
+    key: "manager-conversation",
     question: "Tell me about a difficult conversation with your manager.",
     audience: "Maturity and communication",
-    answer: "Prepare a real, low-drama example. State the shared objective, describe the difference in view without judging your manager, show the facts or options you brought, explain how you listened and reached a decision, and name what improved afterward. The signal is respectful candour and accountability—not winning an argument.",
+    answer: "This answer still needs a real manager-specific example from my experience; I would not relabel a stakeholder disagreement as a manager conversation. The answer I prepare will identify our shared objective, explain the difference in view without criticising my manager, show the evidence or options I brought, describe how I listened and reached a decision, and state what improved afterward. The point is respectful candour and accountability, not proving that I won an argument.",
     cue: "Shared goal → differing view → evidence → respectful resolution",
   },
   {
+    key: "mastercard-knowledge",
     question: "What do you know about Mastercard?",
     audience: "Company knowledge",
     answer: "Mastercard is a global technology company in payments whose purpose is to connect and power an inclusive digital economy. Its network, partnerships, data, and technology aim to make transactions safe, simple, smart, and accessible. For this role, that purpose becomes practical through Business Identity: creating trusted, verifiable business interactions that can improve onboarding, reduce fraud, and support compliance.",
     cue: "Inclusive digital economy → Business Identity → trust, speed, fraud, compliance",
   },
+];
+
+export const mastercardSampleQuestions: InterviewQuestion[] = [
+  ...coreQuestions,
+  ...behaviouralQuestions,
 ];
 
 export const technicalFollowUps: InterviewQuestion[] = [

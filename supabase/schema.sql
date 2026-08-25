@@ -95,13 +95,29 @@ create table if not exists public.teleprompter_cards (
 --   alter table public.teleprompter_cards add column if not exists role text;
 --   alter table public.teleprompter_cards add column if not exists mental_model jsonb;
 
+-- ============================ interview_answers ============================
+create table if not exists public.interview_answers (
+  id           uuid primary key default gen_random_uuid(),
+  question_key text not null unique,
+  question     text not null,
+  answer       text not null,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  constraint interview_answers_question_key_format
+    check (question_key ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  constraint interview_answers_question_length
+    check (char_length(question) between 1 and 300),
+  constraint interview_answers_answer_length
+    check (char_length(answer) between 1 and 20000)
+);
+
 -- ---- triggers + RLS for every table ----------------------------------------
 do $$
 declare
   t text;
   tables text[] := array[
     'test_plans','specs','sequence_diagrams',
-    'analyses','chats','teleprompter_cards'
+    'analyses','chats','teleprompter_cards','interview_answers'
   ];
 begin
   foreach t in array tables loop
@@ -118,6 +134,11 @@ begin
     execute format('drop policy if exists "anon_all" on public.%I;', t);
   end loop;
 end $$;
+
+-- Current Supabase projects may not expose newly created public tables to the
+-- Data API automatically. Grant only the server role used by this app.
+revoke all on table public.interview_answers from anon, authenticated;
+grant select, insert, update on table public.interview_answers to service_role;
 
 -- ============================================================================
 -- HARDENING (optional) — when you enable Supabase Auth, drop the "anon_all"
