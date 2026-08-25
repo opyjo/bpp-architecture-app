@@ -7,16 +7,6 @@ export interface PrepCard {
   color?: PrepColor;
 }
 
-export interface StarStory {
-  title: string;
-  useFor: string;
-  situation: string;
-  task: string;
-  action: string;
-  result: string;
-  pmFrame: string;
-}
-
 export interface InterviewQuestion {
   question: string;
   audience: string;
@@ -31,299 +21,508 @@ export interface InterviewStage {
   status: "Complete" | "Upcoming";
 }
 
-export interface AnchorRoute {
-  question: string;
-  primary: string;
-  backup: string;
+export interface StoryRoute {
+  questionType: string;
+  primaryStory: string;
   proof: string;
+  guardrail?: string;
 }
 
-export interface ReadinessDimension {
-  id: string;
-  label: string;
-  description: string;
-}
-
-export interface PassChecklistGroup {
+export interface RoundPlaybook {
+  round: string;
   title: string;
-  description: string;
-  items: Array<{
-    id: string;
-    task: string;
-    evidence: string;
-  }>;
+  objective: string;
+  interviewerFocus: string;
+  evidence: string;
+  preparation: string;
+  color: PrepColor;
+}
+
+export interface MastercardTerm {
+  term: string;
+  meaning: string;
+  whyItMatters: string;
+}
+
+export interface ReferenceLink {
+  label: string;
+  href: string;
+  note: string;
+}
+
+export interface ApplicationAlignment {
+  requirement: string;
+  resumeEvidence: string;
+  interviewRoute: string;
+}
+
+export interface StarStory {
+  title: string;
+  useFor: string;
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+  managerFrame: string;
 }
 
 export const interviewStages: InterviewStage[] = [
-  { stage: "Screening", format: "30 min recruiter call", focus: "Background, compensation, role fit", status: "Complete" },
-  { stage: "Stage 1", format: "Hiring Manager + Technical", focus: "Technical depth, leadership, delivery", status: "Upcoming" },
-  { stage: "Stage 2", format: "Panel Interview", focus: "Peers, engineering leads, cross-functional partners", status: "Upcoming" },
-  { stage: "Stage 3", format: "Cultural / Presentation", focus: "DQ alignment, product thinking, case", status: "Upcoming" },
+  { stage: "Recruiter screen", format: "Recruiter conversation", focus: "Background, motivation, compensation, and role fit", status: "Complete" },
+  { stage: "Stage 1", format: "Hiring manager chat", focus: "Résumé, past projects, motivations, and behavioural judgment", status: "Complete" },
+  { stage: "Stage 2", format: "Techno-managerial deep dive", focus: "Agile methods, Jira, product delivery, and technical fluency", status: "Upcoming" },
+  { stage: "Stage 3", format: "Bar raiser: leadership", focus: "Feature-launch scenario, prioritisation, and cross-functional alignment", status: "Upcoming" },
+  { stage: "Stage 4", format: "Bar raiser: program leadership", focus: "Resume depth, capacity, PI planning, metrics, and resilience", status: "Upcoming" },
 ];
 
-export const dashboardChecklist = [
-  "Stage 1 is the next milestone: a hiring-manager conversation with a technical component. Every answer should demonstrate both product leadership and technical credibility.",
-  "Know the five anchors as lived experience, not scripts. Listen, pause, select the best anchor, then shape it to the actual question.",
-  "Lead technical answers at product altitude: contract, flow, trade-off, risk, validation, and measurable outcome. You are not interviewing as an engineer.",
-  "Load Aeroplan Integration, Catalog Management, and Contingency Management first; they are the strongest Stage 1 stories.",
-  "Be ready to whiteboard a system at a high level and explain API boundaries, state transitions, security decisions, requirements, and acceptance criteria.",
-  "Watch for Shashi's scheduling email and reply promptly with concrete availability windows.",
+export const focusCards: PrepCard[] = [
+  { title: "Current interview position", body: "The recruiter screen and Stage 1 hiring-manager chat are complete. The remaining virtual stages are the techno-managerial deep dive, leadership bar raiser, and program-leadership bar raiser. Expect the same résumé stories to be tested at greater depth each time.", cue: "Next: Stage 2 technical craft → Stage 3 leadership → Stage 4 depth", color: "blue" },
+  { title: "One résumé, four levels of depth", body: "Do not find a new story for every question. Know the problem, your ownership, stakeholders, trade-offs, technical decisions, measures, and lesson for each anchor story. The bar-raiser stages will probe until the detail either holds up or does not.", cue: "Problem → decision → trade-off → result → lesson", color: "purple" },
+  { title: "Keep every answer résumé-true", body: "Use only examples and results you can defend from your submitted résumé and lived experience. Prepare genuine examples for a failure, setback, difficult stakeholder, and difficult manager conversation before the interview; do not turn a success into invented conflict.", cue: "Credibility beats a polished story", color: "coral" },
+  { title: "Clarify team-specific Agile language", body: "Agile, Scrum, Kanban, Jira, capacity planning, and PI planning are fair preparation areas. But terms such as “3-3-5” are not universal Agile standards. If asked, clarify the team’s meaning first, then explain the principles and delivery mechanics you use.", cue: "Clarify context before answering a non-standard term", color: "amber" },
 ];
 
-export const levelCards: PrepCard[] = [
-  { title: "Level confirmed: L6", body: "Shashi confirmed that this is Mastercard's Manager level: above Senior Analyst (L7) and below Senior Manager (L5). The evaluation goes beyond execution into leadership, cross-functional influence, delivery ownership, and comfort operating through ambiguity.", cue: "Speak as a manager: decision, alignment, risk, outcome", color: "purple" },
-  { title: "Compensation position", body: "Posted base range: $121,000–$169,000 CAD. Target: $145,000–$155,000 CAD. Floor: $140,000 CAD. The prep-note benchmark for L6 PM median total compensation is approximately $198,695 USD; treat that as a reference point, not the Canadian base. The bonus or incentive program sits on top of base.", cue: "$145K–$155K target; $140K floor; ask about total package", color: "amber" },
-  { title: "What the L6 signal changes", body: "Avoid presenting yourself only as the person who wrote the requirements. Show how you set direction, created clarity, aligned engineering and business partners, made trade-offs, protected quality, and owned the result through launch.", cue: "From artifact author to accountable decision-maker", color: "green" },
-];
-
-export const stage1TechnicalFocus: PrepCard[] = [
-  { title: "API lifecycle management", body: "Be ready to explain how you shape, document, review, version, and govern an API contract at product level. Use the Aeroplan OpenAPI YAML and generated TypeScript contract as the concrete example.", cue: "Consumer need → contract → review → compatibility → release", color: "blue" },
-  { title: "High-level system design", body: "Expect a whiteboard-style conversation about how a product works: actors, service boundaries, data flow, failure paths, security controls, and observability. Keep the discussion architectural rather than code-level.", cue: "Actors → boundary → flow → failure → control", color: "purple" },
-  { title: "Requirements documentation", body: "Show how workflows, business rules, data mappings, state diagrams, user stories, and acceptance criteria remove ambiguity before build. Catalog Management and Contingency Management are the strongest examples.", cue: "Make ambiguity testable before engineering commits", color: "teal" },
-  { title: "Technical trade-off framing", body: "Explain the decision, alternatives, constraints, downstream risks, and validation plan. Aeroplan's token-exchange pattern versus query parameters is the clearest security trade-off story.", cue: "Options → constraint → risk → decision → proof", color: "coral" },
-  { title: "Data literacy", body: "Trace how data enters, transforms, changes state, and reaches downstream consumers. Discuss mappings, ownership, quality gates, reconciliation, and failure handling; coding or deep SQL is not the expected bar.", cue: "Source → transform → state → consumer → reconcile", color: "green" },
-  { title: "Likely boundaries — confirm", body: "Based on the recruiter saying 'a little technical' and the PM–Technical scope, coding algorithms, LeetCode, and engineer-level implementation detail appear unlikely. This is an informed expectation, not a confirmed format; ask whether Stage 1 includes a case, whiteboard, or technical exercise.", cue: "Technical fluency; confirm the exact format", color: "gray" },
-];
-
-export const stage1AnchorMap: PrepCard[] = [
-  { title: "Aeroplan Integration", body: "Use for security architecture, API contracts, vendor delivery, and technical trade-offs. Evidence: OpenAPI YAML, TypeScript type generation, token exchange through a BFF, vendor SLA management, and zero post-launch regressions.", cue: "Security + contract + vendor + zero regressions", color: "blue" },
-  { title: "Catalog Management", body: "Use for stakeholder conflict, business-rule discovery, and requirements governance. Show how you surfaced conflicting assumptions and secured written sign-off before engineering began the build.", cue: "Conflict → rules → written alignment before build", color: "amber" },
-  { title: "Contingency Management", body: "Use for root-cause discovery, operational empathy, endpoint specifications, data mapping, and state-machine validation. Emphasize shadowing operations before defining the solution.", cue: "Observe → root cause → endpoints → validated states", color: "teal" },
-  { title: "Flow Runner API", body: "Use for service-boundary design, legacy-format support, ownership decisions, and parity validation. Explain why execution and rule ownership belong in separate boundaries.", cue: "Execution boundary vs rule ownership", color: "purple" },
-  { title: "Subscription Manager", body: "Use for end-to-end product ownership, measurable call-centre deflection, architecture decisions, dependency mapping, and coordination across six concurrent teams.", cue: "Vision → six teams → launch → measured deflection", color: "green" },
-];
-
-export const stageStrategyCards: PrepCard[] = [
-  { title: "Stage 1 — Hiring Manager + Technical", body: "Question underneath the questions: Can this person do the job and operate like a Manager? Lead with Aeroplan Integration, Catalog Management, and Contingency Management. Pair each technical detail with the leadership decision and delivery outcome.", cue: "Leadership + technical credibility in every answer", color: "blue" },
-  { title: "Stage 2 — Panel Interview", body: "Question underneath the questions: Can engineering leads, peers, data science, legal, and commercialization work effectively with this person? Lead with Flow Runner API, Subscription Manager, and AI-governance stories such as MR Review Automation and Playwright MCP.", cue: "Collaborative, fluent across disciplines, human decides", color: "teal" },
-  { title: "Stage 3 — Cultural / Presentation", body: "Question underneath the questions: Does this person fit Mastercard's Decency Quotient culture and structure product thinking clearly? Prepare for a Business Identity case, home assignment, or values discussion around inclusion, thoughtful risk-taking, and urgency.", cue: "Thoughtful + inclusive + structured", color: "purple" },
-  { title: "Possible presentation shape", body: "If assigned a take-home, build a compact Business Identity product spec: problem definition, target users, journey and failure states, user stories, API contract, risk controls, success metrics, rollout plan, and explicit open questions. No presentation format has been confirmed yet.", cue: "Problem → users → contract → controls → metrics", color: "coral" },
-];
-
-export const anchorMindset: PrepCard[] = [
-  { title: "Anchors over scripts", body: "Know the facts, decisions, tensions, and outcomes of each anchor cold. Do not memorize a single polished answer. Listen to the exact question, pause, choose the closest anchor, and tell only the parts that answer that angle.", cue: "Listen → pause → choose → adapt", color: "amber" },
-  { title: "Stay with the story", body: "When a follow-up goes somewhere unexpected, stay inside the same lived example if it still contains the answer. Clarify the new angle, expose your reasoning, and avoid jumping to a different memorized story just because the wording changed.", cue: "One anchor can support several angles", color: "green" },
-  { title: "Manager-level answer shape", body: "Start with the decision or principle. Give enough context to make the constraint real. Explain what you personally did to align people and de-risk delivery. Close with a measured result and what you learned or would change.", cue: "Decision → context → leadership → result → reflection", color: "blue" },
-];
-
-export const winStrategyCards: PrepCard[] = [
-  { title: "Win condition", body: "Make the hiring manager see an L6 technical product leader who can turn ambiguity into safe, testable delivery. Technical detail is evidence; the decision, alignment, risk ownership, and outcome are the answer.", cue: "Decision → alignment → risk → outcome", color: "green" },
-  { title: "Two depths for every anchor", body: "Prepare a concise two-minute version and enough underlying detail for ten minutes of follow-up. Know the problem, scale, ownership, alternatives, disagreement, validation, result, and lesson without memorizing sentences.", cue: "2-minute story · 10-minute proof", color: "blue" },
-  { title: "Product lens", body: "For Business Identity, reason through trust, onboarding speed, fraud loss, customer friction, manual review, privacy, compliance, and platform reliability. Treat exact Mastercard implementation details as questions until the team confirms them.", cue: "Trust + speed + fraud + compliance", color: "purple" },
-  { title: "Calm conviction", body: "Let the dream-job energy show up as preparation and curiosity, not urgency for approval. Explain why your card-network foundation and technical-product leadership converge here, then stay focused on the problem the team needs solved.", cue: "Committed and credible, never desperate", color: "amber" },
-];
-
-export const questionAnchorMap: AnchorRoute[] = [
-  { question: "API contract, security, or vendor delivery", primary: "Aeroplan Integration", backup: "Contingency Management", proof: "OpenAPI source of truth, generated types, token exchange, vendor SLA, zero regressions" },
-  { question: "Ambiguous requirements or root-cause discovery", primary: "Contingency Management", backup: "Subscription Manager", proof: "Ops problem, data mapping, endpoints, state machine, audit trail" },
-  { question: "Stakeholder conflict or influencing without authority", primary: "Catalog Management", backup: "Aeroplan Integration", proof: "Expire vs cancel, three stakeholder groups, visible trade-offs, written sign-off" },
-  { question: "Service boundary or legacy compatibility", primary: "Flow Runner API", backup: "Aeroplan Integration", proof: "Execution vs rule ownership, legacy format support, parity validation" },
-  { question: "Vision, roadmap, prioritization, or metrics", primary: "Subscription Manager", backup: "UPCM", proof: "End-to-end ownership, multi-team dependencies, call deflection, release-cycle improvement" },
-  { question: "Compliance, audit evidence, or controls", primary: "CRA WCAG / CIBC", backup: "Contingency Management", proof: "CI quality gate, reconciliation evidence, explicit audit-log acceptance criteria" },
-  { question: "Hard deadlines or operational discipline", primary: "Chargeback lifecycle", backup: "Aeroplan Integration", proof: "Deadline/value prioritization, documented cases, zero missed response windows" },
-  { question: "Failure, wrong decision, or coaching", primary: "Evidence gap — prepare a real story", backup: "Do not disguise a success story", proof: "Own the miss, consequence, correction, learning, and changed behaviour" },
-];
-
-export const businessIdentityCaseCards: PrepCard[] = [
-  { title: "Practice prompt", body: "Design a business-verification capability for a bank or marketplace that needs to onboard legitimate businesses quickly, detect risky entities, and produce auditable decisions across jurisdictions.", cue: "This is a practice hypothesis, not confirmed Mastercard architecture", color: "gray" },
-  { title: "Users & outcome", body: "Primary users: applicant business, customer onboarding team, fraud/risk analyst, compliance reviewer, and API-integrating customer. Desired outcome: a trusted verification decision with the least necessary friction and a clear path for exceptions.", cue: "Who decides, who integrates, who gets reviewed?", color: "blue" },
-  { title: "High-level flow", body: "Customer submits business and ownership data → API validates the request → identity/data providers enrich it → risk policy evaluates signals → decision becomes verified, manual review, rejected, or needs more information → event and audit evidence are recorded → customer receives a reasoned response.", cue: "Input → enrich → decide → review → evidence → response", color: "purple" },
-  { title: "State model", body: "Draft states: DRAFT → SUBMITTED → CHECKS_IN_PROGRESS → VERIFIED | MANUAL_REVIEW | MORE_INFO_REQUIRED | REJECTED. Define permitted transitions, retry/idempotency behaviour, timeout handling, reason codes, and who is authorized to override a decision.", cue: "Every state needs owner, entry rule, exit rule, evidence", color: "teal" },
-  { title: "Trade-offs to surface", body: "Accuracy vs onboarding conversion; fraud prevention vs customer friction; automated decisioning vs explainability; global consistency vs local regulation; richer data vs privacy; synchronous response vs deeper asynchronous checks.", cue: "Name both sides, constraint, decision, and mitigation", color: "coral" },
-  { title: "Success & guardrails", body: "Measure time to verify, completion rate, manual-review rate, false positives/negatives, fraud loss prevented, decision reversals, API availability/latency/error rate, and customer adoption. Segment metrics by market and risk tier so averages do not hide harm.", cue: "Speed + accuracy + fraud + reliability + fairness", color: "green" },
-  { title: "Discovery questions", body: "Which customer segment and jurisdiction comes first? What evidence sources are permitted? Who owns the decision policy? What reason codes can customers see? What is the acceptable manual-review rate? Which decisions require human approval? What audit evidence must be retained, and for how long?", cue: "Clarify before designing", color: "amber" },
-];
-
-export const l6BehavioralQuestions: InterviewQuestion[] = [
-  { question: "Tell me about a decision you got wrong or a product that underperformed.", audience: "L6 judgment & self-awareness", answer: "Open evidence gap: choose a real example with a meaningful consequence. State the decision and why it looked reasonable, identify the signal you missed, own the impact without blaming others, explain the correction, and show the behaviour or mechanism you changed afterward.", cue: "Real miss → consequence → correction → changed behaviour" },
-  { question: "How have you influenced stakeholders without authority?", audience: "L6 influence", answer: "Use Catalog Management. Marketing, product, and billing held different assumptions about expire versus cancel. You interviewed them separately, mapped downstream effects, made trade-offs visible in one joint session, and secured written agreement before engineering built against the rule.", cue: "Catalog: separate discovery → shared map → written sign-off" },
-  { question: "Tell me about a time you said no or challenged a requested solution.", audience: "L6 courage & product judgment", answer: "Use Aeroplan if the request involved an unsafe data path: frame the underlying outcome, explain why the proposed mechanism created security or downstream risk, present the token-exchange/BFF alternative, and show how you preserved the partnership goal without accepting the risky implementation.", cue: "Reject the mechanism, protect the outcome" },
-  { question: "Describe a disagreement with engineering.", audience: "L6 cross-functional leadership", answer: "Choose a real disagreement, not normal clarification. Explain engineering's legitimate constraint, your product or risk concern, the evidence each side used, how the decision was made, and how you preserved trust afterward. Aeroplan or Flow Runner may fit only if an actual disagreement occurred.", cue: "Do not invent conflict—verify the lived example" },
-  { question: "How do you act when important information is missing?", audience: "L6 ambiguity", answer: "Use Contingency Management. The apparent request was a tool, but the operational problem was fragmented and untraceable. You observed the workflow, mapped sources and states, separated facts from assumptions, and converted what you learned into an API contract, state model, data mapping, and audit requirement.", cue: "Observe → map → test assumptions → specify" },
-  { question: "How have you protected delivery under pressure?", audience: "L6 execution", answer: "Use Subscription Manager or Aeroplan: make dependencies and non-negotiable quality gates explicit, sequence work around the critical path, negotiate scope rather than silently accepting risk, and communicate the decision early. Be ready with the specific trade-off and result.", cue: "Critical path + quality floor + early communication" },
-  { question: "Tell me about someone you coached or helped improve.", audience: "L6 people leadership", answer: "Open evidence gap: prepare a specific person and observable before/after behaviour. Explain what you noticed, how you gave feedback or created a mechanism for growth, how you avoided taking the work over, and what improved. Do not rely on general statements about mentoring the team.", cue: "Specific person → intervention → observable improvement" },
-];
-
-export const readinessDimensions: ReadinessDimension[] = [
-  { id: "question", label: "Answered the question", description: "The opening directly addresses what was asked instead of delivering a nearby prepared answer." },
-  { id: "ownership", label: "Personal ownership", description: "My decision and contribution are unmistakable, accurate, and distinct from the team's work." },
-  { id: "leadership", label: "L6 leadership", description: "I show direction, influence, prioritization, conflict handling, or accountability—not only artifact creation." },
-  { id: "technical", label: "Technical reasoning", description: "I explain the contract, flow, state, boundary, security control, or data decision at product altitude." },
-  { id: "tradeoff", label: "Real trade-off", description: "I name alternatives, constraints, downstream risk, and why the selected option was appropriate." },
-  { id: "outcome", label: "Credible outcome", description: "The result is specific, defensible, and connected to the original problem without inflated claims." },
-  { id: "delivery", label: "Concise & conversational", description: "The answer leaves room for follow-ups and sounds responsive rather than memorized." },
-];
-
-export const passChecklistGroups: PassChecklistGroup[] = [
+export const mastercardIntelligenceCards: PrepCard[] = [
   {
-    title: "1. Lock the evidence",
-    description: "Every important claim must survive detailed follow-up without exaggeration.",
-    items: [
-      { id: "verify-facts", task: "Verify every metric, date, title, and ownership claim against the resume and lived experience.", evidence: "No number or ownership verb needs qualification after you say it." },
-      { id: "anchor-depth", task: "Prepare a two-minute version and ten-minute evidence depth for all five core anchors.", evidence: "For each: problem, ownership, options, trade-off, stakeholders, validation, result, lesson." },
-      { id: "failure-story", task: "Prepare one genuine decision that went wrong or product outcome that underperformed.", evidence: "You can name the consequence, correction, learning, and changed behaviour without disguising a success." },
-      { id: "coaching-story", task: "Prepare one specific coaching or colleague-development example.", evidence: "A real person, your intervention, and observable before/after behaviour are clear." },
-      { id: "disagreement-proof", task: "Confirm the real engineering disagreement and Flow Runner delivery evidence you will use.", evidence: "You can explain both sides fairly and state the verified outcome." },
-    ],
+    title: "What Mastercard is",
+    body: "Mastercard describes itself as a global technology company in payments. It connects people and organisations in more than 210 countries and territories, combining payments with value-added services that help customers manage fraud and risk, improve cybersecurity, and enhance digital-payment experiences.",
+    cue: "Payments network + technology + value-added services—not a bank", color: "blue",
   },
   {
-    title: "2. Prove technical product depth",
-    description: "Practise the decisions and diagrams, not implementation trivia.",
-    items: [
-      { id: "aeroplan-diagram", task: "Draw and narrate the Aeroplan flow from client through BFF/token exchange to the vendor boundary.", evidence: "You cover contract, trust boundaries, failure paths, security decision, and validation in under five minutes." },
-      { id: "api-lifecycle", task: "Explain your API lifecycle approach: discovery, contract, review, compatibility, errors, release, monitoring, and change.", evidence: "You can answer versioning and breaking-change follow-ups without drifting into code." },
-      { id: "contingency-state", task: "Draw Contingency Management's state model and explain invalid transitions, audit evidence, and recovery.", evidence: "Every important state has an owner, entry rule, exit rule, and failure path." },
-      { id: "identity-case", task: "Complete the Business Identity practice case on a blank page in 15 minutes.", evidence: "You clarify scope, identify users, draw the flow, define decisions, name risks, and select metrics." },
-      { id: "identity-tradeoffs", task: "Practise the core identity trade-offs and how you would make each decision.", evidence: "You can reason through friction vs fraud, automation vs review, privacy vs data coverage, and speed vs depth." },
-    ],
+    title: "The purpose to connect to the role",
+    body: "Its purpose is to power economies and empower people. In an interview, make that concrete: trusted business onboarding, lower fraud, appropriate compliance, and less customer friction enable more businesses to participate safely in digital commerce.",
+    cue: "Purpose → trusted participation in the digital economy", color: "green",
   },
   {
-    title: "3. Demonstrate the L6 bar",
-    description: "Show leadership, judgment, and influence—not only strong documentation.",
-    items: [
-      { id: "catalog-influence", task: "Deliver the Catalog conflict story with the competing interests and decision process explicit.", evidence: "The answer shows influence without authority and written alignment before build." },
-      { id: "say-no", task: "Prepare a clear example of saying no, challenging a mechanism, or negotiating scope.", evidence: "You protected the business outcome while refusing an unsafe or low-value path." },
-      { id: "ambiguity", task: "Deliver the Contingency ambiguity story starting with what was unknown—not with the finished artifacts.", evidence: "Observation, assumptions, discovery, decision, and outcome form a clear chain." },
-      { id: "dq-behaviour", task: "Prepare two examples that demonstrate Mastercard DQ through behaviour.", evidence: "Listening, inclusion, transparency, customer protection, integrity, or shared credit are visible without reciting values." },
-      { id: "manager-questions", task: "Prepare three manager-level questions about outcomes, decision rights, team friction, and L6 success.", evidence: "The questions help the interviewer imagine you operating in the role." },
-    ],
+    title: "Identity is a growth and risk problem",
+    body: "Mastercard Identity positions identity as a way to reduce fraud, improve customer experience, and build trust. Its public materials emphasise making informed decisions with data and protecting genuine users without unnecessary friction. For this role, discuss the trade-off between approval/onboarding speed, fraud loss, manual review, privacy, and regulatory obligations.",
+    cue: "Trust + conversion + fraud control; never optimise one in isolation", color: "teal",
   },
   {
-    title: "4. Pass the mock-interview bar",
-    description: "Readiness is demonstrated in recorded, unrehearsed answers.",
-    items: [
-      { id: "technical-mock", task: "Complete one recorded technical-PM mock interview.", evidence: "It includes APIs, system boundaries, state/data flow, risk, and measurement." },
-      { id: "behavioural-mock", task: "Complete one recorded L6 behavioural mock interview.", evidence: "It covers conflict, failure, ambiguity, prioritization, coaching, and reflection." },
-      { id: "pressure-followups", task: "Complete one pressure round with at least three follow-ups per anchor.", evidence: "You remain inside the lived example and answer the new angle without switching to a script." },
-      { id: "five-scores", task: "Score five recorded answers with the readiness scorecard.", evidence: "All five average at least 4.0/5, with no dimension consistently below 3." },
-      { id: "timing", task: "Trim every unprompted answer that regularly exceeds two minutes.", evidence: "The direct answer arrives in the opening sentence and the interviewer has room to probe." },
-    ],
+    title: "What the culture signals mean in practice",
+    body: "Mastercard grounds ethical operations in decency, integrity, and respect, supported by trust, partnership, agility, and initiative. Demonstrate them through behaviour: make risks transparent, share credit, listen to constraints, move with evidence, and protect customers even when it creates delivery friction.",
+    cue: "Show values through choices, not a memorised list", color: "purple",
   },
   {
-    title: "5. Final 24-hour readiness",
-    description: "Protect clarity and energy once preparation is complete.",
-    items: [
-      { id: "confirm-format", task: "Confirm the Stage 1 format, participants, duration, and whether a case or whiteboard is included when the information is available.", evidence: "No preventable format surprise remains." },
-      { id: "final-cues", task: "Review only anchor cues, verified numbers, the question map, and your interviewer questions.", evidence: "You are recalling decisions rather than rereading paragraphs." },
-      { id: "logistics", task: "Test audio/video, meeting link, camera framing, notes setup, and a backup connection.", evidence: "The interview can start on time without troubleshooting." },
-      { id: "stop-content", task: "Stop adding new preparation material at least 24 hours before the interview.", evidence: "The final day is rehearsal, rest, and retrieval—not new research." },
-      { id: "delivery-state", task: "Protect sleep, food, water, and ten quiet minutes before joining.", evidence: "You enter calm enough to listen, pause, and adapt." },
-    ],
+    title: "What the company says it assesses",
+    body: "Mastercard’s interview guidance says every process includes behavioural and problem-solving assessment. It asks candidates to know their résumé in depth, explain why Mastercard, ask questions, and act with integrity. The final bar-raiser preparation should therefore be detailed but strictly factual.",
+    cue: "Know the résumé, show your reasoning, ask thoughtful questions", color: "amber",
+  },
+  {
+    title: "Business Identity: keep the claim precise",
+    body: "The job description is specifically about business-entity risk assessment and verification: improving onboarding, reducing fraud, and supporting regulatory compliance. You have strong adjacent payments, controls, API, security, and delivery experience—but should not claim direct KYB or formal data-science ownership unless you can substantiate it.",
+    cue: "Strong adjacent fit; no invented direct-KYB claim", color: "coral",
   },
 ];
 
-export const roleCards: PrepCard[] = [
-  { title: "What the role actually is", body: "A technical product owner embedded between product strategy and engineering. You take a roadmap and turn it into features, user stories, and acceptance criteria; you run backlog prioritization, JAD sessions, and technical story reviews; and you carry requirements through delivery — demos, defect triage, UAT, and post-launch review.", cue: "Strategy in → user stories + AC out → shepherd to launch", color: "blue" },
-  { title: "The product: Business Identity", body: "Mastercard's Business Identity capabilities let businesses (not individual consumers) be verified and trusted across digital ecosystems — think KYB (Know Your Business), onboarding, and fraud/risk signals used by banks, marketplaces, and payment networks. Outcomes called out in the JD: faster onboarding, reduced fraud, regulatory compliance.", cue: "KYB / business identity verification, not consumer identity", color: "purple" },
-  { title: "Who you work with", body: "Engineering, data science, commercialization, and legal — plus external customers directly, to refine requirements. That's a wide stakeholder net, but it's the same shape as coordinating Bell engineering, a loyalty vendor, and security stakeholders on the Aeroplan integration, or finance/compliance on the CIBC gap analysis.", cue: "4 internal partners + external customers — a familiar shape", color: "teal" },
-  { title: "Compliance is a first-class responsibility", body: "Explicit JD lines: \"ensure timely identification and remediation of vulnerabilities and technical risks\" and \"support regulatory and compliance requirements, including audit evidence preparation and product risk assessments.\" This isn't a side note — for an identity/fraud product it's core to the job, and it's territory already covered by CPA/ACCA training plus real audit-evidence work at CIBC and CRA.", cue: "Audit evidence + risk assessment are deliverables, not afterthoughts", color: "amber" },
-  { title: "How the hiring manager will evaluate you", body: "At Stage 1, the bar moves beyond plausible fit. The hiring manager is checking whether you can lead delivery, translate ambiguity into technically sound requirements, make defensible trade-offs, align cross-functional partners, and own outcomes at L6 scope.", cue: "Leadership + technical judgment + delivery ownership", color: "green" },
+export const mastercardTerms: MastercardTerm[] = [
+  { term: "Business Identity / KYB", meaning: "Verification and risk assessment of a business entity and its relevant attributes before or during a commercial relationship.", whyItMatters: "This is the role’s core domain: secure onboarding and trusted business interactions." },
+  { term: "KYC", meaning: "Verification of an individual customer’s identity and risk profile.", whyItMatters: "Use it to distinguish consumer identity from the business-focused scope of this role." },
+  { term: "False positive / false negative", meaning: "A false positive wrongly flags a legitimate entity; a false negative misses a risky or fraudulent one.", whyItMatters: "Shows you understand that risk decisioning has customer-experience and loss trade-offs." },
+  { term: "Manual review", meaning: "A human decision path for cases that need more evidence or cannot safely be automated.", whyItMatters: "Connects model/rule confidence thresholds with operational design and customer outcomes." },
+  { term: "Risk-based decisioning", meaning: "Applying stronger controls where risk is higher while reducing friction for lower-risk interactions.", whyItMatters: "A useful way to discuss fraud prevention without advocating blanket friction." },
+  { term: "Audit evidence", meaning: "Traceable records that show what rule, data, decision, approval, or control applied.", whyItMatters: "Directly maps to the job description and your CIBC/CRA controls background." },
+  { term: "Acceptance criteria", meaning: "Observable, testable conditions that define whether a requirement is complete and correct.", whyItMatters: "Your strongest bridge from strategy and regulation to engineering-ready delivery." },
 ];
 
-export const positioningScripts: PrepCard[] = [
-  { title: "Tell me about yourself — 60–90 seconds", body: "I'm a Technical Product Manager with seven-plus years of end-to-end product ownership, currently Senior Technical Product Manager at Bell Canada, where I own the Subscription Manager platform — defining the product vision, backlog, and acceptance criteria that give millions of subscribers self-serve control over their streaming subscriptions, and architecting the microfrontend delivery model behind it. Before Bell I was a Technical Product Owner at the Canada Revenue Agency on government-grade compliance work, and earlier in my career I worked directly inside card network operations — I owned the full chargeback dispute lifecycle across both Visa and Mastercard networks at Skye Bank, with zero missed response deadlines, and led operational readiness for a co-branded card launch that got me selected to represent the organization at a Mastercard conference in Dubai. I'm also a CPA and ACCA, which gives me a genuine analytical foundation for regulatory compliance and audit evidence, not just a checkbox. Business Identity is a rare role where my product craft and my original card-network background actually point at the same problem.", cue: "7+ yrs TPM → Bell Subscription Manager → CRA compliance → Visa/Mastercard chargebacks → CPA/ACCA → why this role", color: "blue" },
-  { title: "Why Mastercard / Business Identity?", body: "This is closer to a homecoming than a career change. I started my career owning settlement, reconciliation, and the Visa/Mastercard chargeback dispute lifecycle at a bank — I know what it costs when a business isn't who it claims to be, and I've lived inside the deadlines and audit trail discipline that fraud and dispute infrastructure demands. Since then I've built the product-management craft — requirements, acceptance criteria, cross-functional delivery — on enterprise platforms at Bell and CRA. Business Identity is the first role I've seen that asks for exactly that combination: real card-network and fraud-adjacent domain knowledge, plus the technical product ownership to turn it into shipped features.", cue: "Card-network origin + product craft, not one or the other", color: "coral" },
-  { title: "How the resume maps directly to this JD", body: "Chargeback dispute lifecycle across Visa and Mastercard → fraud/dispute domain fluency. Co-branded card launch and card issuance ownership (zero errors, selected for the Mastercard Dubai conference) → hands-on card-network product delivery. CIBC's Financial Controls Gap Analysis and Regulatory Reconciliation Tool, plus CPA/ACCA → audit evidence and regulatory compliance. CRA's WCAG/Axe-core work and Bell's Contract Manager audit-trail product → compliance embedded as a continuous product standard, not a one-time gate. Every JD bullet has a concrete match, not an analogy.", cue: "This is a checklist match, not a stretch", color: "green" },
-  { title: "If asked about the title/level directly", body: "I'd note that my current title is already Senior Technical Product Manager, so I'd ask a clarifying question rather than guess: \"Can you tell me more about the scope of 'Manager' here — is it a people-management title, or a product-ownership level?\" That signals I read the JD closely and am thinking about fit, not just title inflation.", cue: "Ask, don't assume, on a 30-minute call", color: "gray" },
+export const mastercardQuestionsToAsk: PrepCard[] = [
+  { title: "Product direction", body: "Which Business Identity customer problem is most important for this team to solve in the next 6–12 months, and how will you measure whether it is solved?", cue: "Shows outcome orientation", color: "blue" },
+  { title: "Decision trade-offs", body: "Which trade-offs are most active today—for example, onboarding speed, data coverage, fraud loss, manual-review capacity, or regulatory requirements?", cue: "Shows mature product judgment", color: "teal" },
+  { title: "Operating model", body: "How do product, engineering, data science, legal/compliance, and commercial partners make decisions when a requirement crosses those functions?", cue: "Shows cross-functional readiness", color: "purple" },
+  { title: "Success in role", body: "What would distinguish an excellent first six months in this role from an adequate one?", cue: "Shows ownership and standards", color: "green" },
 ];
 
-export const domainPrimer: PrepCard[] = [
-  { title: "What Mastercard says about itself", body: "From the JD's own framing: Mastercard's purpose is powering economies and empowering people in 200+ countries and territories, helping build a sustainable economy where everyone can prosper — through digital payment choices that are secure, simple, smart, and accessible. Useful if Shashi asks \"what do you know about us\": lead with the purpose statement, then narrow to how Business Identity delivers it.", cue: "200+ countries, sustainable economy, secure/simple/smart/accessible payments", color: "gray" },
-  { title: "KYB vs KYC", body: "KYC (Know Your Customer) verifies individual consumers. KYB (Know Your Business) verifies the legal entity itself — registration, beneficial ownership, standing — before it can transact, onboard as a merchant, or integrate into a payment/marketplace ecosystem. The JD makes this role appear KYB-shaped; confirm the exact product surface, customer, and decision journey with the hiring manager.", cue: "KYB hypothesis—confirm the team's exact scope", color: "blue" },
-  { title: "Why it matters to Mastercard", body: "Faster, trustworthy business onboarding reduces fraud losses and satisfies regulators (AML, sanctions screening) simultaneously — a business that's verifiably \"who it says it is\" is cheaper to onboard and harder to use for fraud. Same logic that made zero-error card issuance and zero missed chargeback deadlines matter at the cardholder level.", cue: "Trust unlocks speed AND reduces fraud, not a trade-off", color: "purple" },
-  { title: "Where data science may fit", body: "The JD explicitly lists data science as a delivery partner, so risk signals, scoring, or model outputs may influence product decisions. If so, clarify inputs, confidence thresholds, manual-review boundaries, explainability, and false-positive/negative measurement—the same decision-table discipline used for Contingency Management's state transitions.", cue: "Likely collaboration—ask how the team uses model outputs", color: "teal" },
-  { title: "Where legal/compliance fits", body: "Regulatory requirements (AML, KYB standards vary by jurisdiction) likely show up as explicit acceptance criteria and audit evidence, not just a review gate — literally \"document requirements using rules, workflows, diagrams, and state transition models.\" Direct precedent: CIBC's Financial Controls Gap Analysis, CRA's government-grade security acceptance criteria, and Contract Manager's audit-trail integrity requirements at Bell.", cue: "Compliance = testable AC + traceable audit trail, not a rubber stamp", color: "amber" },
+export const mastercardReferences: ReferenceLink[] = [
+  { label: "About Mastercard", href: "https://www.mastercard.com/global/en/for-the-world/about-us.html", note: "Purpose, global reach, payments, and value-added services." },
+  { label: "Mastercard Identity", href: "https://www.mastercard.com/global/en/business/cybersecurity-fraud-prevention/identity.html", note: "Identity, fraud, customer experience, and trust." },
+  { label: "Mastercard hiring process", href: "https://careers.mastercard.com/us/en/mastercards-hiring-process", note: "Official interview expectations and stages." },
+  { label: "Interview tips", href: "https://careers.mastercard.com/us/en/interview-tips", note: "Official guidance for preparation and interview conduct." },
+  { label: "Culture and values", href: "https://www.mastercard.com/global/en/for-the-world/about-us/mastercard-human-rights-statement.html", note: "Decency, integrity, respect, trust, partnership, agility, and initiative." },
 ];
 
-export const evidenceCards: PrepCard[] = [
-  { title: "Visa/Mastercard chargeback dispute lifecycle", body: "At Skye Bank, I owned the full chargeback dispute lifecycle across both Visa and Mastercard networks — where a missed response window permanently forfeits recovery rights. I prioritized the case queue by deadline proximity and recovery value, kept detailed case documentation for audit purposes, and hit zero missed dispute deadlines across both networks for my full tenure. Directly relevant to Mastercard's own fraud prevention and dispute infrastructure.", cue: "Zero missed deadlines, both networks, full tenure", color: "coral" },
-  { title: "Card issuance, personalization & the Mastercard Dubai conference", body: "I led operational readiness for a new co-branded card launch — closing the gap between product design and what operations could execute on day one, defining data-validation standards for secure cardholder data collection, and owning issuance/personalization as a zero-error product. Recognized with selection to represent the organization at the Mastercard Dubai conference.", cue: "Zero issuance errors → Mastercard-recognized delivery", color: "amber" },
-  { title: "Requirements → user stories → acceptance criteria", body: "At Bell, I defined the product vision for the Subscription Manager, owned the full backlog, and authored user stories with explicit acceptance criteria — then validated adoption through Adobe Analytics event tracking. Direct match for \"analyze system requirements and elaborate them into features, user stories, and clear acceptance criteria.\"", cue: "This is the JD's #1 bullet, done daily at Bell", color: "blue" },
-  { title: "API specs & state-transition models", body: "For Contingency Management, I authored RESTful API specs across /orders, /transactions, /bulkOrders, /fieldAuditLogs, and defined server-side state-machine validation rules as formal acceptance criteria. For UPCM, I designed a decoupled state-machine architecture and data-model specs for PromoCode, Campaign, Brand, Channel, and Province entities.", cue: "State transition models are already a working deliverable, not new territory", color: "teal" },
-  { title: "Cross-functional delivery incl. legal/vendor/security", body: "On the Bell–Aeroplan Membership Management integration, I coordinated across Bell engineering, an external loyalty vendor, and security stakeholders — managing vendor SOW/SLA deliverables and enforcing TypeScript type contracts as a quality gate — to deliver live with zero post-launch integration regressions. Closest existing precedent to working with legal + data science + commercialization here.", cue: "Vendor + security + engineering, zero regressions", color: "purple" },
-  { title: "Audit evidence & regulatory compliance (+ CPA/ACCA)", body: "At CIBC, I scoped a Financial Controls Gap Analysis by regulatory requirement and risk severity, and built a Regulatory Reconciliation Tool that cut the monthly reconciliation cycle from two full days to half a day. CPA and ACCA designations back this with a genuine accounting/audit foundation — directly maps to \"audit evidence preparation and product risk assessments.\"", cue: "Formal accounting credentials + real audit-tooling delivery", color: "green" },
-  { title: "Compliance embedded as a continuous standard", body: "At CRA, I reframed WCAG 2.1 AA as a product quality problem, not a one-time audit — embedding Axe-core into CI/CD so accessibility regressions are caught automatically. At Bell, Contract Manager's audit-trail integrity requirements support billing dispute resolution. Both map to \"ensure timely identification and remediation of vulnerabilities and technical risks.\"", cue: "Compliance as CI gate, not a periodic checklist", color: "gray" },
+export const jobDescriptionCards: PrepCard[] = [
+  {
+    title: "Role and team",
+    body: "Manager, Product Management - Technical, within Mastercard Identity's Business Identity team in Security Solutions. The team builds products and services for business-entity verification and risk assessment, supporting trusted digital commerce, onboarding, fraud reduction, and regulatory compliance.",
+    cue: "Business identity verification + risk assessment + digital trust", color: "blue",
+  },
+  {
+    title: "Core delivery mandate",
+    body: "Translate roadmap strategy into technical requirements, planning, and prioritisation. Turn system requirements into features, user stories, and acceptance criteria; keep a well-prioritised backlog; and carry work through engineering, quality validation, demos, handoffs, and post-launch learning.",
+    cue: "Strategy → requirements → backlog → delivery → learning", color: "teal",
+  },
+  {
+    title: "Technical and cross-functional bar",
+    body: "The role requires technical analysis, API and non-functional-requirements discipline, prototypes or experiments, feasibility assessment, dependency management, workflow/state-transition documentation, and technical-risk remediation. Key partners include engineering, data science, commercialisation, legal, internal stakeholders, and external customers.",
+    cue: "Clear technical requirements and cross-functional execution", color: "purple",
+  },
+  {
+    title: "Risk and operating expectations",
+    body: "Mastercard calls out audit evidence, product-risk assessment, vulnerability remediation, Agile experience (SAFe is a plus), globally distributed collaboration, flexible hours, and up to 15% travel. The Toronto posting lists a CAD $121,000-$169,000 pay range.",
+    cue: "Compliance, risk, global delivery, and execution rigour", color: "amber",
+  },
+];
+
+export const resumeCards: PrepCard[] = [
+  {
+    title: "Submitted positioning",
+    body: "Senior Technical Product Manager with 7+ years across SaaS platforms, API integrations, AI-powered workflows, data products, product backlogs, acceptance criteria, vendor SOWs, and production delivery in enterprise environments.",
+    cue: "Technical product ownership + platform delivery", color: "blue",
+  },
+  {
+    title: "Bell Canada: strongest delivery evidence",
+    body: "Owned Subscription Manager vision, backlog, sprint acceptance criteria, multi-environment delivery, and post-launch analytics. Delivered an Aeroplan integration with a secure token-exchange pattern, vendor SOW/SLA coordination, OpenAPI-derived type contracts, and zero post-launch integration regressions. Also coordinated 6+ workstreams across engineering, billing, operations, marketing, and compliance.",
+    cue: "Backlog + API/security + delivery coordination", color: "teal",
+  },
+  {
+    title: "CRA and CIBC: compliance evidence",
+    body: "At CRA, authored government-grade security acceptance criteria and embedded Axe-core in CI/CD, achieving WCAG AA compliance with regression prevention. At CIBC, completed a Financial Controls Gap Analysis and delivered a reconciliation tool that reduced the monthly process from two days to half a day.",
+    cue: "Controls become testable, continuous product standards", color: "green",
+  },
+  {
+    title: "Skye Bank: direct payments context",
+    body: "Managed Visa and Mastercard chargeback cases by deadline proximity and recovery value, with zero missed dispute deadlines. Led operational readiness for a co-branded card launch, including cardholder-data validation standards, and delivered zero issuance errors.",
+    cue: "Payments operations + deadlines + data integrity", color: "coral",
+  },
+  {
+    title: "Credentials and accuracy note",
+    body: "The submitted résumé lists CPA Ontario and ACCA designations, a Diploma in Computer Programming, and a BSc. Its professional summary contains residual Guidepoint wording; do not mention Guidepoint in the Mastercard interview. Keep all speaking examples aligned to the specific résumé bullets above.",
+    cue: "Use the experience; avoid the résumé's target-company typo", color: "amber",
+  },
+];
+
+export const applicationAlignment: ApplicationAlignment[] = [
+  { requirement: "Roadmap, backlog, requirements, acceptance criteria", resumeEvidence: "Bell Subscription Manager backlog and sprint acceptance criteria; multi-workstream Agile delivery.", interviewRoute: "Stage 2: vague need → engineering-ready requirements; backlog prioritisation." },
+  { requirement: "Technical APIs, systems, and state/workflow documentation", resumeEvidence: "Bell REST/GraphQL/tRPC experience; Aeroplan token exchange; Contingency Management state-transition validation.", interviewRoute: "Stage 2: explain interfaces, rules, failure paths, quality gates, and trade-offs." },
+  { requirement: "Engineering, quality, dependencies, and launch execution", resumeEvidence: "Aeroplan vendor/SLA coordination and zero integration regressions; 6+ concurrent Bell workstreams; CRA release readiness.", interviewRoute: "Stage 1 project examples; Stage 4 pressure-test ownership and metrics." },
+  { requirement: "Risk, compliance, audit evidence, and product controls", resumeEvidence: "CPA/ACCA; CIBC controls/reconciliation; CRA security and WCAG CI gate; Bell security token exchange.", interviewRoute: "Stage 2: turn controls into observable acceptance criteria and evidence." },
+  { requirement: "Digital payments and security landscape", resumeEvidence: "Visa/Mastercard chargeback lifecycle, settlement/reconciliation, co-branded-card launch, and cardholder-data controls.", interviewRoute: "Stage 1: why Mastercard; Stage 4: payments-risk detail." },
+  { requirement: "Data science, legal, external-customer discovery, and SAFe", resumeEvidence: "Adjacent experience with AI governance, vendors, security, compliance, and distributed delivery; no formal titled data-science, legal, or SAFe ownership stated.", interviewRoute: "Be direct about the gap, explain the transferable discipline, and show how you would ramp." },
+];
+
+export const roundPlaybooks: RoundPlaybook[] = [
+  {
+    round: "Stage 1",
+    title: "Hiring manager chat",
+    objective: "Establish that you are a credible product leader for this specific role and that your career move has a clear purpose.",
+    interviewerFocus: "Your résumé, project ownership, why Mastercard, why now, and behavioural judgment such as a delivery challenge or a project that changed course.",
+    evidence: "Bell product ownership; CRA compliance work; Aeroplan integration; Visa/Mastercard chargebacks and co-branded-card launch.",
+    preparation: "Completed. Keep a short record of the questions asked and any themes the hiring manager emphasised. Reuse that information to sharpen your Stage 2 technical examples without changing the facts of your résumé.",
+    color: "blue",
+  },
+  {
+    round: "Stage 2",
+    title: "Techno-managerial deep dive",
+    objective: "Show product-manager technical fluency: how you turn ambiguity into a delivery plan and work credibly with engineering.",
+    interviewerFocus: "Agile versus Waterfall; Scrum and Kanban; Jira; requirements, backlog prioritisation, dependencies, quality, risk, and technical trade-offs.",
+    evidence: "Bell backlog and acceptance-criteria ownership; API and state-transition scope; multi-environment delivery; CRA CI/CD accessibility control.",
+    preparation: "Practise concise answers first, then a deeper example. Explain systems at product altitude: workflow, rules, interfaces, failure paths, acceptance criteria, and measures—not implementation trivia.",
+    color: "teal",
+  },
+  {
+    round: "Stage 3",
+    title: "Bar raiser: leadership scenario",
+    objective: "Demonstrate owner-level product judgment in an unfamiliar feature-launch scenario.",
+    interviewerFocus: "Planning a feature from discovery through launch; reconciling conflicting priorities; aligning engineering, business, risk, and operational stakeholders.",
+    evidence: "Subscription Manager, Contingency Management, and Aeroplan show problem framing, risk reduction, cross-functional alignment, and delivery ownership.",
+    preparation: "Use the feature-launch framework. State assumptions, identify users and success measures, prioritise an MVP, surface risks and dependencies, define the delivery loop, then describe launch and learning.",
+    color: "purple",
+  },
+  {
+    round: "Stage 4",
+    title: "Bar raiser: program leadership",
+    objective: "Prove that your leadership claims survive detailed, pressure-tested follow-up.",
+    interviewerFocus: "Capacity planning, PI planning, metrics, workplace frustration, difficult decisions, and deep questions about the exact projects on your résumé.",
+    evidence: "Six-plus concurrent Bell workstreams; CRA distributed-team planning; chargeback deadline discipline; CIBC reconciliation improvement.",
+    preparation: "Know what you personally decided, why, which trade-off you made, how success was measured, and what you would change. Be candid about formal SAFe/PI-planning experience if it is not on your résumé.",
+    color: "coral",
+  },
+];
+
+export const coreQuestions: InterviewQuestion[] = [
+  {
+    question: "Tell me about yourself.",
+    audience: "All interview rounds",
+    answer: "I am a Senior Technical Product Manager at Bell, where I own products from problem definition through backlog, acceptance criteria, delivery, and post-launch measurement. Before that, at the CRA, I worked on security and accessibility standards for public-facing platforms. Earlier, at Skye Bank, I managed the Visa and Mastercard chargeback lifecycle and supported a co-branded card launch. That combination of technical product delivery, compliance discipline, and direct payments operations is why this Business Identity role is a strong fit.",
+    cue: "Bell product ownership → CRA compliance → Visa/Mastercard operations → role fit",
+  },
+  {
+    question: "Why do you want to work for Mastercard?",
+    audience: "All interview rounds",
+    answer: "Mastercard brings together two parts of my background that have usually been separate: technical product ownership and payments-risk operations. I started in Visa and Mastercard chargeback and card-issuance work, where accuracy, deadlines, and auditability mattered every day. Since then, I have built products at Bell and the CRA by turning complex requirements into secure, measurable delivery. Business Identity is compelling because it applies that same discipline to trust, onboarding, fraud prevention, and compliance at a global scale.",
+    cue: "Payments foundation + technical product craft + digital trust",
+  },
+  {
+    question: "Tell me about a time you worked as part of a cross-functional team.",
+    audience: "Hiring manager or panel",
+    answer: "For Bell's Aeroplan membership-management integration, I coordinated Bell engineering, an external loyalty vendor, and security stakeholders. I owned the product scope for account linking, made the secure token-exchange approach explicit, tracked vendor SOW and SLA delivery, and used generated type contracts as a quality gate. The result was a production launch with zero post-launch integration regressions. The key was making the risks and handoffs visible early, so each group could make the right decision in its area.",
+    cue: "Aeroplan: engineering + vendor + security → clear contracts → zero regressions",
+  },
+  {
+    question: "Why should we hire you?",
+    audience: "All interview rounds",
+    answer: "I offer three directly relevant strengths. First, I have seven-plus years of technical product ownership, including backlog management, acceptance criteria, platform delivery, and measurable launch outcomes. Second, I bring direct Visa and Mastercard chargeback and card-launch experience, so the payments-risk context is familiar rather than abstract. Third, my CPA and ACCA background, together with controls and compliance work at CIBC and the CRA, helps me build products that are not only useful but also auditable and risk-aware.",
+    cue: "Technical PM execution + payments context + compliance rigor",
+  },
+];
+
+export const behaviouralQuestions: InterviewQuestion[] = [
+  {
+    question: "Why are you suitable for this role?",
+    audience: "Motivation and fit",
+    answer: "Connect the job's requirements to three examples: Bell for roadmap-to-delivery and cross-functional execution; Aeroplan for secure API and vendor integration; and Skye Bank, CIBC, and the CRA for payments, controls, and compliance. Be candid that Business Identity is a new product domain for you, while the core execution and risk disciplines are established strengths.",
+    cue: "Execution + integration + risk/compliance; do not claim direct KYB ownership",
+  },
+  {
+    question: "Why are you leaving Bell?",
+    audience: "Motivation and professionalism",
+    answer: "Bell has been a strong place to deepen my technical product-management experience, and I am proud of what I have built there. This move is a pull toward a specific opportunity: Mastercard lets me apply the product craft I have developed at Bell to the payments and trust domain where I began my career. It is about the fit and impact of this role, not dissatisfaction with my current employer.",
+    cue: "Move toward Mastercard; never move away from Bell",
+  },
+  {
+    question: "Tell me about a significant challenge and how you overcame it.",
+    audience: "Resilience and execution",
+    answer: "Use the CRA accessibility example. The challenge was treating WCAG gaps as a recurring product and user-impact issue, rather than a one-time compliance exercise. You defined the audit scope, prioritised remediation by severity and user impact, wrote acceptance criteria, and embedded Axe-core into CI/CD. The outcome was WCAG AA compliance with regression prevention built into the delivery process.",
+    cue: "CRA: recurring risk → prioritised remediation → CI gate",
+  },
+  {
+    question: "Tell me about a project that did not go according to plan. What did you do?",
+    audience: "Judgment and recovery",
+    answer: "Prepare a real example before using this answer. State what changed, the impact, the signal you missed or constraint that emerged, how you reset scope or the delivery plan, and the operating change you made afterward. Do not reuse a successful project unless there was a genuine, defensible recovery moment within it.",
+    cue: "Real miss → ownership → recovery → changed behaviour",
+  },
+  {
+    question: "What are Mastercard's values, and how do they align with you?",
+    audience: "Culture and values",
+    answer: "Mastercard describes a culture of decency, integrity, and respect, supported by trust, partnership, agility, and initiative. Choose two values and make them concrete. For trust, discuss the documentation and deadline discipline behind Visa/Mastercard chargebacks or the security controls in the Aeroplan integration. For partnership, describe how you made engineering, vendor, and security handoffs explicit. Avoid reciting values without a lived example.",
+    cue: "Choose two values; prove each with behaviour",
+  },
+  {
+    question: "What is your biggest weakness?",
+    audience: "Self-awareness",
+    answer: "A precise answer is that you have not yet partnered with a formally titled data-science team. Your relevant foundation is working through rules, state transitions, quality signals, and AI-governance boundaries at Bell. Explain that you would close the gap by learning the team's model, decision thresholds, error trade-offs, and monitoring metrics before translating them into requirements. Keep it narrow, factual, and paired with an action.",
+    cue: "Name the gap plainly, then show the learning plan",
+  },
+  {
+    question: "Tell me about a setback and how you reacted.",
+    audience: "Resilience and self-awareness",
+    answer: "Prepare a different genuine example from the project-off-track answer if possible. Describe the setback without minimising it, your immediate response, the support or information you sought, the corrected action, and the lesson that changed how you work. Never invent a setback from a successful launch.",
+    cue: "Setback → response → correction → learning",
+  },
+  {
+    question: "Tell me about a time you stepped in and took charge.",
+    audience: "Initiative and ownership",
+    answer: "Use Contingency Management at Bell. Operations depended on engineering whenever a subscription order failed. You framed that as a structural product problem, defined a self-serve diagnostic platform, owned the front-end and API scope, prioritised data-integrity edge cases, and set state-transition validation as the quality standard. Operations could then investigate and resolve failures without developer involvement.",
+    cue: "Contingency: recurring escalation → self-serve product → operational independence",
+  },
+  {
+    question: "Where do you see yourself in five years?",
+    audience: "Career direction",
+    answer: "I want to be a product leader trusted with increasingly complex platform and trust problems: setting product direction, helping cross-functional teams make sound decisions, and developing other product talent. Mastercard is attractive because Business Identity sits at the intersection of technology, risk, and global commerce. I am focused on growing through impact and scope, not on chasing a title on a fixed timetable.",
+    cue: "Growth through trusted scope and impact",
+  },
+  {
+    question: "Tell me about a time you influenced a difficult stakeholder.",
+    audience: "Influence without authority",
+    answer: "Use a real example in which a stakeholder initially disagreed or had competing constraints. Aeroplan may work only if you can truthfully describe the disagreement. Explain their concern fairly, make the trade-offs visible, use evidence or a risk framing to align on the decision, document the agreement, and state the result. Do not label someone difficult merely because they asked questions.",
+    cue: "Fairly describe the concern → surface trade-offs → agree and document",
+  },
+  {
+    question: "What three things set you apart from other candidates?",
+    audience: "Differentiation",
+    answer: "First, technical product delivery: I can turn ambiguous business problems into backlogs, acceptance criteria, platform requirements, and measured launches. Second, direct payments operations: I have owned Visa/Mastercard chargebacks and supported a co-branded card launch. Third, risk and controls rigor: CPA/ACCA designations plus CIBC and CRA experience help me create products that are usable, secure, and auditable.",
+    cue: "Build + payments + controls",
+  },
+  {
+    question: "Tell me about a difficult conversation with your manager.",
+    audience: "Maturity and communication",
+    answer: "Prepare a real, low-drama example. State the shared objective, describe the difference in view without judging your manager, show the facts or options you brought, explain how you listened and reached a decision, and name what improved afterward. The signal is respectful candour and accountability—not winning an argument.",
+    cue: "Shared goal → differing view → evidence → respectful resolution",
+  },
+  {
+    question: "What do you know about Mastercard?",
+    audience: "Company knowledge",
+    answer: "Mastercard is a global technology company in payments whose purpose is to connect and power an inclusive digital economy. Its network, partnerships, data, and technology aim to make transactions safe, simple, smart, and accessible. For this role, that purpose becomes practical through Business Identity: creating trusted, verifiable business interactions that can improve onboarding, reduce fraud, and support compliance.",
+    cue: "Inclusive digital economy → Business Identity → trust, speed, fraud, compliance",
+  },
+];
+
+export const technicalFollowUps: InterviewQuestion[] = [
+  {
+    question: "When would you use Agile rather than Waterfall?",
+    audience: "Stage 2: delivery methods",
+    answer: "Choose the delivery approach based on uncertainty, feedback needs, dependency structure, and risk. Agile fits when the team can learn through incremental delivery and customer feedback; a more sequential plan can fit stable, heavily constrained work with clear handoffs. In either case, make scope, decision rights, dependencies, quality gates, and measures visible. Avoid presenting Agile as the automatic answer to every problem.",
+    cue: "Choose the method to fit uncertainty and risk—not a label",
+  },
+  {
+    question: "How do Scrum and Kanban differ, and when would you use each?",
+    audience: "Stage 2: Agile fluency",
+    answer: "Scrum uses time-boxed sprints, a planned sprint goal, and regular ceremonies to create a predictable delivery rhythm. Kanban manages a continuous flow of work, limits work in progress, and focuses on cycle time and bottlenecks. I would use Scrum when a team benefits from planning and review cadence; I would use Kanban for continuous operational or support demand. A hybrid can work if the rules are explicit.",
+    cue: "Scrum = sprint cadence; Kanban = flow and WIP",
+  },
+  {
+    question: "How do you use Jira to run delivery rather than just track tickets?",
+    audience: "Stage 2: tools and operating rhythm",
+    answer: "Use Jira to make the product decision trail visible: a prioritised backlog, clear epics and stories, acceptance criteria, owners, dependencies, risks, and release status. At Bell and the CRA, Jira supported sprint planning, delivery coordination, and release readiness. The tool is useful only when it helps the team make and communicate decisions; it should not become administrative theatre.",
+    cue: "Backlog + decision trail + dependencies + release visibility",
+  },
+  {
+    question: "What does “3-3-5” mean in Agile?",
+    audience: "Stage 2: team-specific terminology",
+    answer: "There is no universal Agile standard called “3-3-5.” I would first clarify what the interviewer’s team means by it rather than confidently inventing an answer. Then I would relate my response to the underlying delivery mechanics: planning cadence, roles, work-item quality, flow or sprint metrics, risk management, and continuous improvement.",
+    cue: "Clarify the local definition; do not guess",
+  },
+  {
+    question: "How do you turn a vague business need into engineering-ready requirements?",
+    audience: "Stage 1 technical follow-up",
+    answer: "Start with the user and business problem, then make the workflow, rules, states, data, success measures, and risks explicit. At Bell, you applied this discipline to the Subscription Manager and Contingency Management products through backlog ownership, acceptance criteria, API scope, and state-transition validation. Validate the proposal with engineering and QA before build, then confirm the result after launch.",
+    cue: "Problem → workflow/rules → acceptance criteria → validate → measure",
+  },
+  {
+    question: "How do you prioritise a backlog when there are competing needs?",
+    audience: "Stage 1 technical follow-up",
+    answer: "Make the decision criteria visible: customer impact, risk, regulatory obligation, dependency, effort, and the consequence of delay. The chargeback queue is a clear example of using deadline proximity and recovery value under non-negotiable response windows. At Bell, use the same logic across marketing, operations, engineering, and compliance rather than allowing the loudest request to determine priority.",
+    cue: "Impact + risk + dependency + cost of delay",
+  },
+  {
+    question: "How do you build compliance and quality into a product?",
+    audience: "Stage 1 technical follow-up",
+    answer: "Translate the requirement into observable, testable behaviour rather than leaving it as a review-stage aspiration. At the CRA, you embedded Axe-core in CI/CD so accessibility regression was prevented continuously. At CIBC, you delivered a reconciliation tool that cross-checked data and cut the monthly cycle from two days to half a day. In this role, I would apply the same approach to requirements, evidence, controls, and release validation.",
+    cue: "Make compliance testable and continuous",
+  },
+  {
+    question: "How would you work with data science on a fraud or risk model?",
+    audience: "Stage 1 technical follow-up",
+    answer: "I would first learn the model's purpose, input signals, decision thresholds, false-positive and false-negative trade-offs, monitoring, and human-review path. Then I would convert the agreed decision logic into clear product requirements, workflows, controls, and measures. I would be direct that my experience is adjacent rather than formal data-science partnership, while showing that I already work comfortably with rules, quality gates, and risk-based decisions.",
+    cue: "Learn model → agree trade-offs → turn logic into testable requirements",
+  },
+];
+
+export const featureLaunchFramework: PrepCard[] = [
+  { title: "1. Clarify the problem", body: "State the target user, the customer or business problem, desired outcome, constraints, and decision owner. Identify what is known, what is assumed, and the first information you need.", cue: "User → problem → outcome → constraints", color: "blue" },
+  { title: "2. Define success and guardrails", body: "Choose a primary outcome metric and a small set of guardrails such as quality, fraud/risk, accessibility, cost, or operational load. Set the baseline before deciding whether the feature worked.", cue: "Outcome metric + risk guardrails", color: "teal" },
+  { title: "3. Shape the MVP", body: "Prioritise the smallest valuable release. Separate must-haves from later improvements using customer impact, risk, dependency, effort, and cost of delay—not the loudest stakeholder request.", cue: "MVP first; show the prioritisation logic", color: "amber" },
+  { title: "4. Align the delivery system", body: "Bring engineering, design, data, operations, security, legal/compliance, and commercial partners in early as applicable. Make workflows, acceptance criteria, interfaces, dependencies, and decision rights explicit.", cue: "Early alignment prevents late surprises", color: "purple" },
+  { title: "5. Deliver, launch, learn", body: "Run the delivery cadence, manage risks and scope changes, validate against acceptance criteria, prepare rollout and support, then compare launch metrics with the baseline. Turn the learning into backlog decisions.", cue: "Build → validate → launch → measure → iterate", color: "green" },
+];
+
+export const roundFourQuestions: InterviewQuestion[] = [
+  {
+    question: "Walk me through one program on your résumé in depth.",
+    audience: "Stage 4: résumé pressure test",
+    answer: "Choose the Bell–Aeroplan integration or Subscription Manager. Start with the business problem and your specific ownership, then cover stakeholders, key requirements, risks, decision points, dependencies, validation, outcome, and what you learned. Expect follow-ups on each claim, so use only details you personally observed and can explain.",
+    cue: "Problem → ownership → decisions → risks → validation → result → lesson",
+  },
+  {
+    question: "How do you approach capacity planning?",
+    audience: "Stage 4: delivery leadership",
+    answer: "Start from available capacity, not a wish list: team availability, historical throughput, planned leave, operational load, dependencies, and the uncertainty in the work. Reserve capacity for defects and risk, expose the trade-off between scope, date, and quality, then re-plan as evidence changes. At Bell, coordinating six-plus workstreams required making dependencies and priority choices explicit; do not claim a formal capacity model you did not run.",
+    cue: "Capacity → uncertainty → dependencies → trade-offs → re-plan",
+  },
+  {
+    question: "How would you contribute to PI Planning?",
+    audience: "Stage 4: SAFe / planning cadence",
+    answer: "Be candid that formal SAFe PI Planning is not stated on your résumé. Explain how you would contribute: bring the product vision and measurable objectives, prepare prioritised features and dependencies, work with teams on feasibility and sequencing, identify risks, agree on commitments, and keep the plan visible through the increment. Connect this to your existing sprint planning, dependency mapping, and multi-team coordination experience.",
+    cue: "Vision → objectives → features → dependencies → risks → commitments",
+  },
+  {
+    question: "Which metrics do you track, and how do they change your decisions?",
+    audience: "Stage 4: measurable leadership",
+    answer: "Use a balanced set: customer or business outcome, delivery health, quality, and risk. Examples from your résumé include Subscription Manager adoption and call-centre deflection, SLA performance and post-launch integration regressions for Aeroplan, accessibility compliance at the CRA, and reconciliation cycle time at CIBC. Explain the baseline, threshold, owner, review cadence, and the decision the metric would trigger.",
+    cue: "Outcome + delivery + quality + risk; each metric changes a decision",
+  },
+  {
+    question: "How do you handle workplace frustration or conflict?",
+    audience: "Stage 4: resilience and maturity",
+    answer: "Prepare a real example before the interview. In the answer, separate the person from the problem, name the impact, listen for the underlying constraint, make options and trade-offs visible, agree on an action, and follow through. Do not invent conflict from an otherwise successful project or describe a colleague as difficult simply for disagreeing.",
+    cue: "Impact → listen → options → agreement → follow-through",
+  },
+];
+
+export const roundOneQuestions: InterviewQuestion[] = [
+  ...coreQuestions,
+  ...behaviouralQuestions.filter((item) => [
+    "Why are you suitable for this role?",
+    "Why are you leaving Bell?",
+    "Tell me about a significant challenge and how you overcame it.",
+    "Tell me about a project that did not go according to plan. What did you do?",
+  ].includes(item.question)),
+];
+
+export const roundThreeQuestions: InterviewQuestion[] = [
+  {
+    question: "How would you plan the launch of a new Business Identity feature from start to finish?",
+    audience: "Stage 3: product-leadership scenario",
+    answer: "I would begin by clarifying the user segment, problem, desired outcome, constraints, and decision owner. Next I would define the success metric and guardrails such as fraud loss, false-positive rate, privacy, manual-review capacity, or regulatory requirements. I would then shape the MVP, align engineering, data, legal/compliance, operations, and commercial partners on requirements and dependencies, and make the rollout and support plan explicit. Finally, I would validate against acceptance criteria, monitor the launch against the baseline, and turn the learning into backlog decisions. The key is to show the trade-offs, not jump straight to a solution.",
+    cue: "Problem → measures/guardrails → MVP → align → deliver → launch → learn",
+  },
+  {
+    question: "How do you handle conflicting priorities across teams during a feature launch?",
+    audience: "Stage 3: alignment and influence",
+    answer: "First make the conflict concrete: which customer outcome, risk, dependency, or date is each group protecting? Then show the downstream effects and evaluate options against agreed criteria such as customer impact, regulatory exposure, fraud risk, effort, and cost of delay. I would document the decision, owner, and any follow-up risk. This is the same approach I used in Bell Catalog Management when marketing, product, and billing interpreted promotion rules differently: map the consequences, bring the decision-makers together, and secure written agreement before build.",
+    cue: "Surface the real conflict → show impacts → decide and document",
+  },
+  ...behaviouralQuestions.filter((item) => [
+    "Tell me about a setback and how you reacted.",
+    "Tell me about a time you stepped in and took charge.",
+    "Tell me about a time you influenced a difficult stakeholder.",
+    "Tell me about a difficult conversation with your manager.",
+    "What are Mastercard's values, and how do they align with you?",
+  ].includes(item.question)),
 ];
 
 export const starStories: StarStory[] = [
-  { title: "Visa/Mastercard chargeback dispute lifecycle — zero missed deadlines", useFor: "Fraud/dispute domain, deadline discipline, direct network experience", situation: "At Skye Bank, mandatory chargeback response windows meant a missed deadline permanently forfeited recovery rights, across both Visa and Mastercard networks.", task: "Manage the full dispute case queue without a single missed window.", action: "I prioritized the case queue by deadline proximity and recovery value, maintained detailed case documentation for audit purposes, and treated every case as a hard deadline rather than a soft target.", result: "Zero missed dispute deadlines across both networks throughout my full tenure.", pmFrame: "Frame as: direct, hands-on fluency with the exact dispute infrastructure Mastercard's fraud prevention systems protect — not an analogy borrowed from another domain." },
-  { title: "Co-branded card launch & card issuance — zero errors, Mastercard Dubai recognition", useFor: "Card-network delivery, operational readiness, fraud/identity data validation", situation: "A new co-branded card needed operational readiness before go-live, with card issuance and personalization carrying real fraud and regulatory exposure if mishandled.", task: "Close the gap between product design and what operations could actually execute on day one, with zero tolerance for issuance errors.", action: "I identified execution gaps ahead of launch, coordinated IT system parameter changes, defined data-validation standards for secure cardholder data collection, and documented post-launch operating procedures.", result: "Zero issuance errors, an on-time launch, and selection to represent the organization at the Mastercard Dubai conference.", pmFrame: "Frame as: this is prior, direct recognition from within the Mastercard ecosystem — say it plainly, it's a genuine credibility hook for this exact interview." },
-  { title: "Subscription Manager — product vision to measurable call deflection", useFor: "Requirements ownership, backlog prioritization, architecture-level decisions", situation: "Bell's streaming subscription platform had no self-serve path, driving high call-centre volume for Netflix, Disney+, and Crave subscription changes.", task: "Define a product that gives subscribers full self-serve control and measurably reduces call-centre load.", action: "I defined the product vision, owned the full backlog, prioritized features with marketing and operations, authored user stories with explicit acceptance criteria, and architected the microfrontend delivery model (Webpack Module Federation) enabling independent deployment of 5+ applications.", result: "Measurable call-centre deflection validated through Adobe Analytics event tracking, and a 40% reduction in release cycle time from the microfrontend architecture.", pmFrame: "Frame as: end-to-end ownership from business problem to shipped architecture to measured outcome — the full JD loop in one story." },
-  { title: "Aeroplan loyalty integration — cross-functional delivery with a vendor and security", useFor: "Cross-functional partnership (legal/vendor/security analog), technical risk mitigation", situation: "Bell's Aeroplan loyalty partnership was a revenue-critical integration requiring a secure token-based pattern and coordination with an external vendor and security stakeholders.", task: "Translate the partnership's business requirements into technical specs and deliver without integration regressions.", action: "I defined a token-based security pattern (Token API + BFF proxy) to mitigate query-parameter fraud, managed vendor SOW deliverables against SLA milestones, enforced auto-generated TypeScript type contracts as a non-negotiable quality gate, and coordinated alignment across Bell engineering, the vendor, and security.", result: "Delivered live in production with zero post-launch integration regressions, on schedule.", pmFrame: "Frame as: closest existing precedent to coordinating engineering, a vendor, and security/legal simultaneously — map directly to this JD's engineering/data science/legal/commercialization stakeholder set." },
-  { title: "Catalog Management — align three groups before build", useFor: "Stakeholder conflict, influence without authority, business-rule clarity", situation: "Marketing, product, and billing used 'expire' and 'cancel' differently, even though each interpretation created different customer, catalog, and charging outcomes.", task: "Create one buildable rule without carrying conflicting promises into engineering.", action: "I met each group separately to uncover its underlying need, mapped expire and cancel as distinct states with their downstream effects, then brought all three groups together around the same visual model so the trade-offs were explicit.", result: "All three groups agreed to a single definition and provided written sign-off before development, avoiding the rework cycle the ambiguity would have caused.", pmFrame: "Frame as: L6 influence is not winning an argument; it is creating a decision process where competing functions can see and own the same trade-off." },
-  { title: "Contingency Management — make operations traceable", useFor: "Ambiguity, operational discovery, API/data/state design, auditability", situation: "Agents investigated stuck subscriber and order scenarios through a fragmented, largely manual process with no consistent record of what was checked or changed.", task: "Turn an improvised workflow into a repeatable and reconstructable product capability before development began.", action: "I mapped the operational flow and data sources, specified the API contract and UI-to-endpoint data mapping, defined permitted order-status transitions, and made an audit log—who did what and when—an explicit acceptance requirement.", result: "The process became repeatable and traceable; the audit log was later used in two internal investigations to reconstruct what happened.", pmFrame: "Frame as: the root problem was not 'build a screen'; it was operational traceability. The technical artifacts enforced that product outcome." },
-  { title: "Flow Runner API — separate execution from rule ownership", useFor: "Service boundaries, legacy compatibility, technical trade-offs", situation: "The platform needed a clear boundary between executing a flow and owning the policy rules, while existing consumers still depended on a legacy request/response format.", task: "Define an evolvable service boundary without breaking current integrations.", action: "I framed execution and rule ownership as separate responsibilities, documented the compatibility requirement, and made functional parity across the legacy and newer paths part of the validation plan.", result: "The design preserved existing consumer behaviour while creating a clearer ownership boundary for future change.", pmFrame: "Frame as: boundary decisions are product decisions when they determine ownership, compatibility risk, and how safely the platform can evolve. Verify the exact delivery evidence before using this as a primary result story." },
-  { title: "CIBC Regulatory Reconciliation Tool — audit evidence, halved cycle time", useFor: "Audit evidence preparation, regulatory compliance, CPA/ACCA-backed rigor", situation: "CIBC's monthly regulatory reconciliation cycle took two full days and was prone to manual errors causing rework.", task: "Reduce cycle time and eliminate the specific error class causing rework, without requiring technical support to operate.", action: "I designed and delivered a semi-automated reconciliation tool that cross-checked report outputs against source data, scoped it around the highest-rework error types, and validated it was operable by finance staff directly.", result: "Reconciliation cycle time cut from two full days to half a day.", pmFrame: "Frame as: this is where the CPA/ACCA background stops being a line item and becomes evidence — genuine audit/financial-controls fluency, not adjacent interest." },
-  { title: "WCAG 2.1 AA at CRA — compliance as a continuous CI gate", useFor: "Vulnerability/technical-risk remediation, regulatory compliance as ongoing product standard", situation: "CRA's public-facing properties had accessibility gaps affecting Canadians relying on assistive technology — both a legal obligation and a real user-impact problem, historically handled as periodic manual audits.", task: "Achieve WCAG 2.1 AA compliance and prevent regression, not just pass a one-time audit.", action: "I defined the audit scope, prioritized remediation by severity and user impact, authored acceptance criteria per remediation sprint, and embedded Axe-core into the CI/CD pipeline so accessibility became an automatically enforced product standard.", result: "WCAG AA compliance achieved across all public-facing properties, with regression prevention built into CI — eliminating recurring manual audits.", pmFrame: "Frame as: exactly the JD's \"ensure timely identification and remediation of vulnerabilities and technical risks\" — compliance as a CI gate, not a checkbox." },
+  {
+    title: "Catalog Management - promotion-rule conflict and sign-off",
+    useFor: "Stakeholder conflict, complex requirements, influence without authority, getting alignment before delivery",
+    situation: "Bell's Catalog Management system is the master-data layer for products, promotions, and prices, so an error can reach customer-facing pricing and billing. Promotion-eligibility rules were undocumented and interpreted differently by marketing, product, and billing.",
+    task: "Elicit, document, and obtain sign-off on the complete business rules before the development team built the admin workflows, especially promotion stackability and the materially different effects of expiring versus cancelling a promotion.",
+    action: "I ran separate requirement sessions with marketing, product, and billing, then brought the groups together to reconcile the differences. Marketing treated expire and cancel as interchangeable, while billing depended on the exact action. I mapped the downstream impacts of each interpretation, made the billing dependency visible to every group, produced a formal rules document, and obtained written sign-off before build.",
+    result: "The feature launched without requirement-driven defects. Billing said it was the first time a complete, agreed rules document had existed before a Catalog feature entered development, and the document became the template for later eligibility-logic work.",
+    managerFrame: "Lead with the conflict and the decision mechanism. This demonstrates that requirements documentation is a tool for alignment and risk reduction—not an administrative deliverable.",
+  },
+  {
+    title: "Contingency Management - API requirements and root-cause resolution",
+    useFor: "Technical depth, API contracts, data mapping, operations discovery, root-cause thinking, auditability",
+    situation: "Bell operations teams manually triaged failed subscription orders, or kickouts, across back-office systems. The process was slow, error-prone, and delayed customers, while the new Contingency Management platform lacked a formal definition of what the service needed to support.",
+    task: "Specify the API contract and data mapping between agent views and backend services for order search, transaction management, and audit logging—while ensuring the product addressed why orders failed rather than simply exposing them.",
+    action: "I shadowed operations agents to understand the actual exception workflow and found that many failures originated in invalid address data from the upstream CPM feed. I reframed the requirement from showing failed orders to enabling agents to correct address data and resubmit the transaction. I specified the edit-and-resubmit capability, an automatic-resubmit Lambda after correction, data mapping, endpoint specifications, API-boundary validation rules, audit logging, and endpoint-level acceptance criteria. I reviewed the work with operations and engineering before backend implementation.",
+    result: "Agents could resolve the most common failure class without escalating to engineering, and automatic resubmission removed manual reprocessing for corrected records. Engineering built from the specifications without significant rework, while the audit trail made each transaction change traceable.",
+    managerFrame: "Emphasise how direct observation changed the product boundary: self-service root-cause correction, not another diagnostic screen.",
+  },
+  {
+    title: "Aeroplan loyalty integration - secure contract and vendor delivery",
+    useFor: "Security judgment, APIs, vendor management, UAT, technical risk, cross-functional delivery",
+    situation: "Bell's Aeroplan loyalty integration was a strategically important commercial partnership, but it began without a formal integration specification, documented security model, or API contract. A vendor SOW already existed, making ambiguity both a quality and commercial risk.",
+    task: "Define the product scope before implementation: the security model, API contract, compile-time type checks, acceptance criteria, and vendor delivery against the SOW.",
+    action: "I flagged the original proposal to pass customer data through URL query parameters as a privacy and fraud risk, and proposed a token exchange: the host platform sends the payload to a Token API, receives a one-time UUID, and the microfrontend retrieves it securely through a BFF. After aligning engineering and security, I defined the API contract, OpenAPI-driven TypeScript type generation as a quality gate, acceptance criteria for each flow, vendor SOW milestones, and UAT across the deployment pipeline.",
+    result: "The production launch had zero post-launch integration regressions. OpenAPI-driven type generation found two contract mismatches in UAT, both resolved before production. The multi-program architecture also created a reusable path for future loyalty partners.",
+    managerFrame: "Show the decision before the artifact: you stopped an unsafe data-flow pattern, aligned the right partners, and made quality measurable before launch.",
+  },
+  {
+    title: "Flow Runner - centralising duplicated qualification logic",
+    useFor: "Platform product strategy, service boundaries, technical architecture, migration risk, proving parity",
+    situation: "On Bell's subscription platform, offer-qualification logic was duplicated across reseller-service, catalog-api, and merchant adapters. That caused inconsistent eligibility outcomes, required multiple deployments for rule changes, and left no clear end-to-end explanation of how a customer qualified for an offer.",
+    task: "Define a central service that executes qualification rules consistently without owning the rules themselves, then prove that it produced the same outcomes as the scattered legacy logic before any cutover.",
+    action: "I audited the existing patterns—account type, household eligibility, existing subscriptions, and promotion stacking—and spoke with product, catalog, billing, and partner engineering about rule-change needs and the cost of bad rules. I defined the boundary: Flow Runner executes rules while catalog-api and the policy store own them. With engineering, I modelled a declarative JSON flow that loads product and promotion rules, evaluates the request profile, and returns a qualification outcome with reasons. I specified the OpenAPI contract for /api/v2/flows/:flowId/execute, supported legacy and new rule formats, and validated a pilot against real catalog data to prove parity before cutover.",
+    result: "The platform gained one execution point instead of scattered logic, rule changes no longer required redeploying every service, and existing integrations were not disrupted. The reusable recipe model later supported additional validation scenarios.",
+    managerFrame: "Frame it as a product-boundary decision: centralise execution for consistency and agility, but leave rule ownership with the systems and people best positioned to manage it.",
+  },
 ];
 
-export const screeningQuestions: InterviewQuestion[] = [
-  { question: "Walk me through your background.", audience: "Recruiter screen — Shashi", answer: "Use the 60–90 second \"Tell me about yourself\" script: 7+ years as a Technical Product Manager, currently Senior Technical PM at Bell (Subscription Manager), prior Technical Product Owner at CRA, and — the direct hit — early career owning the Visa/Mastercard chargeback dispute lifecycle and a co-branded card launch at Skye Bank, plus CPA/ACCA designations.", cue: "Same script as positioning card #1" },
-  { question: "Why are you interested in this role / Mastercard?", audience: "Recruiter screen — Shashi", answer: "I started my career inside card-network fraud and dispute infrastructure — chargeback lifecycle management across Visa and Mastercard, card issuance with zero errors, even prior recognition at a Mastercard conference. I've since built full technical-product-management craft on enterprise platforms. Business Identity is the first role I've seen that asks for both halves of that background at once.", cue: "Card-network origin + product craft, homecoming framing" },
-  { question: "What's your experience with Agile / backlog management?", audience: "Recruiter screen — Shashi", answer: "I own full product backlogs end-to-end — at Bell, prioritizing the Subscription Manager and UPCM backlogs with marketing and operations using Agile sprint ceremonies, authoring user stories with explicit acceptance criteria, and validating outcomes through post-launch analytics. That's the primary artifact I own day to day, across 10+ enterprise features over my career.", cue: "10+ enterprise features, backlog-to-analytics ownership" },
-  { question: "Have you worked directly with legal or data science teams?", audience: "Recruiter screen — Shashi", answer: "Not under those exact titles, but the closest precedent is the Bell–Aeroplan integration, where I coordinated engineering, an external vendor, and security stakeholders on a token-based fraud-mitigation pattern — same shape as legal/data-science partnership. On the compliance side, CPA/ACCA plus CIBC's Financial Controls Gap Analysis give me real fluency in how legal/regulatory requirements get translated into product acceptance criteria.", cue: "Vendor/security precedent + CPA/ACCA compliance fluency" },
-  { question: "What are your salary expectations?", audience: "Recruiter screen — Shashi", answer: "The posted range for Toronto is $121,000–$169,000 CAD. Best move: ask their range first if not yet given, or anchor high-but-reasonable within the posted band given 7+ years of directly relevant experience — e.g. \"Given the posted range and my background, including direct Visa/Mastercard domain experience, I'd expect to land in the upper portion of that band, and I'm open to discussing the full package.\" Don't volunteer a number below the range's midpoint.", cue: "Posted range: $121K–$169K CAD (Toronto) — anchor upper band given direct domain fit" },
-  { question: "Are you legally able to work in Canada / what's your location?", audience: "Recruiter screen — Shashi", answer: "Confirm current work authorization and location (Toronto, ON) plainly and early if asked — this is a logistics check, not a competency question.", cue: "Plain, factual answer" },
-  { question: "What's your availability for the next round(s)?", audience: "Recruiter screen — Shashi", answer: "Have 2–3 concrete windows ready for this week and next before the call, rather than \"I'm flexible\" — makes scheduling faster and signals organization.", cue: "Bring specific windows, not vague availability" },
-  { question: "Why are you looking to leave Bell / make a move now?", audience: "Recruiter screen — Shashi", answer: "Frame it forward, not away: \"Bell has been a strong platform for building product ownership at scale, and I'm proud of what I've shipped there. But my career actually started inside card-network and fraud infrastructure — Visa/Mastercard chargeback disputes, card issuance — and Business Identity is the first role I've seen since then that puts that domain knowledge back to direct use alongside the product craft I've built. It's a pull toward a specific opportunity, not a push away from something.\" Never criticize Bell, a manager, or the current role.", cue: "Pull toward the opportunity, never push away from the current employer" },
-  { question: "What's an area you're working on developing, or a weakness?", audience: "Recruiter screen — Shashi", answer: "Pick something real and low-risk: \"I haven't partnered with a formally-titled data science team before — my closest experience is working with vendor and security stakeholders on the Aeroplan integration, and defining decision-table-style business rules for state transitions. I'd want to move quickly to understand how a fraud/risk model's confidence thresholds get set so I can write acceptance criteria that reflect them accurately.\" Ends on how you'd close the gap, not just the gap itself.", cue: "Name a real, narrow gap; end on how you'd close it" },
-  { question: "The role mentions flexible hours across time zones and up to 15% travel — are you comfortable with that?", audience: "Recruiter screen — Shashi", answer: "Answer plainly and confirm: \"Yes — I already coordinate with globally distributed engineering teams across time zones on sprint planning and demos, so the flexible-hours expectation is familiar. And I'm open to the travel.\" This is a direct JD line item Shashi is likely screening for explicitly.", cue: "Direct JD ask — confirm plainly, cite the CRA/global-team precedent" },
-  { question: "Are you interviewing elsewhere, or juggling other processes right now?", audience: "Recruiter screen — Shashi", answer: "Be honest and brief. If yes: name the stage without over-sharing (\"I'm in early conversations with one other company\") — it signals you're in demand without sounding like leverage-play. If no: \"This is the role I'm most focused on right now,\" which is also a fine, honest answer if true.", cue: "Brief and honest either way; don't overplay leverage" },
-  { question: "What do you know about Mastercard?", audience: "Recruiter screen — Shashi", answer: "Mastercard describes its purpose as powering economies and empowering people in 200+ countries and territories, helping build a sustainable economy where everyone can prosper — through secure, simple, smart, and accessible digital payment choices. For this specific role, that translates into Business Identity: trusted, verifiable business identity as the foundation that makes fast onboarding and fraud prevention possible at the same time, not a trade-off between them.", cue: "Purpose statement (200+ countries, sustainable economy) → how Business Identity delivers it" },
+export const storyRoutes: StoryRoute[] = [
+  { questionType: "Cross-functional delivery, security, vendor management", primaryStory: "Bell–Aeroplan membership integration", proof: "Engineering, vendor, and security coordination; token-exchange approach; SOW/SLA tracking; zero post-launch integration regressions." },
+  { questionType: "Taking ownership, root cause, operational improvement", primaryStory: "Contingency Management", proof: "Turned recurring engineering escalations into a self-serve diagnostic tool; prioritised data integrity and state validation." },
+  { questionType: "Challenge, risk, quality, compliance", primaryStory: "CRA WCAG 2.1 AA work", proof: "Prioritised remediation by severity and user impact; embedded Axe-core into CI/CD; achieved WCAG AA with regression prevention." },
+  { questionType: "Hard deadlines, payments risk, attention to detail", primaryStory: "Skye Bank chargeback lifecycle", proof: "Managed Visa/Mastercard dispute cases by deadline and recovery value; no missed dispute deadlines during tenure." },
+  { questionType: "Controls, audit evidence, measurable process improvement", primaryStory: "CIBC Regulatory Reconciliation Tool", proof: "Reduced the monthly reconciliation cycle from two days to half a day and eliminated the targeted error class." },
+  { questionType: "Failure, setback, difficult manager conversation", primaryStory: "Choose a real lived example before the interview", proof: "The submitted résumé does not provide a safe, detailed example for this question type.", guardrail: "Do not manufacture conflict or failure from a successful project." },
 ];
 
-export const technicalPmQuestions: InterviewQuestion[] = [
-  { question: "How would you turn a vague product goal into engineering-ready requirements?", audience: "If this advances — hiring manager / panel", answer: "I anchor on the concrete business problem first — the way I diagnosed call-centre volume as the real problem behind Subscription Manager, not \"build a self-serve UI.\" From there I define the API contracts and data model (as with Contingency Management's /orders, /transactions specs), write acceptance criteria covering happy path, errors, and edge cases, and validate with engineering and QA before build starts.", cue: "Diagnose the real problem → API/data contract → acceptance criteria → validate with eng/QA" },
-  { question: "How do you decide what goes into a compliance-facing acceptance criterion versus a product one?", audience: "If this advances", answer: "Anything a regulator or auditor could ask to see evidence of — a state transition, an approval step, a data-retention rule — becomes an explicit, testable acceptance criterion with a traceable audit log entry, the way Contract Manager's audit-trail integrity requirements at Bell support billing dispute resolution. Product-facing AC covers the user experience around that same rule.", cue: "If it's audit-evidence, it's an explicit AC with a state transition" },
-  { question: "How would you work with data science on a fraud/risk model?", audience: "If this advances", answer: "I'd treat model outputs the way I treat any business rule: define the decision table — what confidence thresholds trigger auto-approve, manual review, or auto-reject — agree on how false positives/negatives get measured, and document the decision boundary so the product team can reason about it. Same discipline used to define Contingency Management's state-transition validation rules.", cue: "Model output → decision table → measurable false-positive/negative rate" },
-  { question: "Tell me about a time you had to say no to a stakeholder request, or manage competing priorities under a deadline.", audience: "If this advances", answer: "Use the chargeback dispute-queue story — prioritizing by deadline proximity and recovery value under a hard, non-negotiable regulatory deadline, with zero misses across a full tenure. Alternatively, the Aeroplan vendor/SLA story shows negotiating scope and quality gates across three separate stakeholder groups simultaneously.", cue: "Hard-deadline prioritization with zero misses, or vendor/SLA negotiation" },
-  { question: "How do you know if a feature is actually working post-launch?", audience: "If this advances", answer: "Tie it back to acceptance criteria and KPIs defined pre-launch — at Bell I tracked Subscription Manager adoption via Adobe Analytics event tracking to validate call-centre deflection, and UPCM's promotional efficiency (30%) and service-query reduction (25%) directly. For identity/onboarding here, I'd expect onboarding completion rate, time-to-verify, and false-positive/negative fraud rate as the equivalent KPIs.", cue: "Pre-defined KPIs, reviewed against baseline post-launch — direct precedent from UPCM" },
-];
-
-export interface KeyNumber {
-  metric: string;
-  source: string;
-}
-
-export const keyNumbers: KeyNumber[] = [
-  { metric: "Zero missed chargeback deadlines", source: "Skye Bank — Visa/Mastercard dispute lifecycle, full tenure" },
-  { metric: "Zero card-issuance errors", source: "Skye Bank — co-branded card launch; selected for Mastercard Dubai conference" },
-  { metric: "40% release-cycle reduction", source: "Bell — Subscription Manager microfrontend architecture" },
-  { metric: "30% increase in promotional efficiency", source: "Bell — UPCM Dashboard" },
-  { metric: "25% reduction in customer service queries", source: "Bell — UPCM Dashboard" },
-  { metric: "Zero post-launch integration regressions", source: "Bell — Aeroplan Membership Management" },
-  { metric: "2 days → half a day reconciliation cycle", source: "CIBC — Regulatory Reconciliation Tool" },
-  { metric: "40% mobile engagement / 35% PageSpeed improvement", source: "CRA — Enterprise Client Portal Redesign (same figures appear at Genpact too — see caution below)" },
-  { metric: "20% team productivity improvement", source: "CRA — bi-weekly sprint planning across distributed teams" },
-  { metric: "30% bug-rate reduction", source: "CRA — testing protocols across the SDLC" },
-  { metric: "20% increase in user retention", source: "Genpact — Insurance Claims Dashboard" },
-  { metric: "15% increase in accessibility", source: "Genpact — cross-browser/IE11 QA gate" },
-  { metric: "40% mobile engagement / 35% PageSpeed improvement", source: "Genpact — responsive redesign (same figures as CRA above — see caution below)" },
-];
-
-export const numbersCaution: PrepCard[] = [
-  { title: "Watch-out: the 40% / 35% figure appears twice", body: "The resume lists a 40% mobile-engagement increase and 35% PageSpeed improvement at CRA (Enterprise Client Portal Redesign) AND at Genpact (responsive redesign) — same numbers, two different jobs, three years apart. If asked for a specific example of a performance/mobile win, pick ONE (CRA is more recent and more senior — default to that one) and don't casually cite both in the same answer, since reciting identical figures for two separate roles back-to-back can read as copy-paste rather than two distinct measured outcomes.", cue: "Default to citing the CRA figure; don't stack both in one answer", color: "coral" },
-];
-
-export const recruiterCallLogistics: PrepCard[] = [
-  { title: "Recruiter screen — complete", body: "The August 24 screening call with Shashi went well. Advancement to Stage 1 is confirmed, the role is confirmed at L6, the three remaining interview stages are known, and Shashi flagged that Stage 1 may be a little technical.", cue: "Screen passed; prepare for Hiring Manager + Technical", color: "green" },
-  { title: "Watch for the scheduling email", body: "Shashi (Shashikant Jagdale) will coordinate Stage 1. Monitor the email associated with the application and respond promptly with two or three concrete windows, including the time zone.", cue: "Prompt reply + specific Toronto-time windows", color: "teal" },
-  { title: "Draft scheduling reply", body: "Hi Shashi,\n\nThank you for the update — I'm glad to move forward to Stage 1. I'm available on [DAY] between [TIME]–[TIME], and on [DAY] and [DAY] between [TIME]–[TIME] ET. Happy to adjust if none of those windows work for the team.\n\nLooking forward to the conversation.\n\nBest,\nJohnson", cue: "Replace every placeholder before sending", color: "amber" },
-  { title: "Role & contact details", body: "Manager, Product Management – Technical · Req R-281813 · L6 · Toronto, Ontario · Hybrid · posted base $121,000–$169,000 CAD. Recruiter: Shashi (Shashikant Jagdale) via mastercard@myworkday.com.", cue: "R-281813 · Toronto · L6 · Shashi", color: "gray" },
-];
-
-export const closeCards: PrepCard[] = [
-  { title: "Compensation", body: "Posted base range: $121,000–$169,000 CAD. Target $145,000–$155,000 CAD; floor $140,000 CAD. Anchor the target in seven-plus years of relevant technical-product experience and direct card-network knowledge, while keeping the bonus, incentive plan, benefits, and complete package in view.", cue: "$145K–$155K target · $140K floor · total package", color: "amber" },
-  { title: "Closing statement", body: "What draws me to this role is that it's the first time in my career I've seen my two backgrounds asked for together — real, hands-on Visa/Mastercard card-network and fraud-dispute experience, and seven-plus years of technical product ownership turning strategy into shipped, auditable, compliant features. I'd welcome the chance to talk further.", cue: "Two backgrounds converging, not a reach", color: "green" },
-  { title: "Follow-up note", body: "Thank Shashi, reference one specific point from the call, restate interest, and confirm next steps. Keep it under 120 words and send within 24 hours.", cue: "Specific reference → interest → next steps", color: "blue" },
-];
-
-export const callDrill: Array<{ time: string; task: string }> = [
-  { time: "5 minutes", task: "Sketch the Aeroplan system from memory: client, BFF, Token API, vendor boundary, contract, security risk, and validation. Narrate the trade-off at product altitude." },
-  { time: "5 minutes", task: "Walk through Contingency Management from ops shadowing to root cause, endpoint specs, state transitions, acceptance criteria, and launch validation." },
-  { time: "5 minutes", task: "Tell the Catalog Management conflict story with emphasis on leadership: competing assumptions, business-rule clarification, decision ownership, and written sign-off before build." },
-  { time: "5 minutes", task: "Answer one system-design prompt using: actors → boundaries → data flow → failure paths → security/controls → success metrics." },
-  { time: "4 minutes", task: "Explain Flow Runner's service boundary and legacy-format decision, then state how parity was validated." },
-  { time: "3 minutes", task: "Scan the five anchors and numbers sheet. Do not rehearse wording; recall the decision, tension, your action, and the result for each." },
-  { time: "3 minutes", task: "Prepare two hiring-manager questions, test audio/video, silence notifications, and have a blank page ready for a whiteboard discussion." },
+export const rehearsalChecklist = [
+  "Say the four core answers aloud in 60–90 seconds each. They should sound conversational, not memorised.",
+  "Choose and verify one real project-recovery or setback example, one difficult-stakeholder example, and one difficult-manager conversation.",
+  "Practise the four technical follow-ups using a 90-second product-level answer and a deeper follow-up layer.",
+  "Pick two Mastercard culture values and connect each to a specific behaviour from your experience.",
+  "Review the story map and metrics you can defend. Do not introduce facts that were not in your submitted résumé or lived experience.",
+  "Prepare two questions for the interviewer about the team's immediate Business Identity priorities, decision rights, and what success looks like in the first six months.",
 ];
