@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Target } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Target } from "lucide-react";
 import { toast } from "sonner";
 import MentalModelPractice from "@/components/mastercard/MentalModelPractice";
 import SectionLayout from "@/components/ui/SectionLayout";
@@ -43,6 +43,7 @@ import {
   type MastercardTerm,
   type PrepCard,
   type PrepColor,
+  type TechnicalInterviewQuestion,
 } from "@/data/mastercard-prep";
 
 const sidebarItems = [{ id: "mc-focus", label: "Four-stage overview" }];
@@ -61,10 +62,10 @@ const sidebarGroups = [
   ] },
   { label: "Application materials", items: [{ id: "mc-jd", label: "Job description" }, { id: "mc-resume", label: "Résumé used to apply" }, { id: "mc-alignment", label: "JD → résumé evidence" }] },
   { label: "✓ Stage 1 · Done", items: [{ id: "mc-round-1", label: "Completed · Hiring manager" }] },
-  { label: "Stage 2 · Technical", items: [{ id: "mc-interviewer", label: "Michael Cacho prep" }, { id: "mc-round-2", label: "Technical question bank" }] },
+  { label: "Stage 2 · Technical", items: [{ id: "mc-interviewer", label: "Michael Cacho prep" }, { id: "mc-round-2", label: "Detailed technical bank" }] },
   { label: "Stage 3 · Bar raiser", items: [{ id: "mc-round-3", label: "Leadership scenario" }] },
   { label: "Stage 4 · Bar raiser", items: [{ id: "mc-round-4", label: "Program-leadership gauntlet" }] },
-  { label: "Practice", items: [{ id: "mc-mental-models", label: "Mental model practice" }, { id: "mc-stars", label: "Your STAR stories" }, { id: "mc-stories", label: "Story map" }, { id: "mc-rehearse", label: "Rehearsal checklist" }] },
+  { label: "Practice", items: [{ id: "mc-mental-models", label: "Simple story flow" }, { id: "mc-stars", label: "Your STAR stories" }, { id: "mc-stories", label: "Story map" }, { id: "mc-rehearse", label: "Rehearsal checklist" }] },
 ];
 
 const colorClasses: Record<PrepColor, string> = {
@@ -224,7 +225,7 @@ function InterviewRoadmap() {
   return <div><Title>Four-stage interview roadmap</Title><Intro>Your recruiter’s process description aligns with this four-stage preparation plan. Stage 1 and the recruiter screen are done; concentrate your practice on Stages 2–4 while staying adaptable to each interviewer’s exact questions.</Intro><div className="overflow-x-auto rounded-xl border border-arch-border"><table className="w-full min-w-[680px] text-left"><thead className="bg-arch-bg2 text-[10px] uppercase tracking-wider text-arch-text3"><tr>{["Stage", "Format", "Focus", "Status"].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody>{interviewStages.map((stage) => <tr key={stage.stage} className="border-t border-arch-border text-[11px] text-arch-text2"><td className="px-4 py-3 font-semibold text-arch-text">{stage.stage}</td><td className="px-4 py-3">{stage.format}</td><td className="px-4 py-3">{stage.focus}</td><td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-[9.5px] font-semibold ${stage.status === "Complete" ? "bg-arch-green/10 text-arch-green" : "bg-arch-amber/10 text-arch-amber"}`}>{stage.stage === "Stage 1" ? "Done ✓" : stage.status}</span></td></tr>)}</tbody></table></div></div>;
 }
 
-function RoundPage({ round, questions, framework }: { round: 1 | 2 | 3 | 4; questions: InterviewQuestion[]; framework?: PrepCard[] }) {
+function RoundPage({ round, questions, framework }: { round: 1 | 3 | 4; questions: InterviewQuestion[]; framework?: PrepCard[] }) {
   const playbook = roundPlaybooks[round - 1];
   return <div>
     <Title>{playbook.round}: {playbook.title}{round === 1 ? " — Done ✓" : ""}</Title>
@@ -235,7 +236,99 @@ function RoundPage({ round, questions, framework }: { round: 1 | 2 | 3 | 4; ques
       { title: "How to prepare", body: playbook.preparation, cue: "Practise out loud; do not memorise a script", color: "amber" },
     ]} columns={1} />
     {framework && <div className="mt-7"><Title>Feature-launch framework</Title><Intro>For the leadership scenario, narrate your reasoning in this sequence. State assumptions aloud and explain how you would validate them.</Intro><Cards cards={framework} /></div>}
-    <div className="mt-7"><QuestionBank questions={questions} title={round === 2 ? "Stage 2 technical question bank" : round === 4 ? "Stage 4 pressure-test questions" : "Questions to rehearse"} intro={round === 4 ? "Expect detailed follow-ups. The answer must survive questions about your personal ownership, trade-offs, measures, and learning." : "Use these as adaptable speaking models. Lead with the answer, support it with a résumé-backed example, and pause for the follow-up."} /></div>
+    <div className="mt-7"><QuestionBank questions={questions} title={round === 4 ? "Stage 4 pressure-test questions" : "Questions to rehearse"} intro={round === 4 ? "Expect detailed follow-ups. The answer must survive questions about your personal ownership, trade-offs, measures, and learning." : "Use these as adaptable speaking models. Lead with the answer, support it with a résumé-backed example, and pause for the follow-up."} /></div>
+  </div>;
+}
+
+function AnswerPlanFlow({ steps }: { steps: TechnicalInterviewQuestion["answerPlan"] }) {
+  return <div className="flex flex-wrap items-center gap-1.5">
+    {steps.map((step, i) => <div key={step.label} className="flex items-center gap-1.5">
+      <div className="rounded-lg border border-arch-border bg-arch-bg px-2.5 py-1.5">
+        <div className="text-[8.5px] font-bold uppercase tracking-wider text-arch-blue">{step.label}</div>
+        <div className="mt-0.5 max-w-[150px] text-[9.5px] leading-4 text-arch-text2">{step.detail}</div>
+      </div>
+      {i < steps.length - 1 && <ArrowRight className="h-3 w-3 shrink-0 text-arch-text3" />}
+    </div>)}
+  </div>;
+}
+
+function TechnicalQuestionCard({ item, index }: { item: TechnicalInterviewQuestion; index: number }) {
+  const [revealed, setRevealed] = useState(false);
+  const priorityStyle = item.priority === "Must know" ? "bg-arch-coral/10 text-arch-coral" : "bg-arch-text3/10 text-arch-text3";
+
+  return <article className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-arch-coral/10 text-[10px] font-bold text-arch-coral">{index + 1}</span>
+          <span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${priorityStyle}`}>{item.priority}</span>
+        </div>
+        <h2 className="mt-2 text-[12.5px] font-semibold leading-5 text-arch-text">{item.question}</h2>
+        <div className="mt-1 text-[9.5px] uppercase tracking-wider text-arch-text3">{item.audience}</div>
+      </div>
+      <button type="button" aria-expanded={revealed} onClick={() => setRevealed((v) => !v)} className="flex shrink-0 items-center gap-1 rounded-md border border-arch-blue/30 bg-arch-blue/10 px-2.5 py-1.5 text-[10px] font-semibold leading-none text-arch-blue transition-colors hover:bg-arch-blue/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-arch-blue/50">
+        {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+        {revealed ? "Hide full answer" : "Reveal full answer"}
+      </button>
+    </div>
+
+    <div className="mt-3 rounded-lg bg-arch-bg px-3 py-2.5">
+      <div className="text-[9px] font-bold uppercase tracking-wider text-arch-purple">What this is really testing</div>
+      <p className="mt-1 text-[10.5px] leading-[1.7] text-arch-text2">{item.testing}</p>
+    </div>
+    <div className="mt-2 rounded-lg border border-arch-teal/20 bg-arch-teal/5 px-3 py-2.5">
+      <div className="text-[9px] font-bold uppercase tracking-wider text-arch-teal">In plain English</div>
+      <p className="mt-1 text-[10.5px] leading-[1.7] text-arch-text2">{item.plainEnglish}</p>
+    </div>
+
+    <div className="mt-3">
+      <div className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-arch-text3">Answer structure</div>
+      <AnswerPlanFlow steps={item.answerPlan} />
+    </div>
+
+    {revealed && <div className="mt-3 space-y-3 border-t border-arch-border pt-3">
+      <p className="whitespace-pre-line text-[11px] leading-[1.75] text-arch-text2">{item.answer}</p>
+      <div className="rounded-md bg-arch-green/10 px-2.5 py-2 text-[10.5px] leading-5 text-arch-green"><span className="font-semibold">Résumé anchor:</span> {item.resumeAnchor}</div>
+      {item.keyTerms.length > 0 && <div>
+        <div className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-arch-text3">Key terms</div>
+        <div className="grid gap-1.5 sm:grid-cols-2">{item.keyTerms.map((term) => <div key={term.term} className="rounded-md border border-arch-border bg-arch-bg px-2.5 py-2 text-[10px] leading-5 text-arch-text2"><span className="font-semibold text-arch-text">{term.term}:</span> {term.meaning}</div>)}</div>
+      </div>}
+      {item.followUps.length > 0 && <div>
+        <div className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-arch-text3">Likely follow-ups</div>
+        <ul className="space-y-1">{item.followUps.map((question) => <li key={question} className="flex gap-1.5 text-[10.5px] leading-5 text-arch-text2"><span className="text-arch-amber">→</span>{question}</li>)}</ul>
+      </div>}
+      <div className="rounded-md bg-arch-bg px-2.5 py-2 text-[10.5px] font-medium text-arch-amber"><span className="text-arch-text3">Recall cue:</span> {item.cue}</div>
+    </div>}
+  </article>;
+}
+
+function TechnicalQuestionBank({ questions }: { questions: TechnicalInterviewQuestion[] }) {
+  const categories = Array.from(new Set(questions.map((question) => question.category)));
+
+  return <div>
+    <Title>Stage 2 detailed technical question bank</Title>
+    <Intro>Grouped by theme, hardest-hitting first within each group. Every card shows what the question actually tests and a plain-English translation up front; reveal the full spoken answer to see the résumé anchor, key terms to use precisely, and the follow-ups Michael is likely to ask next.</Intro>
+    <div className="space-y-7">{categories.map((category) => {
+      const items = questions.filter((question) => question.category === category);
+      return <div key={category}>
+        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-arch-blue">{category}</h2>
+        <div className="space-y-3">{items.map((item, index) => <TechnicalQuestionCard key={item.key ?? item.question} item={item} index={index} />)}</div>
+      </div>;
+    })}</div>
+  </div>;
+}
+
+function TechnicalRoundPage({ questions }: { questions: TechnicalInterviewQuestion[] }) {
+  const playbook = roundPlaybooks[1];
+  return <div>
+    <Title>{playbook.round}: {playbook.title}</Title>
+    <Intro>{playbook.objective}</Intro>
+    <Cards cards={[
+      { title: "What they are testing", body: playbook.interviewerFocus, cue: "Answer the actual signal—not only the surface question", color: playbook.color },
+      { title: "Your strongest evidence", body: playbook.evidence, cue: "Use résumé-backed facts you can explain under follow-up", color: "green" },
+      { title: "How to prepare", body: playbook.preparation, cue: "Practise out loud; do not memorise a script", color: "amber" },
+    ]} columns={1} />
+    <div className="mt-7"><TechnicalQuestionBank questions={questions} /></div>
   </div>;
 }
 
@@ -369,7 +462,7 @@ export default function MastercardPrepTab() {
     if (activeId === "mc-alignment") return <ApplicationMaterials type="alignment" />;
     if (activeId === "mc-round-1") return <RoundPage round={1} questions={roundOneQuestions} />;
     if (activeId === "mc-interviewer") return <MichaelCachoPrep />;
-    if (activeId === "mc-round-2") return <RoundPage round={2} questions={technicalFollowUps} />;
+    if (activeId === "mc-round-2") return <TechnicalRoundPage questions={technicalFollowUps} />;
     if (activeId === "mc-round-3") return <RoundPage round={3} questions={roundThreeQuestions} framework={featureLaunchFramework} />;
     if (activeId === "mc-round-4") return <RoundPage round={4} questions={roundFourQuestions} />;
     if (activeId === "mc-mental-models") return <MentalModelPractice />;

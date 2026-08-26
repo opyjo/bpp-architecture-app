@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  ArrowDown,
   ArrowRight,
   Brain,
   Check,
-  ChevronDown,
   Dices,
   Eye,
-  EyeOff,
   Pencil,
   RotateCcw,
   Save,
@@ -20,9 +19,6 @@ import {
   type PracticeConfidence,
   type StarMentalModel,
 } from "@/data/mastercard-prep";
-
-type AnswerDepth = "30" | "90" | "deep";
-type PracticeMode = "recall" | "study";
 
 interface PracticeStatus {
   confidence: PracticeConfidence;
@@ -44,6 +40,56 @@ interface LocalPracticePayload {
 }
 
 const LOCAL_STORAGE_KEY = "mastercard-star-story-practice-v1";
+const FLOW_STEPS = [
+  {
+    id: "problem",
+    label: "Problem",
+    prompt: "What was happening, and why did it matter?",
+    nodeIds: ["context", "tension"],
+    fallbackIndexes: [0, 1],
+    activeClass: "border-arch-blue bg-arch-blue/10 text-arch-blue",
+    numberClass: "bg-arch-blue text-white",
+  },
+  {
+    id: "goal",
+    label: "Goal",
+    prompt: "What were you responsible for?",
+    nodeIds: ["mandate"],
+    fallbackIndexes: [2],
+    activeClass: "border-arch-purple bg-arch-purple/10 text-arch-purple",
+    numberClass: "bg-arch-purple text-white",
+  },
+  {
+    id: "insight",
+    label: "Insight",
+    prompt: "What did you discover?",
+    nodeIds: ["diagnosis"],
+    fallbackIndexes: [3],
+    activeClass: "border-arch-amber bg-arch-amber/10 text-arch-amber",
+    numberClass: "bg-arch-amber text-white",
+  },
+  {
+    id: "action",
+    label: "Action",
+    prompt: "What decision did you make, and what did you do?",
+    nodeIds: ["decision", "execution"],
+    fallbackIndexes: [4, 5],
+    activeClass: "border-arch-teal bg-arch-teal/10 text-arch-teal",
+    numberClass: "bg-arch-teal text-white",
+  },
+  {
+    id: "impact",
+    label: "Impact",
+    prompt: "What changed, and what did you learn?",
+    nodeIds: ["evidence", "lesson"],
+    fallbackIndexes: [6, 7],
+    activeClass: "border-arch-green bg-arch-green/10 text-arch-green",
+    numberClass: "bg-arch-green text-white",
+  },
+] as const;
+
+type FlowStepId = (typeof FLOW_STEPS)[number]["id"];
+
 const defaultModels = Object.fromEntries(
   starMentalModels.map((model) => [model.storyKey, model])
 ) as Record<string, StarMentalModel>;
@@ -73,73 +119,101 @@ function formatPracticeDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function MentalModelDiagram({
+function nodesForStep(model: StarMentalModel, step: (typeof FLOW_STEPS)[number]) {
+  const byId = new Map(model.nodes.map((node) => [node.id, node]));
+  const matched = step.nodeIds.flatMap((nodeId) => {
+    const node = byId.get(nodeId);
+    return node ? [node] : [];
+  });
+
+  return matched.length > 0
+    ? matched
+    : step.fallbackIndexes.flatMap((index) => model.nodes[index] ? [model.nodes[index]] : []);
+}
+
+function MentalModelFlow({
   model,
-  mode,
   revealed,
+  activeStepId,
   editing,
-  onReveal,
+  onSelect,
   onNodeChange,
 }: {
   model: StarMentalModel;
-  mode: PracticeMode;
   revealed: Set<string>;
+  activeStepId: FlowStepId;
   editing: boolean;
-  onReveal: (nodeId: string) => void;
+  onSelect: (stepId: FlowStepId) => void;
   onNodeChange: (nodeId: string, detail: string) => void;
 }) {
-  return <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-    {model.nodes.map((node, index) => {
-      const isVisible = mode === "study" || revealed.has(node.id) || editing;
-      const detailId = `mental-model-${model.storyKey}-${node.id}`;
+  const activeStep = FLOW_STEPS.find((step) => step.id === activeStepId) ?? FLOW_STEPS[0];
+  const activeNodes = nodesForStep(model, activeStep);
+  const activeIsVisible = editing || revealed.has(activeStep.id);
+  const detailId = `mental-model-${model.storyKey}-${activeStep.id}`;
 
-      return <li key={node.id} className="relative min-w-0">
+  return <div>
+    <ol className="grid gap-5 lg:grid-cols-5">
+      {FLOW_STEPS.map((step, index) => {
+        const isVisible = editing || revealed.has(step.id);
+        const isActive = activeStepId === step.id;
+
+        return <li key={step.id} className="relative min-w-0">
         <button
           type="button"
           aria-expanded={isVisible}
-          aria-controls={detailId}
-          onClick={() => onReveal(node.id)}
-          className={`h-full w-full rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-arch-blue/50 ${isVisible ? "border-arch-blue/40 bg-arch-blue/10" : "border-arch-border bg-arch-bg2 hover:border-arch-blue/35"}`}
+          aria-controls={isActive ? detailId : undefined}
+          onClick={() => onSelect(step.id)}
+          className={`h-full min-h-28 w-full rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-arch-blue/50 ${isActive ? step.activeClass : isVisible ? "border-arch-border bg-arch-bg" : "border-arch-border bg-arch-bg2 hover:border-arch-blue/35"}`}
         >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-arch-blue/15 text-[10px] font-bold text-arch-blue">{index + 1}</span>
-              <div className="min-w-0">
-                <div className="text-[11.5px] font-semibold text-arch-text">{node.label}</div>
-                <div className="mt-0.5 text-[9.5px] leading-4 text-arch-text3">{node.prompt}</div>
-              </div>
-            </div>
-            {index < model.nodes.length - 1 && <>
-              <ArrowRight className="hidden h-4 w-4 shrink-0 text-arch-text3 xl:block" aria-hidden="true" />
-              <ChevronDown className="h-4 w-4 shrink-0 text-arch-text3 xl:hidden" aria-hidden="true" />
-            </>}
+          <div className="flex items-center gap-2">
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${isVisible ? step.numberClass : "bg-arch-border text-arch-text3"}`}>{index + 1}</span>
+            <span className="text-[13px] font-semibold text-arch-text">{step.label}</span>
           </div>
-          {!isVisible && <div className="mt-3 flex items-center gap-1.5 text-[9.5px] font-medium text-arch-amber"><Eye className="h-3.5 w-3.5" aria-hidden="true" />Reveal</div>}
+          <p className="mt-2 text-[11px] leading-5 text-arch-text2">{step.prompt}</p>
+          <div className={`mt-2 text-[10px] font-semibold ${isVisible ? "text-arch-green" : "text-arch-text3"}`}>{isVisible ? "Revealed" : "Click to reveal"}</div>
         </button>
-        {isVisible && <div id={detailId} className="mt-2 rounded-lg border border-arch-border bg-arch-bg p-3" aria-live="polite">
+        {index < FLOW_STEPS.length - 1 && <>
+          <ArrowRight className="absolute -right-4 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-arch-text3 lg:block" aria-hidden="true" />
+          <ArrowDown className="absolute -bottom-4 left-1/2 h-4 w-4 -translate-x-1/2 text-arch-text3 lg:hidden" aria-hidden="true" />
+        </>}
+      </li>;
+    })}
+    </ol>
+
+    <div id={detailId} className="mt-4 rounded-xl border border-arch-border bg-arch-bg p-4" aria-live="polite">
+      <div className="flex items-center gap-2">
+        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${activeStep.numberClass}`}>{FLOW_STEPS.findIndex((step) => step.id === activeStep.id) + 1}</span>
+        <div>
+          <h3 className="text-[13px] font-semibold text-arch-text">{activeStep.label}</h3>
+          <p className="text-[11px] text-arch-text3">{activeStep.prompt}</p>
+        </div>
+      </div>
+
+      {activeIsVisible ? <div className={`mt-3 grid gap-2 ${activeNodes.length > 1 ? "md:grid-cols-2" : ""}`}>
+        {activeNodes.map((node) => <div key={node.id} className="rounded-lg border border-arch-border bg-arch-bg2 p-3">
+          {activeNodes.length > 1 && <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-arch-amber">{node.label}</div>}
           {editing
             ? <textarea
                 value={node.detail}
                 onChange={(event) => onNodeChange(node.id, event.target.value)}
-                rows={6}
+                rows={5}
                 maxLength={4_000}
                 aria-label={`${node.label} detail`}
-                className="w-full resize-y rounded-md border border-arch-border bg-arch-bg2 px-2.5 py-2 text-[10.5px] leading-5 text-arch-text outline-none focus:border-arch-blue/60 focus:ring-2 focus:ring-arch-blue/15"
+                className="w-full resize-y rounded-md border border-arch-border bg-arch-bg px-3 py-2 text-[12px] leading-6 text-arch-text outline-none focus:border-arch-blue/60 focus:ring-2 focus:ring-arch-blue/15"
               />
-            : <p className="text-[10.5px] leading-5 text-arch-text2">{node.detail}</p>}
-        </div>}
-      </li>;
-    })}
-  </ol>;
+            : <p className="text-[12px] leading-6 text-arch-text2">{node.detail}</p>}
+        </div>)}
+      </div> : <button type="button" onClick={() => onSelect(activeStep.id)} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-arch-blue/40 bg-arch-blue/5 px-3 py-5 text-[11px] font-semibold text-arch-blue"><Eye className="h-4 w-4" aria-hidden="true" />Reveal this step</button>}
+    </div>
+  </div>;
 }
 
 export default function MentalModelPractice() {
   const [selectedStoryKey, setSelectedStoryKey] = useState(starMentalModels[0].storyKey);
   const [models, setModels] = useState<Record<string, StarMentalModel>>(defaultModels);
   const [statuses, setStatuses] = useState<Record<string, PracticeStatus>>(defaultStatuses);
-  const [mode, setMode] = useState<PracticeMode>("recall");
-  const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
-  const [answerDepth, setAnswerDepth] = useState<AnswerDepth>("90");
+  const [revealed, setRevealed] = useState<Set<string>>(() => new Set([FLOW_STEPS[0].id]));
+  const [activeStepId, setActiveStepId] = useState<FlowStepId>(FLOW_STEPS[0].id);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [draft, setDraft] = useState<StarMentalModel | null>(null);
   const [saving, setSaving] = useState(false);
@@ -148,7 +222,7 @@ export default function MentalModelPractice() {
   const currentModel = draft ?? models[selectedStoryKey] ?? starMentalModels[0];
   const currentStatus = statuses[selectedStoryKey] ?? defaultStatuses[selectedStoryKey];
   const sourceStory = starStories.find((story) => story.title === currentModel.storyTitle);
-  const allRevealed = currentModel.nodes.every((node) => revealed.has(node.id));
+  const allRevealed = FLOW_STEPS.every((step) => revealed.has(step.id));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -200,8 +274,8 @@ export default function MentalModelPractice() {
 
   const selectStory = (storyKey: string) => {
     setSelectedStoryKey(storyKey);
-    setMode("recall");
-    setRevealed(new Set());
+    setRevealed(new Set([FLOW_STEPS[0].id]));
+    setActiveStepId(FLOW_STEPS[0].id);
     setAnswerRevealed(false);
     setDraft(null);
   };
@@ -264,14 +338,14 @@ export default function MentalModelPractice() {
     }
   };
 
-  const revealNode = (nodeId: string) => {
-    if (mode === "study" || draft) return;
-    setRevealed((current) => new Set(current).add(nodeId));
+  const selectStep = (stepId: FlowStepId) => {
+    setActiveStepId(stepId);
+    setRevealed((current) => new Set(current).add(stepId));
   };
 
   const revealNext = () => {
-    const nextNode = currentModel.nodes.find((node) => !revealed.has(node.id));
-    if (nextNode) revealNode(nextNode.id);
+    const nextStep = FLOW_STEPS.find((step) => !revealed.has(step.id));
+    if (nextStep) selectStep(nextStep.id);
   };
 
   const randomStory = () => {
@@ -281,7 +355,7 @@ export default function MentalModelPractice() {
   };
 
   const beginEditing = () => {
-    setMode("study");
+    setRevealed(new Set(FLOW_STEPS.map((step) => step.id)));
     setDraft(cloneModel(models[selectedStoryKey] ?? currentModel));
   };
 
@@ -331,108 +405,122 @@ export default function MentalModelPractice() {
   };
 
   return <div>
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-arch-text">STAR mental-model practice</h1>
-        <p className="mt-1 max-w-4xl text-[11px] leading-5 text-arch-text2">Build retrieval muscle through one fixed path: Context → Tension → Mandate → Diagnosis → Decision → Execution → Evidence → Lesson.</p>
-      </div>
-      <button type="button" onClick={randomStory} className="flex items-center gap-1.5 rounded-md border border-arch-border bg-arch-bg2 px-2.5 py-2 text-[10px] font-semibold text-arch-text2 transition-colors hover:border-arch-purple/40 hover:text-arch-purple"><Dices className="h-3.5 w-3.5" aria-hidden="true" />Random story</button>
+    <div className="mb-5">
+      <h1 className="text-xl font-semibold tracking-tight text-arch-text">Story flow practice</h1>
+      <p className="mt-1 max-w-3xl text-[12px] leading-6 text-arch-text2">Remember every story in the same five moves: <strong className="text-arch-text">Problem → Goal → Insight → Action → Impact.</strong> Click one box at a time and say that part aloud before revealing it.</p>
     </div>
 
-    <div className="mb-4 flex flex-wrap gap-2" aria-label="Choose a STAR story">
-      {starMentalModels.map((model) => <button
-        key={model.storyKey}
-        type="button"
-        aria-pressed={selectedStoryKey === model.storyKey}
-        onClick={() => selectStory(model.storyKey)}
-        className={`rounded-md border px-2.5 py-1.5 text-[10px] font-semibold transition-colors ${selectedStoryKey === model.storyKey ? "border-arch-blue bg-arch-blue text-white" : "border-arch-border bg-arch-bg2 text-arch-text2 hover:border-arch-blue/40 hover:text-arch-blue"}`}
-      >{storyShortName(model)}</button>)}
+    <div className="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-arch-border bg-arch-bg2 p-3">
+      <label className="min-w-[240px] flex-1 text-[11px] font-semibold text-arch-text2">
+        Choose a story
+        <select value={selectedStoryKey} onChange={(event) => selectStory(event.target.value)} className="mt-1 block w-full rounded-lg border border-arch-border bg-arch-bg px-3 py-2.5 text-[12px] font-medium text-arch-text outline-none focus:border-arch-blue/60 focus:ring-2 focus:ring-arch-blue/15">
+          {starMentalModels.map((model) => <option key={model.storyKey} value={model.storyKey}>{storyShortName(model)}</option>)}
+        </select>
+      </label>
+      <button type="button" onClick={randomStory} className="flex items-center gap-1.5 rounded-lg border border-arch-border bg-arch-bg px-3 py-2.5 text-[11px] font-semibold text-arch-text2 transition-colors hover:border-arch-purple/40 hover:text-arch-purple"><Dices className="h-4 w-4" aria-hidden="true" />Surprise me</button>
     </div>
 
     <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[9.5px] font-semibold uppercase tracking-wider text-arch-purple"><Brain className="h-4 w-4" aria-hidden="true" />Mental spine</div>
-          <h2 className="mt-1 text-[14px] font-semibold text-arch-text">{currentModel.storyTitle}</h2>
-          <p className="mt-1 text-[10px] leading-5 text-arch-text3">Use for: {currentModel.useFor}</p>
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-arch-purple"><Brain className="h-4 w-4" aria-hidden="true" />Five-step story map</div>
+          <h2 className="mt-1 text-[15px] font-semibold text-arch-text">{currentModel.storyTitle}</h2>
+          <p className="mt-1 text-[11px] leading-5 text-arch-text3">Best for: {currentModel.useFor}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" aria-pressed={mode === "recall"} onClick={() => { setMode("recall"); setRevealed(new Set()); setAnswerRevealed(false); setDraft(null); }} className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-semibold ${mode === "recall" ? "border-arch-amber/50 bg-arch-amber/10 text-arch-amber" : "border-arch-border text-arch-text2"}`}><EyeOff className="h-3.5 w-3.5" aria-hidden="true" />Recall</button>
-          <button type="button" aria-pressed={mode === "study"} onClick={() => { setMode("study"); setRevealed(new Set(currentModel.nodes.map((node) => node.id))); }} className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-semibold ${mode === "study" ? "border-arch-green/50 bg-arch-green/10 text-arch-green" : "border-arch-border text-arch-text2"}`}><Eye className="h-3.5 w-3.5" aria-hidden="true" />Study</button>
-          {!draft && <button type="button" onClick={beginEditing} className="flex items-center gap-1.5 rounded-md border border-arch-border px-2.5 py-1.5 text-[10px] font-semibold text-arch-text2 hover:border-arch-blue/40 hover:text-arch-blue"><Pencil className="h-3.5 w-3.5" aria-hidden="true" />Edit wording</button>}
-        </div>
+        {!draft && <button type="button" onClick={beginEditing} className="flex items-center gap-1.5 rounded-lg border border-arch-border px-3 py-2 text-[11px] font-semibold text-arch-text2 hover:border-arch-blue/40 hover:text-arch-blue"><Pencil className="h-4 w-4" aria-hidden="true" />Edit my wording</button>}
       </div>
 
-      <div className="mt-3 rounded-lg bg-arch-bg px-3 py-2 text-[11px] font-semibold text-arch-amber">
+      <div className="mt-4 rounded-lg border border-arch-amber/20 bg-arch-amber/5 px-3 py-3">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-arch-amber">Memory line</div>
         {draft
-          ? <input value={draft.memoryCode} onChange={(event) => setDraft({ ...draft, memoryCode: event.target.value })} maxLength={500} aria-label="Memory code" className="w-full rounded-md border border-arch-border bg-arch-bg2 px-2.5 py-2 text-[11px] text-arch-text outline-none focus:border-arch-blue/60" />
-          : currentModel.memoryCode}
+          ? <input value={draft.memoryCode} onChange={(event) => setDraft({ ...draft, memoryCode: event.target.value })} maxLength={500} aria-label="Memory line" className="mt-1.5 w-full rounded-md border border-arch-border bg-arch-bg2 px-3 py-2 text-[12px] text-arch-text outline-none focus:border-arch-blue/60" />
+          : <p className="mt-1 text-[13px] font-semibold leading-6 text-arch-text">{currentModel.memoryCode}</p>}
       </div>
 
       <div className="mt-4">
-        <MentalModelDiagram model={currentModel} mode={mode} revealed={revealed} editing={Boolean(draft)} onReveal={revealNode} onNodeChange={updateNode} />
+        <MentalModelFlow model={currentModel} revealed={revealed} activeStepId={activeStepId} editing={Boolean(draft)} onSelect={selectStep} onNodeChange={updateNode} />
       </div>
 
-      {mode === "recall" && !draft && <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" disabled={allRevealed} onClick={revealNext} className="rounded-md bg-arch-blue px-2.5 py-1.5 text-[10px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">{allRevealed ? "All nodes revealed" : "Reveal next node"}</button>
-        <button type="button" onClick={() => setRevealed(new Set())} className="flex items-center gap-1.5 rounded-md border border-arch-border px-2.5 py-1.5 text-[10px] font-semibold text-arch-text2"><RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />Reset recall</button>
-        <span className="text-[10px] text-arch-text3">{revealed.size} / {currentModel.nodes.length} recalled</span>
+      {!draft && <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button type="button" disabled={allRevealed} onClick={revealNext} className="rounded-lg bg-arch-blue px-3 py-2 text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">{allRevealed ? "All five steps revealed" : "Reveal next step"}</button>
+        <button type="button" onClick={() => setRevealed(new Set(FLOW_STEPS.map((step) => step.id)))} className="flex items-center gap-1.5 rounded-lg border border-arch-border px-3 py-2 text-[11px] font-semibold text-arch-text2"><Eye className="h-4 w-4" aria-hidden="true" />Show all</button>
+        <button type="button" onClick={() => { setRevealed(new Set([FLOW_STEPS[0].id])); setActiveStepId(FLOW_STEPS[0].id); setAnswerRevealed(false); }} className="flex items-center gap-1.5 rounded-lg border border-arch-border px-3 py-2 text-[11px] font-semibold text-arch-text2"><RotateCcw className="h-4 w-4" aria-hidden="true" />Start over</button>
+        <span className="ml-auto text-[11px] text-arch-text3">{revealed.size} of {FLOW_STEPS.length} steps</span>
       </div>}
     </section>
 
-    <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
-      <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-[12.5px] font-semibold text-arch-text">Answer-length drill</h2>
-          <div className="flex gap-1" aria-label="Answer length">
-            {(["30", "90", "deep"] as AnswerDepth[]).map((depth) => <button key={depth} type="button" aria-pressed={answerDepth === depth} onClick={() => { setAnswerDepth(depth); setAnswerRevealed(false); }} className={`rounded-md border px-2 py-1 text-[9.5px] font-semibold ${answerDepth === depth ? "border-arch-purple/50 bg-arch-purple/10 text-arch-purple" : "border-arch-border text-arch-text3"}`}>{depth === "deep" ? "Deep dive" : `${depth} sec`}</button>)}
-          </div>
-        </div>
-
-        {draft && answerDepth !== "deep" ? <textarea
-          value={answerDepth === "30" ? draft.answer30 : draft.answer90}
-          onChange={(event) => setDraft({ ...draft, [answerDepth === "30" ? "answer30" : "answer90"]: event.target.value })}
-          rows={answerDepth === "30" ? 6 : 10}
-          maxLength={answerDepth === "30" ? 5_000 : 12_000}
-          aria-label={`${answerDepth} second answer`}
-          className="mt-3 w-full resize-y rounded-lg border border-arch-border bg-arch-bg px-3 py-2 text-[10.5px] leading-5 text-arch-text outline-none focus:border-arch-blue/60"
-        /> : <div className="mt-3">
-          {!answerRevealed
-            ? <button type="button" onClick={() => setAnswerRevealed(true)} className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-arch-purple/40 bg-arch-purple/5 px-3 py-6 text-[10.5px] font-semibold text-arch-purple"><Eye className="h-4 w-4" aria-hidden="true" />Reveal model answer after speaking</button>
-            : answerDepth === "deep" && sourceStory
-              ? <div className="grid gap-2 md:grid-cols-2">{[
-                  ["Situation", sourceStory.situation],
-                  ["Task", sourceStory.task],
-                  ["Action", sourceStory.action],
-                  ["Result", sourceStory.result],
-                ].map(([label, value]) => <div key={label} className="rounded-lg bg-arch-bg p-3"><div className="text-[9px] font-bold uppercase tracking-wider text-arch-amber">{label}</div><p className="mt-1 text-[10.5px] leading-5 text-arch-text2">{value}</p></div>)}</div>
-              : <p className="whitespace-pre-line rounded-lg bg-arch-bg p-3 text-[10.5px] leading-5 text-arch-text2">{answerDepth === "30" ? currentModel.answer30 : currentModel.answer90}</p>}
-        </div>}
-      </section>
-
-      <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
-        <h2 className="text-[12.5px] font-semibold text-arch-text">Confidence and repetition</h2>
-        <div className="mt-3 grid grid-cols-3 gap-1.5">
-          {(["Weak", "Developing", "Ready"] as PracticeConfidence[]).map((confidence) => <button key={confidence} type="button" disabled={saving} aria-pressed={currentStatus.confidence === confidence} onClick={() => void setConfidence(confidence)} className={`rounded-md border px-2 py-2 text-[9.5px] font-semibold disabled:opacity-50 ${currentStatus.confidence === confidence ? "border-arch-green bg-arch-green/15 text-arch-green" : "border-arch-border text-arch-text3"}`}>{confidence}</button>)}
-        </div>
-        <div className="mt-3 rounded-lg bg-arch-bg p-3 text-[10px] leading-5 text-arch-text2">
-          <div><span className="text-arch-text3">Repetitions:</span> {currentStatus.practiceCount}</div>
-          <div><span className="text-arch-text3">Last practice:</span> {formatPracticeDate(currentStatus.lastPracticedAt)}</div>
-        </div>
-        <button type="button" disabled={saving} onClick={() => void markPractised()} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-arch-green px-3 py-2 text-[10px] font-semibold text-white disabled:opacity-50"><Check className="h-4 w-4" aria-hidden="true" />Mark repetition complete</button>
-        {syncNote && <p className="mt-2 text-[9.5px] leading-4 text-arch-amber">{syncNote}</p>}
-      </section>
-    </div>
-
     <section className="mt-4 rounded-xl border border-arch-border bg-arch-bg2 p-4">
-      <h2 className="text-[12.5px] font-semibold text-arch-text">Pressure-test branches</h2>
-      <p className="mt-1 text-[10px] leading-5 text-arch-text3">Answer the question before opening the route back into the diagram.</p>
-      <div className="mt-3 grid gap-2 md:grid-cols-2">{currentModel.followUps.map((followUp) => <details key={followUp.question} className="rounded-lg border border-arch-border bg-arch-bg p-3"><summary className="cursor-pointer text-[10.5px] font-semibold text-arch-text">{followUp.question}</summary><p className="mt-2 text-[10px] leading-5 text-arch-purple">{followUp.route}</p></details>)}</div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-[14px] font-semibold text-arch-text">Say the story out loud</h2>
+          <p className="mt-1 text-[11px] text-arch-text3">Aim for 60–90 seconds. Then compare your answer.</p>
+        </div>
+        {!draft && <button type="button" disabled={saving} onClick={() => void markPractised()} className="flex items-center gap-1.5 rounded-lg bg-arch-green px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50"><Check className="h-4 w-4" aria-hidden="true" />Mark practice complete</button>}
+      </div>
+
+      {draft ? <textarea
+        value={draft.answer90}
+        onChange={(event) => setDraft({ ...draft, answer90: event.target.value })}
+        rows={9}
+        maxLength={12_000}
+        aria-label="90 second answer"
+        className="mt-3 w-full resize-y rounded-lg border border-arch-border bg-arch-bg px-3 py-2 text-[12px] leading-6 text-arch-text outline-none focus:border-arch-blue/60"
+      /> : <div className="mt-3">
+        {!answerRevealed
+          ? <button type="button" onClick={() => setAnswerRevealed(true)} className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-arch-purple/40 bg-arch-purple/5 px-3 py-5 text-[11px] font-semibold text-arch-purple"><Eye className="h-4 w-4" aria-hidden="true" />Reveal the 90-second example</button>
+          : <p className="whitespace-pre-line rounded-lg bg-arch-bg p-4 text-[12px] leading-6 text-arch-text2">{currentModel.answer90}</p>}
+      </div>}
+      {syncNote && <p className="mt-2 text-[10px] leading-5 text-arch-amber">{syncNote}</p>}
     </section>
 
+    <details open={draft ? true : undefined} className="mt-4 rounded-xl border border-arch-border bg-arch-bg2 p-4">
+      <summary className="cursor-pointer text-[13px] font-semibold text-arch-text">More practice options</summary>
+      <p className="mt-1 text-[11px] text-arch-text3">Open only when you want a shorter answer, confidence tracking, or follow-up practice.</p>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <section className="rounded-lg border border-arch-border bg-arch-bg p-3">
+          <h3 className="text-[12px] font-semibold text-arch-text">30-second version</h3>
+          {draft ? <textarea
+            value={draft.answer30}
+            onChange={(event) => setDraft({ ...draft, answer30: event.target.value })}
+            rows={6}
+            maxLength={5_000}
+            aria-label="30 second answer"
+            className="mt-2 w-full resize-y rounded-lg border border-arch-border bg-arch-bg2 px-3 py-2 text-[12px] leading-6 text-arch-text outline-none focus:border-arch-blue/60"
+          /> : <p className="mt-2 text-[11.5px] leading-6 text-arch-text2">{currentModel.answer30}</p>}
+        </section>
+
+        <section className="rounded-lg border border-arch-border bg-arch-bg p-3">
+          <h3 className="text-[12px] font-semibold text-arch-text">Confidence and repetition</h3>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {(["Weak", "Developing", "Ready"] as PracticeConfidence[]).map((confidence) => <button key={confidence} type="button" disabled={saving || Boolean(draft)} aria-pressed={currentStatus.confidence === confidence} onClick={() => void setConfidence(confidence)} className={`rounded-lg border px-2 py-2 text-[10px] font-semibold disabled:opacity-50 ${currentStatus.confidence === confidence ? "border-arch-green bg-arch-green/15 text-arch-green" : "border-arch-border text-arch-text3"}`}>{confidence}</button>)}
+          </div>
+          <div className="mt-3 text-[11px] leading-6 text-arch-text2">
+            <div><span className="text-arch-text3">Completed practices:</span> {currentStatus.practiceCount}</div>
+            <div><span className="text-arch-text3">Last practice:</span> {formatPracticeDate(currentStatus.lastPracticedAt)}</div>
+          </div>
+        </section>
+      </div>
+
+      {sourceStory && <section className="mt-4 rounded-lg border border-arch-border bg-arch-bg p-3">
+        <h3 className="text-[12px] font-semibold text-arch-text">Full STAR reference</h3>
+        <div className="mt-3 grid gap-2 md:grid-cols-2">{[
+          ["Situation", sourceStory.situation],
+          ["Task", sourceStory.task],
+          ["Action", sourceStory.action],
+          ["Result", sourceStory.result],
+        ].map(([label, value]) => <div key={label} className="rounded-lg border border-arch-border bg-arch-bg2 p-3"><div className="text-[10px] font-semibold uppercase tracking-wide text-arch-amber">{label}</div><p className="mt-1 text-[11.5px] leading-6 text-arch-text2">{value}</p></div>)}</div>
+      </section>}
+
+      <section className="mt-4 rounded-lg border border-arch-border bg-arch-bg p-3">
+        <h3 className="text-[12px] font-semibold text-arch-text">Optional follow-up questions</h3>
+        <div className="mt-3 grid gap-2 md:grid-cols-2">{currentModel.followUps.map((followUp) => <details key={followUp.question} className="rounded-lg border border-arch-border bg-arch-bg2 p-3"><summary className="cursor-pointer text-[11px] font-semibold text-arch-text">{followUp.question}</summary><p className="mt-2 text-[11px] leading-5 text-arch-purple">Answer path: {followUp.route.replace(/^Tension|^Diagnosis/, "Problem").replace(/^Mandate/, "Goal").replace(/^Decision|^Execution/, "Action").replace(/^Evidence/, "Impact")}</p></details>)}</div>
+      </section>
+    </details>
+
     {draft && <div className="sticky bottom-3 mt-4 flex justify-end gap-2 rounded-xl border border-arch-blue/30 bg-arch-bg2/95 p-3 shadow-lg backdrop-blur">
-      <button type="button" disabled={saving} onClick={() => setDraft(null)} className="rounded-md border border-arch-border px-3 py-2 text-[10px] font-semibold text-arch-text2 disabled:opacity-50">Cancel edits</button>
-      <button type="button" disabled={saving} onClick={() => void saveDraft()} className="flex items-center gap-1.5 rounded-md bg-arch-blue px-3 py-2 text-[10px] font-semibold text-white disabled:opacity-50"><Save className="h-4 w-4" aria-hidden="true" />{saving ? "Saving…" : "Save model"}</button>
+      <button type="button" disabled={saving} onClick={() => setDraft(null)} className="rounded-lg border border-arch-border px-3 py-2 text-[11px] font-semibold text-arch-text2 disabled:opacity-50">Cancel edits</button>
+      <button type="button" disabled={saving} onClick={() => void saveDraft()} className="flex items-center gap-1.5 rounded-lg bg-arch-blue px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50"><Save className="h-4 w-4" aria-hidden="true" />{saving ? "Saving…" : "Save my wording"}</button>
     </div>}
   </div>;
 }
