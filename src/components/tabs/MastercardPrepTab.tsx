@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Eye, EyeOff, Target } from "lucide-react";
 import { toast } from "sonner";
 import MentalModelPractice from "@/components/mastercard/MentalModelPractice";
 import SectionLayout from "@/components/ui/SectionLayout";
 import FlowDiagram from "@/components/ui/FlowDiagram";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
+import ChatInput from "@/components/ai/ChatInput";
+import MessageBubble from "@/components/ai/MessageBubble";
+import { useChat } from "@/lib/hooks/useChat";
 import { useQuestionPractice } from "@/lib/hooks/useQuestionPractice";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
+import { buildMastercardChatContext } from "@/lib/ai/mastercard-context";
 import {
   acquisitionLifecycleCards,
   acquisitionQuestionsToAsk,
@@ -56,7 +61,10 @@ import {
   type TechnicalInterviewQuestion,
 } from "@/data/mastercard-prep";
 
-const sidebarItems = [{ id: "mc-focus", label: "Four-stage overview" }];
+const sidebarItems = [
+  { id: "mc-focus", label: "Four-stage overview" },
+  { id: "mc-chat", label: "Ask AI about this interview" },
+];
 const sidebarGroups = [
   { label: "Process", items: [{ id: "mc-rounds", label: "Four-stage roadmap" }] },
   { label: "Card network 101", items: [
@@ -268,6 +276,51 @@ function QuestionBank({ questions, title, intro, answersHidden = false, answersE
         </div>}
       </article>;
     })}</div>
+  </div>;
+}
+
+const MASTERCARD_CHAT_PROMPTS = [
+  "What's Mastercard's four-party model, in one sentence?",
+  "Quiz me on the payment-flow terms I'm weakest on",
+  "How should I answer 'why are you leaving Bell?'",
+  "What should I ask Michael Cacho in Stage 2?",
+];
+
+function MastercardChat() {
+  const systemContext = useMemo(() => buildMastercardChatContext(), []);
+  const { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory } = useChat(DEFAULT_MODEL_ID, {
+    storageKey: "mastercard-interview-chat-v1",
+    systemContext,
+  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  const isEmpty = messages.length === 0;
+
+  return <div>
+    <Title>Ask AI about this interview</Title>
+    <Intro>Grounded in everything on this Mastercard tab — company research, the technical question bank, your STAR stories, résumé alignment, the acquisition stack, all of it — plus general knowledge for anything this tab doesn&apos;t cover. Use it to rehearse and dig into follow-ups; close it before the live call.</Intro>
+    <div className="flex h-[68vh] flex-col overflow-hidden rounded-xl border border-arch-border bg-arch-bg2">
+      <div ref={scrollRef} className={`flex-1 overflow-y-auto px-4 py-4 ${isEmpty ? "flex flex-col items-center justify-center" : ""}`}>
+        {isEmpty ? <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
+          <div className="mb-1 text-center text-[11.5px] text-arch-text3">Try one of these, or ask anything</div>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {MASTERCARD_CHAT_PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={() => sendMessage(prompt)} className="rounded-full border border-arch-border px-2.5 py-1 text-[10.5px] text-arch-text3 transition-colors hover:border-arch-purple/40 hover:text-arch-purple">{prompt}</button>)}
+          </div>
+        </div> : <div className="mx-auto flex max-w-3xl flex-col gap-4">
+          {messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
+        </div>}
+        {error && <div className="mt-3 rounded-lg border border-arch-coral/30 bg-arch-coral/10 px-3 py-2 text-[11.5px] text-arch-coral">{error}</div>}
+      </div>
+      <div className="shrink-0 border-t border-arch-border px-4 py-3">
+        {messages.length > 0 && <div className="mb-2 flex justify-end"><button type="button" onClick={clearHistory} className="text-[11px] font-semibold text-arch-text3 transition-colors hover:text-arch-coral">Clear chat</button></div>}
+        <ChatInput onSend={sendMessage} onStop={stopStreaming} isStreaming={isStreaming} placeholder="Ask anything about the Mastercard interview…" />
+      </div>
+    </div>
   </div>;
 }
 
@@ -540,6 +593,7 @@ function RehearsalChecklist() {
 export default function MastercardPrepTab() {
   return <SectionLayout label="Interview guide" items={sidebarItems} groups={sidebarGroups}>{(activeId) => {
     if (activeId === "mc-focus") return <div><Title>Mastercard interview hack</Title><Intro>This page is built around the four-stage virtual process that matches the information from your recruiter. Every answer is anchored to the résumé used in this application, so the later bar-raiser stages can probe without exposing inflated claims.</Intro><Cards cards={focusCards} /></div>;
+    if (activeId === "mc-chat") return <MastercardChat />;
     if (activeId === "mc-rounds") return <InterviewRoadmap />;
     if (activeId === "mc-network-basics") return <CardNetworkBasics />;
     if (activeId === "mc-network-flow") return <CardNetworkFlowPage />;

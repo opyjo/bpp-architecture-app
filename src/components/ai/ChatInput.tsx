@@ -6,9 +6,10 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   onStop: () => void;
   isStreaming: boolean;
+  placeholder?: string;
 }
 
-export default function ChatInput({ onSend, onStop, isStreaming }: ChatInputProps) {
+export default function ChatInput({ onSend, onStop, isStreaming, placeholder = "Ask about the codebase, paste a Jira ticket..." }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -46,7 +47,7 @@ export default function ChatInput({ onSend, onStop, isStreaming }: ChatInputProp
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask about the codebase, paste a Jira ticket..."
+        placeholder={placeholder}
         rows={1}
         className="flex-1 bg-transparent px-2 py-1.5 text-[13px] text-arch-text placeholder:text-arch-text3 resize-none focus:outline-none"
       />
