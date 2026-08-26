@@ -5,12 +5,20 @@ import { ArrowRight, Eye, EyeOff, Target } from "lucide-react";
 import { toast } from "sonner";
 import MentalModelPractice from "@/components/mastercard/MentalModelPractice";
 import SectionLayout from "@/components/ui/SectionLayout";
+import FlowDiagram from "@/components/ui/FlowDiagram";
+import MermaidDiagram from "@/components/ui/MermaidDiagram";
+import { useQuestionPractice } from "@/lib/hooks/useQuestionPractice";
 import {
   acquisitionLifecycleCards,
   acquisitionQuestionsToAsk,
   acquisitionStackBrief,
   acquisitionStackItems,
   applicationAlignment,
+  cardNetworkAuthDiagram,
+  cardNetworkFlowNodes,
+  cardNetworkFlowSteps,
+  cardNetworkFundamentals,
+  cardNetworkSettlementDiagram,
   featureLaunchFramework,
   focusCards,
   interviewStages,
@@ -28,6 +36,7 @@ import {
   mastercardSampleQuestions,
   mastercardStrategyResearch,
   mastercardTerms,
+  paymentFlowTerms,
   rehearsalChecklist,
   roundFourQuestions,
   roundOneQuestions,
@@ -41,6 +50,7 @@ import {
   type AcquisitionStackItem,
   type ApplicationAlignment,
   type MastercardTerm,
+  type PracticeConfidence,
   type PrepCard,
   type PrepColor,
   type TechnicalInterviewQuestion,
@@ -49,6 +59,10 @@ import {
 const sidebarItems = [{ id: "mc-focus", label: "Four-stage overview" }];
 const sidebarGroups = [
   { label: "Process", items: [{ id: "mc-rounds", label: "Four-stage roadmap" }] },
+  { label: "Card network 101", items: [
+    { id: "mc-network-basics", label: "How the network works" },
+    { id: "mc-network-flow", label: "Payment flow (click-through)" },
+  ] },
   { label: "Sample questions", items: [{ id: "mc-sample-questions", label: "17 questions & answers" }] },
   { label: "Company research", items: [
     { id: "mc-intelligence", label: "Research overview" },
@@ -103,7 +117,31 @@ interface SavedInterviewAnswer {
   answer: string;
 }
 
-function QuestionBank({ questions, title, intro, answersHidden = false, answersEditable = false }: { questions: InterviewQuestion[]; title: string; intro: string; answersHidden?: boolean; answersEditable?: boolean }) {
+const CONFIDENCE_LEVELS: PracticeConfidence[] = ["Weak", "Developing", "Ready"];
+const confidenceActiveClass: Record<PracticeConfidence, string> = {
+  Weak: "border-arch-coral bg-arch-coral/15 text-arch-coral",
+  Developing: "border-arch-amber bg-arch-amber/15 text-arch-amber",
+  Ready: "border-arch-green bg-arch-green/15 text-arch-green",
+};
+
+function ConfidencePicker({ value, onChange }: { value: PracticeConfidence; onChange: (confidence: PracticeConfidence) => void }) {
+  return <div className="flex gap-1.5">{CONFIDENCE_LEVELS.map((level) => <button key={level} type="button" aria-pressed={value === level} onClick={() => onChange(level)} className={`rounded-md border px-2 py-1 text-[9.5px] font-semibold transition-colors ${value === level ? confidenceActiveClass[level] : "border-arch-border text-arch-text3 hover:border-arch-blue/30"}`}>{level}</button>)}</div>;
+}
+
+type ConfidenceFilter = "All" | PracticeConfidence;
+
+function ConfidenceFilterBar({ filter, onChange, statuses, questionKeys }: { filter: ConfidenceFilter; onChange: (filter: ConfidenceFilter) => void; statuses: Record<string, PracticeConfidence>; questionKeys: string[] }) {
+  const counts: Record<ConfidenceFilter, number> = { All: questionKeys.length, Weak: 0, Developing: 0, Ready: 0 };
+  questionKeys.forEach((key) => { counts[statuses[key] ?? "Developing"] += 1; });
+  const levels: ConfidenceFilter[] = ["All", ...CONFIDENCE_LEVELS];
+
+  return <div className="mb-4 flex flex-wrap items-center gap-1.5 rounded-lg border border-arch-border bg-arch-bg2 p-2">
+    <span className="mr-1 text-[9.5px] font-semibold uppercase tracking-wider text-arch-text3">Filter by confidence</span>
+    {levels.map((level) => <button key={level} type="button" aria-pressed={filter === level} onClick={() => onChange(level)} className={`rounded-md border px-2.5 py-1.5 text-[10px] font-semibold transition-colors ${filter === level ? (level === "All" ? "border-arch-blue bg-arch-blue/15 text-arch-blue" : confidenceActiveClass[level]) : "border-arch-border text-arch-text2 hover:border-arch-blue/30"}`}>{level} ({counts[level]})</button>)}
+  </div>;
+}
+
+function QuestionBank({ questions, title, intro, answersHidden = false, answersEditable = false, confidenceTracking = false }: { questions: InterviewQuestion[]; title: string; intro: string; answersHidden?: boolean; answersEditable?: boolean; confidenceTracking?: boolean }) {
   const [revealedAnswers, setRevealedAnswers] = useState<Set<number>>(() => new Set());
   const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
   const [answersLoading, setAnswersLoading] = useState(false);
@@ -111,6 +149,8 @@ function QuestionBank({ questions, title, intro, answersHidden = false, answersE
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [draftAnswer, setDraftAnswer] = useState("");
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
+  const { statuses: confidenceStatuses, syncNote: confidenceSyncNote, setConfidence } = useQuestionPractice(confidenceTracking);
 
   useEffect(() => {
     if (!answersEditable) return;
@@ -181,13 +221,19 @@ function QuestionBank({ questions, title, intro, answersHidden = false, answersE
     }
   };
 
+  const questionKeys = questions.map((item, index) => item.key ?? `question-${index + 1}`);
+
   return <div>
     <Title>{title}</Title>
     <Intro>{intro}</Intro>
     {answersEditable && answersLoading && <div className="mb-3 text-[10.5px] text-arch-text3">Loading saved answers…</div>}
     {answersEditable && loadError && <div className="mb-3 rounded-md border border-arch-coral/30 bg-arch-coral/10 px-3 py-2 text-[10.5px] text-arch-coral">Saved answers could not be loaded: {loadError}</div>}
+    {confidenceTracking && <ConfidenceFilterBar filter={confidenceFilter} onChange={setConfidenceFilter} statuses={confidenceStatuses} questionKeys={questionKeys} />}
+    {confidenceTracking && confidenceSyncNote && <p className="mb-3 text-[10px] leading-5 text-arch-amber">{confidenceSyncNote}</p>}
     <div className={answersHidden ? "space-y-2" : "space-y-3"}>{questions.map((item, index) => {
-      const questionKey = item.key ?? `question-${index + 1}`;
+      const questionKey = questionKeys[index];
+      const confidence = confidenceStatuses[questionKey] ?? "Developing";
+      if (confidenceTracking && confidenceFilter !== "All" && confidence !== confidenceFilter) return null;
       const isRevealed = revealedAnswers.has(index);
       const hasSavedAnswer = Object.prototype.hasOwnProperty.call(savedAnswers, questionKey);
       const displayedAnswer = savedAnswers[questionKey] ?? item.answer;
@@ -202,6 +248,10 @@ function QuestionBank({ questions, title, intro, answersHidden = false, answersE
             {answersHidden && <button type="button" aria-expanded={isRevealed} aria-controls={`sample-answer-${index}`} onClick={() => { if (isRevealed && isEditing) setEditingKey(null); toggleAnswer(index); }} className="shrink-0 rounded-md border border-arch-blue/30 bg-arch-blue/10 px-2.5 py-1.5 text-[10px] font-semibold leading-none text-arch-blue transition-colors hover:bg-arch-blue/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-arch-blue/50">{isRevealed ? "Hide answer" : "Reveal answer"}</button>}
           </div>
         </div>
+        {confidenceTracking && <div className={`flex items-center gap-2 ${answersHidden ? "mt-2 pl-7" : "mt-2 pl-9"}`}>
+          <span className="text-[9.5px] font-semibold uppercase tracking-wider text-arch-text3">Confidence</span>
+          <ConfidencePicker value={confidence} onChange={(next) => void setConfidence(questionKey, next)} />
+        </div>}
         {(!answersHidden || isRevealed) && <div id={answersHidden ? `sample-answer-${index}` : undefined}>
           {answersEditable && <div className="mt-2 flex items-center justify-between gap-2">
             <span className={`text-[9.5px] font-medium ${hasSavedAnswer ? "text-arch-green" : "text-arch-text3"}`}>{hasSavedAnswer ? "Saved in Supabase" : "Default answer"}</span>
@@ -252,7 +302,7 @@ function AnswerPlanFlow({ steps }: { steps: TechnicalInterviewQuestion["answerPl
   </div>;
 }
 
-function TechnicalQuestionCard({ item, index }: { item: TechnicalInterviewQuestion; index: number }) {
+function TechnicalQuestionCard({ item, index, confidence, onConfidenceChange }: { item: TechnicalInterviewQuestion; index: number; confidence: PracticeConfidence; onConfidenceChange: (confidence: PracticeConfidence) => void }) {
   const [revealed, setRevealed] = useState(false);
   const priorityStyle = item.priority === "Must know" ? "bg-arch-coral/10 text-arch-coral" : "bg-arch-text3/10 text-arch-text3";
 
@@ -270,6 +320,11 @@ function TechnicalQuestionCard({ item, index }: { item: TechnicalInterviewQuesti
         {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
         {revealed ? "Hide full answer" : "Reveal full answer"}
       </button>
+    </div>
+
+    <div className="mt-2 flex items-center gap-2">
+      <span className="text-[9.5px] font-semibold uppercase tracking-wider text-arch-text3">Confidence</span>
+      <ConfidencePicker value={confidence} onChange={onConfidenceChange} />
     </div>
 
     <div className="mt-3 rounded-lg bg-arch-bg px-3 py-2.5">
@@ -304,15 +359,25 @@ function TechnicalQuestionCard({ item, index }: { item: TechnicalInterviewQuesti
 
 function TechnicalQuestionBank({ questions }: { questions: TechnicalInterviewQuestion[] }) {
   const categories = Array.from(new Set(questions.map((question) => question.category)));
+  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
+  const { statuses: confidenceStatuses, syncNote: confidenceSyncNote, setConfidence } = useQuestionPractice(true);
+  const questionKeys = questions.map((question, index) => question.key ?? `question-${index + 1}`);
 
   return <div>
     <Title>Stage 2 detailed technical question bank</Title>
     <Intro>Grouped by theme, hardest-hitting first within each group. Every card shows what the question actually tests and a plain-English translation up front; reveal the full spoken answer to see the résumé anchor, key terms to use precisely, and the follow-ups Michael is likely to ask next.</Intro>
+    <ConfidenceFilterBar filter={confidenceFilter} onChange={setConfidenceFilter} statuses={confidenceStatuses} questionKeys={questionKeys} />
+    {confidenceSyncNote && <p className="mb-3 text-[10px] leading-5 text-arch-amber">{confidenceSyncNote}</p>}
     <div className="space-y-7">{categories.map((category) => {
-      const items = questions.filter((question) => question.category === category);
+      const items = questions
+        .map((question, index) => ({ question, questionKey: questionKeys[index] }))
+        .filter(({ question }) => question.category === category)
+        .filter(({ questionKey }) => confidenceFilter === "All" || (confidenceStatuses[questionKey] ?? "Developing") === confidenceFilter);
+      if (items.length === 0) return null;
+
       return <div key={category}>
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-arch-blue">{category}</h2>
-        <div className="space-y-3">{items.map((item, index) => <TechnicalQuestionCard key={item.key ?? item.question} item={item} index={index} />)}</div>
+        <div className="space-y-3">{items.map(({ question, questionKey }, index) => <TechnicalQuestionCard key={questionKey} item={question} index={index} confidence={confidenceStatuses[questionKey] ?? "Developing"} onConfidenceChange={(next) => void setConfidence(questionKey, next)} />)}</div>
       </div>;
     })}</div>
   </div>;
@@ -334,6 +399,34 @@ function TechnicalRoundPage({ questions }: { questions: TechnicalInterviewQuesti
 
 function TermTable({ terms }: { terms: MastercardTerm[] }) {
   return <div className="overflow-x-auto rounded-xl border border-arch-border"><table className="w-full min-w-[720px] text-left"><thead className="bg-arch-bg2 text-[10px] uppercase tracking-wider text-arch-text3"><tr>{["Term", "What it means", "Why it matters here"].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody>{terms.map((item) => <tr key={item.term} className="border-t border-arch-border text-[10.5px] leading-5 text-arch-text2"><td className="px-4 py-3 font-semibold text-arch-text">{item.term}</td><td className="px-4 py-3">{item.meaning}</td><td className="px-4 py-3">{item.whyItMatters}</td></tr>)}</tbody></table></div>;
+}
+
+function CardNetworkBasics() {
+  return <div>
+    <Title>How the card network actually works</Title>
+    <Intro>Domain background, not job-specific research: the mental model behind every card swipe. Get this right and the Business Identity role reads as a natural extension of the same trust problem — verifying a business instead of a card.</Intro>
+    <Cards cards={cardNetworkFundamentals} />
+    <div className="mt-7"><Title>Payment-flow terms to use precisely</Title><Intro>The vocabulary a bar raiser expects you to use correctly if you claim payments-adjacent experience.</Intro><TermTable terms={paymentFlowTerms} /></div>
+  </div>;
+}
+
+function CardNetworkFlowPage() {
+  return <div>
+    <Title>The payment flow, step by step</Title>
+    <Intro>Two diagrams of the same journey. The sequence diagrams below show the full message trail; the click-through diagram underneath lets you step through each hop one at a time — same interaction pattern as Platform → UI pages &amp; flows.</Intro>
+
+    <div className="mb-2 text-[11px] font-semibold text-arch-text">1 · Authorization — real time, about one second</div>
+    <MermaidDiagram chart={cardNetworkAuthDiagram} />
+
+    <div className="mb-2 mt-6 text-[11px] font-semibold text-arch-text">2 · Clearing &amp; settlement — batched, one to two days later</div>
+    <MermaidDiagram chart={cardNetworkSettlementDiagram} />
+
+    <div className="mt-7">
+      <Title>Click through the whole journey</Title>
+      <Intro>Use Prev / Next or the dots to walk all 14 steps, from the card being presented to the merchant finally getting paid. The active leg of the journey highlights on the diagram; the panel explains what actually happens and who is involved.</Intro>
+      <FlowDiagram nodes={cardNetworkFlowNodes} steps={cardNetworkFlowSteps} />
+    </div>
+  </div>;
 }
 
 function MastercardIntelligence() {
@@ -448,7 +541,9 @@ export default function MastercardPrepTab() {
   return <SectionLayout label="Interview guide" items={sidebarItems} groups={sidebarGroups}>{(activeId) => {
     if (activeId === "mc-focus") return <div><Title>Mastercard interview hack</Title><Intro>This page is built around the four-stage virtual process that matches the information from your recruiter. Every answer is anchored to the résumé used in this application, so the later bar-raiser stages can probe without exposing inflated claims.</Intro><Cards cards={focusCards} /></div>;
     if (activeId === "mc-rounds") return <InterviewRoadmap />;
-    if (activeId === "mc-sample-questions") return <QuestionBank questions={mastercardSampleQuestions} title="17 Mastercard sample questions" intro="Test yourself before reading the suggested response. Reveal one answer at a time, edit it into your own words, and save your version for future practice." answersHidden answersEditable />;
+    if (activeId === "mc-network-basics") return <CardNetworkBasics />;
+    if (activeId === "mc-network-flow") return <CardNetworkFlowPage />;
+    if (activeId === "mc-sample-questions") return <QuestionBank questions={mastercardSampleQuestions} title="17 Mastercard sample questions" intro="Test yourself before reading the suggested response. Reveal one answer at a time, edit it into your own words, save your version, and rate your confidence so you can filter down to what still needs work." answersHidden answersEditable confidenceTracking />;
     if (activeId === "mc-intelligence") return <MastercardIntelligence />;
     if (activeId === "mc-research-product") return <CompanyResearchPage title="1 · Product and market" intro="Know what Mastercard sells, who pays for it, how the pieces reinforce one another, and where customer value conflicts with risk or friction. The ‘love and hate’ section is framed as product tensions and discovery hypotheses because this is an enterprise platform—not a consumer app with one universal user experience." cards={mastercardProductResearch} />;
     if (activeId === "mc-research-acquisitions") return <AcquisitionStackPage />;

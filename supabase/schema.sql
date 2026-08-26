@@ -130,6 +130,18 @@ create table if not exists public.star_story_practice (
     check (practice_count >= 0)
 );
 
+-- ============================ question_practice =============================
+create table if not exists public.question_practice (
+  question_key text primary key,
+  confidence   text not null default 'Developing',
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  constraint question_practice_key_format
+    check (question_key ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  constraint question_practice_confidence
+    check (confidence in ('Weak', 'Developing', 'Ready'))
+);
+
 -- ---- triggers + RLS for every table ----------------------------------------
 do $$
 declare
@@ -137,7 +149,7 @@ declare
   tables text[] := array[
     'test_plans','specs','sequence_diagrams',
     'analyses','chats','teleprompter_cards','interview_answers',
-    'star_story_practice'
+    'star_story_practice','question_practice'
   ];
 begin
   foreach t in array tables loop
@@ -161,6 +173,8 @@ revoke all on table public.interview_answers from anon, authenticated;
 grant select, insert, update on table public.interview_answers to service_role;
 revoke all on table public.star_story_practice from anon, authenticated;
 grant select, insert, update on table public.star_story_practice to service_role;
+revoke all on table public.question_practice from anon, authenticated;
+grant select, insert, update on table public.question_practice to service_role;
 
 -- ============================================================================
 -- HARDENING (optional) — when you enable Supabase Auth, drop the "anon_all"

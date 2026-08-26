@@ -1,3 +1,5 @@
+import type { FlowNode, FlowDiagramStep } from "@/data/flow-diagrams";
+
 export type PrepColor = "blue" | "purple" | "teal" | "amber" | "green" | "coral" | "gray";
 
 export interface PrepCard {
@@ -176,6 +178,226 @@ export const mastercardTerms: MastercardTerm[] = [
   { term: "Risk-based decisioning", meaning: "Applying stronger controls where risk is higher while reducing friction for lower-risk interactions.", whyItMatters: "A useful way to discuss fraud prevention without advocating blanket friction." },
   { term: "Audit evidence", meaning: "Traceable records that show what rule, data, decision, approval, or control applied.", whyItMatters: "Directly maps to the job description and your CIBC/CRA controls background." },
   { term: "Acceptance criteria", meaning: "Observable, testable conditions that define whether a requirement is complete and correct.", whyItMatters: "Your strongest bridge from strategy and regulation to engineering-ready delivery." },
+];
+
+// ─────────────────────────────────────────────────────────────────────────
+// Card network fundamentals — how Mastercard/Visa actually work behind the
+// scenes. This is domain background, not job-description-specific research.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const cardNetworkFundamentals: PrepCard[] = [
+  {
+    title: "The one thing to get right: Mastercard is not a bank",
+    body: "Mastercard doesn’t hold your money, issue your card, or decide your credit limit — your bank (or a bank-like fintech) does all of that; it’s called the issuer. Mastercard builds and operates the electronic network that lets the issuer and the merchant’s bank talk to each other in about a second, anywhere in the world, using one shared set of rules. Think of Mastercard as the switchboard and the rulebook, not a lender.",
+    cue: "Network + rules + brand — not a bank, not a lender",
+    color: "blue",
+  },
+  {
+    title: "The four-party model — who’s actually involved",
+    body: "Every card transaction has four parties plus the network in the middle. The Cardholder is the person paying. The Merchant is the business getting paid. The Acquirer is the merchant’s bank (or its processor), which gets the merchant’s money into its account. The Issuer is the cardholder’s bank, which owns the lending risk and makes the approve/decline call. Mastercard or Visa sits between the acquirer and the issuer as the neutral switch — most banks in the world are never directly connected to each other, only to the network.",
+    cue: "Cardholder → Merchant → Acquirer → NETWORK → Issuer",
+    color: "purple",
+  },
+  {
+    title: "Two separate jobs, two separate timelines",
+    body: "“Approved” at checkout is not money moving — it’s authorization: the issuer placing a temporary hold on the cardholder’s funds or credit line, confirmed in about a second. The actual movement of money — clearing (agreeing what’s owed) and settlement (the money changing bank accounts) — happens later, usually in an overnight batch, one or two days after the purchase. That’s why a hotel “authorization” hold can disappear from a statement days later without ever becoming a real charge.",
+    cue: "Authorization = an instant promise. Settlement = the real money, later.",
+    color: "teal",
+  },
+  {
+    title: "How Mastercard actually gets paid",
+    body: "Mastercard doesn’t take a cut of the loan or set anyone’s interest rate — that’s the issuer’s business. Mastercard earns a network (assessment) fee, a small percentage of the transaction, for the right to use the brand, the switch, and the fraud and dispute tooling. The bigger slice most people call “the swipe fee” — interchange — flows to the issuer, not to Mastercard; Mastercard sets and publishes interchange rates but doesn’t keep the money. Mastercard’s 2025 reported net revenue was $32.8B, split roughly 59% network / 41% value-added services such as fraud and identity — this role sits in that second bucket.",
+    cue: "Network fee → Mastercard. Interchange → the issuer. Mastercard just sets the rate.",
+    color: "amber",
+  },
+  {
+    title: "What Mastercard is really selling: trust and speed at global scale",
+    body: "The technical product is a message that has to travel from a merchant’s terminal, often across two different countries and banking systems, to the exact bank that issued that card, get a yes-or-no decision, and come all the way back — reliably, in about a second, roughly 175.5 billion times a year. Mastercard calls this routing “switching.” The other half of the business — the part this role sits in — is everything layered on top of that switch to make each decision smarter and safer: fraud signals, identity verification, and dispute rules.",
+    cue: "175.5B switched transactions a year — reliability and speed are the product",
+    color: "green",
+  },
+  {
+    title: "Card-present vs. card-not-present, and why tokenization matters",
+    body: "A chip or tap transaction is “card-present” — the physical card or device proves itself cryptographically to the terminal, which is hard to fake. Typing a card number into a website is “card-not-present” — much easier to attempt fraudulently, since there’s no physical proof. Tokenization — replacing the real card number with a single-use or device-scoped substitute, as with a digital wallet or a saved checkout — is the industry’s main answer: even if the token leaks, it’s useless outside that one device or merchant. It’s the same trade-off Business Identity works on, just for businesses instead of cards.",
+    cue: "Physical proof (chip/tap) vs. no proof (typed number) → tokenization closes the gap",
+    color: "coral",
+  },
+  {
+    title: "Disputes and chargebacks close the loop",
+    body: "If a transaction is disputed as fraudulent, wrong, or undelivered, the cardholder can raise it with their issuer, which can force money back from the merchant under the network’s chargeback rules — the “trust after the transaction” layer that acquisitions like Ethoca support. This is also your own résumé evidence: managing Visa/Mastercard chargeback cases by deadline and recovery value at Skye Bank is a direct, credible bridge into how this network protects trust end-to-end.",
+    cue: "Chargebacks are the network’s built-in trust backstop — and your own résumé evidence",
+    color: "gray",
+  },
+];
+
+export const paymentFlowTerms: MastercardTerm[] = [
+  { term: "Issuer", meaning: "The cardholder’s own bank (or bank-like fintech) — issues the card, owns the credit/debit risk, and makes the approve/decline call.", whyItMatters: "This is who actually says yes or no on a purchase — not Mastercard." },
+  { term: "Acquirer", meaning: "The merchant’s bank or payment processor — sets the merchant up to accept cards and receives the settled funds on the merchant’s behalf.", whyItMatters: "The merchant-side mirror of the issuer; Mastercard connects the two." },
+  { term: "Card network / scheme", meaning: "The company — Mastercard, Visa, and similar — that operates the switch connecting every issuer and acquirer, and sets the technical and operating rules everyone must follow.", whyItMatters: "This is Mastercard’s actual role: infrastructure and rules, not banking." },
+  { term: "Interchange fee", meaning: "A fee, set as a percentage plus a fixed amount, that the acquirer pays to the issuer on every transaction — the largest component of what merchants pay to accept cards.", whyItMatters: "Mastercard sets and publishes the rate, but the money goes to the issuer, not to Mastercard." },
+  { term: "Network / assessment fee", meaning: "A much smaller fee that issuers and acquirers pay directly to the network for using the rails and the brand.", whyItMatters: "This, plus value-added services, is how Mastercard itself actually earns money." },
+  { term: "Merchant discount rate (MDR)", meaning: "The total percentage a merchant is charged to accept a card payment — bundles interchange, the network fee, and the acquirer’s own markup.", whyItMatters: "The number a merchant actually sees on their statement; interchange is the biggest piece of it." },
+  { term: "Authorization", meaning: "The real-time, roughly one-second check where the issuer approves or declines a transaction and places a hold on funds — no money has moved yet.", whyItMatters: "This is the fast yes/no step everyone experiences at checkout." },
+  { term: "Clearing", meaning: "The batch process, usually run once a day, where the acquirer and issuer exchange final transaction details through the network and agree what’s actually owed.", whyItMatters: "This is where an “approved” hold turns into a firm, itemized bill." },
+  { term: "Settlement", meaning: "The actual movement of funds between the issuer’s and acquirer’s settlement accounts, completing the transaction — typically one to two days after the purchase.", whyItMatters: "This is when money really moves; the merchant is paid here, not at authorization." },
+  { term: "BIN / IIN (Bank Identification Number)", meaning: "The first six to eight digits of a card number, which identify exactly which bank issued the card.", whyItMatters: "This is literally how the network knows where to route an authorization request." },
+  { term: "PAN (Primary Account Number)", meaning: "The full card number embossed or printed on the card.", whyItMatters: "The core identifier a transaction carries, and the main thing tokenization is designed to hide." },
+  { term: "Chargeback", meaning: "A forced reversal of funds back to the cardholder, initiated through the issuer under network dispute rules, when a transaction is disputed as fraudulent, wrong, or undelivered.", whyItMatters: "Your direct Skye Bank experience — a mechanism you already know from the inside." },
+  { term: "Tokenization", meaning: "Replacing a real card number with a substitute value that’s useless if stolen, scoped to one device or merchant.", whyItMatters: "Core to how digital wallets and card-not-present fraud prevention work today." },
+];
+
+export const cardNetworkAuthDiagram = `sequenceDiagram
+    autonumber
+    actor C as Cardholder
+    participant M as Merchant (terminal / website)
+    participant A as Acquirer (merchant's bank)
+    participant N as Card Network (Mastercard / Visa)
+    participant I as Issuer (cardholder's bank)
+
+    C->>M: Presents card (tap, chip, or typed online)
+    M->>A: Sends authorization request (card number, amount, merchant ID)
+    A->>N: Forwards the request to the network
+    N->>I: Routes to the exact bank that issued this card (via the BIN)
+    I->>I: Checks balance/credit, fraud rules, card status
+    I-->>N: Approve or decline
+    N-->>A: Relays the decision
+    A-->>M: Relays the decision
+    M-->>C: "Approved" - receipt printed
+    Note over C,I: All of this happens in about one second.
+    Note over C,I: No money has moved yet - this is only a hold.
+`;
+
+export const cardNetworkSettlementDiagram = `sequenceDiagram
+    autonumber
+    participant M as Merchant
+    participant A as Acquirer
+    participant N as Card Network
+    participant I as Issuer
+    actor C as Cardholder
+
+    Note over M,I: End of day: the merchant's approved transactions are batched
+    M->>A: Submits the batch of approved sales for clearing
+    A->>N: Sends the clearing file
+    N->>N: Calculates the net amount owed between every issuer and acquirer
+    N->>I: Tells the issuer the final amount to fund
+    I->>N: Transfers settlement funds (minus the interchange it keeps)
+    N->>A: Forwards the net settlement funds
+    A->>M: Deposits funds to the merchant (minus the merchant discount rate)
+    I->>C: Bills the cardholder on their statement
+    Note over M,C: This is when money actually moves - typically one to two days after the purchase.
+`;
+
+export const cardNetworkFlowNodes: FlowNode[] = [
+  { id: "cardholder", label: "Cardholder", subtitle: "Uses the card", color: "#7c6fcd", x: 10, y: 127 },
+  { id: "merchant", label: "Merchant", subtitle: "Accepts payment", color: "#3eb89a", x: 160, y: 127 },
+  { id: "acquirer", label: "Acquirer", subtitle: "Merchant's bank", color: "#e8a83a", x: 310, y: 127 },
+  { id: "network", label: "Network", subtitle: "Mastercard / Visa", color: "#4a8fe8", x: 460, y: 127 },
+  { id: "issuer", label: "Issuer", subtitle: "Cardholder's bank", color: "#58b87a", x: 610, y: 127 },
+];
+
+export const cardNetworkFlowSteps: FlowDiagramStep[] = [
+  {
+    label: "1 · Card presented",
+    description: "The cardholder taps, dips, or types their card details at checkout. At this exact moment Mastercard has no idea a purchase is happening — the card only has to prove itself to the merchant's terminal.",
+    activeNodes: ["cardholder", "merchant"],
+    activeEdge: ["cardholder", "merchant"],
+    services: ["Card-present: chip / tap", "Card-not-present: typed online"],
+  },
+  {
+    label: "2 · Merchant requests authorization",
+    description: "The merchant's terminal or website sends an authorization request — card number, amount, merchant ID — to its own bank, the acquirer.",
+    activeNodes: ["merchant", "acquirer"],
+    activeEdge: ["merchant", "acquirer"],
+    mutation: "Authorization request",
+    services: ["Acquirer = the merchant's bank or processor"],
+  },
+  {
+    label: "3 · Acquirer forwards to the network",
+    description: "The acquirer has no direct relationship with the cardholder's bank, so it hands the request to Mastercard's switch — the shared infrastructure every issuer and acquirer in the world connects to.",
+    activeNodes: ["acquirer", "network"],
+    activeEdge: ["acquirer", "network"],
+    services: ["This routing step is what Mastercard calls a 'switched transaction'"],
+  },
+  {
+    label: "4 · Network routes to the issuer",
+    description: "Mastercard reads the first six to eight digits of the card (the BIN) to identify exactly which bank issued it, then routes the request there — often across countries and completely different banking systems — in milliseconds.",
+    activeNodes: ["network", "issuer"],
+    activeEdge: ["network", "issuer"],
+    services: ["BIN routing", "210+ countries connected"],
+  },
+  {
+    label: "5 · Issuer makes the actual decision",
+    description: "The cardholder's own bank checks the account balance or credit limit, runs fraud checks, and confirms the card isn't blocked or reported stolen. This yes/no decision belongs entirely to the issuer — Mastercard has no vote here.",
+    activeNodes: ["issuer"],
+    activeEdge: ["network", "issuer"],
+    services: ["Balance/credit check", "Fraud scoring", "Card status"],
+  },
+  {
+    label: "6 · Decision sent back through the network",
+    description: "The issuer's approve or decline travels back the same path it came, through Mastercard's switch to the acquirer.",
+    activeNodes: ["issuer", "network"],
+    activeEdge: ["issuer", "network"],
+    mutation: "Authorization response",
+    services: [],
+  },
+  {
+    label: "7 · Acquirer relays it to the merchant",
+    description: "The acquirer passes the response on to the merchant's terminal or website, completing the round trip back from the network.",
+    activeNodes: ["network", "acquirer"],
+    activeEdge: ["network", "acquirer"],
+    services: [],
+  },
+  {
+    label: "8 · Sale completes",
+    description: "The merchant sees 'Approved,' prints a receipt, and hands over the goods. Total elapsed time: roughly one second. Critically, no money has moved yet — this was only a hold.",
+    activeNodes: ["acquirer", "merchant"],
+    activeEdge: ["acquirer", "merchant"],
+    services: ["End of the authorization phase (real-time)"],
+  },
+  {
+    label: "9 · End of day: merchant batches sales",
+    description: "The merchant (or its processor) bundles every approved transaction from the day and submits it to the acquirer for clearing — the process that turns a temporary hold into a firm, itemized bill.",
+    activeNodes: ["merchant", "acquirer"],
+    activeEdge: ["merchant", "acquirer"],
+    mutation: "Clearing batch",
+    services: ["Start of clearing & settlement (batched, T+1/T+2)"],
+  },
+  {
+    label: "10 · Acquirer sends the clearing file",
+    description: "The acquirer forwards the batch to Mastercard's network, which calculates exactly how much every issuer owes every acquirer across the whole system.",
+    activeNodes: ["acquirer", "network"],
+    activeEdge: ["acquirer", "network"],
+    services: [],
+  },
+  {
+    label: "11 · Network tells the issuer what's owed",
+    description: "Mastercard nets out the day's transactions and tells each issuer the final amount to fund for the cards it issued.",
+    activeNodes: ["network", "issuer"],
+    activeEdge: ["network", "issuer"],
+    services: [],
+  },
+  {
+    label: "12 · Issuer funds settlement, keeps interchange",
+    description: "The issuer transfers the settlement funds through the network — after deducting interchange, the fee it keeps for having taken on the lending risk and fraud liability.",
+    activeNodes: ["issuer", "network"],
+    activeEdge: ["issuer", "network"],
+    mutation: "Settlement funds",
+    services: ["Interchange is deducted here — and stays with the issuer, not Mastercard"],
+  },
+  {
+    label: "13 · Network forwards net funds to the acquirer",
+    description: "Mastercard passes the net settlement amount on to the acquirer, after taking its own much smaller network/assessment fee.",
+    activeNodes: ["network", "acquirer"],
+    activeEdge: ["network", "acquirer"],
+    services: ["Mastercard's own fee is taken here — far smaller than interchange"],
+  },
+  {
+    label: "14 · Merchant gets paid, cardholder gets billed",
+    description: "The acquirer deposits the remaining funds into the merchant's account, minus its own markup — usually one to two days after the original purchase. Meanwhile the issuer bills the cardholder on their statement, closing the loop.",
+    activeNodes: ["acquirer", "merchant"],
+    activeEdge: ["acquirer", "merchant"],
+    services: ["Merchant discount rate = interchange + network fee + acquirer markup"],
+  },
 ];
 
 export const mastercardQuestionsToAsk: PrepCard[] = [
