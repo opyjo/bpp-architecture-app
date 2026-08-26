@@ -51,6 +51,17 @@ export interface ReferenceLink {
   note: string;
 }
 
+export interface AcquisitionStackItem {
+  name: string;
+  acquired: string;
+  capability: string;
+  lifecycle: string;
+  safeRelevance: string;
+  resumeBridge: string;
+  guardrail: string;
+  sourceHref: string;
+}
+
 export interface ApplicationAlignment {
   requirement: string;
   resumeEvidence: string;
@@ -165,6 +176,17 @@ export const mastercardReferences: ReferenceLink[] = [
   { label: "Identity Insights for Transactions · official", href: "https://www.mastercard.com/us/en/business/cybersecurity-fraud-prevention/identity/insights/identity-insights-for-transactions.html", note: "Single-API identity, device, and payment insights for risk decisions." },
   { label: "Identity Review 360 · official", href: "https://www.mastercard.com/us/en/business/cybersecurity-fraud-prevention/identity/solutions/identity-review-360.html", note: "Explainable signals, manual review, false positives, and workflow integration." },
   { label: "Mastercard Developers · official", href: "https://developer.mastercard.com/products", note: "Public product catalogue, API documentation, and sandbox entry points." },
+  { label: "Mastercard platform acquisitions · official", href: "https://www.mastercard.com/news/press/2021/november/mastercard-opens-the-door-for-fintech-companies-to-build-launch-and-grow", note: "Mastercard describes organic and acquisition-led expansion across identity, open banking, crypto, disputes, and behavioural security." },
+  { label: "2024 Investment Community presentation · official", href: "https://investor.mastercard.com/files/doc_events/2024-Mastercard-Investment-Community-Presentation.pdf", note: "Mastercard’s pre-transaction, transaction, and post-transaction Security Solutions lifecycle." },
+  { label: "Ekata acquisition · official", href: "https://investor.mastercard.com/investor-news/investor-news-details/2021/Mastercard-Focuses-on-Digital-Identity-Innovation-with-Close-of-Ekata-Acquisition/default.aspx", note: "Identity verification for account opening, payments, and other digital interactions." },
+  { label: "Recorded Future acquisition · official", href: "https://www.mastercard.com/global/en/news-and-trends/press/2024/december/mastercard-finalizes-acquisition-of-recorded-future.html", note: "Threat intelligence added to cybersecurity, identity, fraud prevention, and real-time scoring." },
+  { label: "Finicity acquisition · official", href: "https://www.mastercard.com/news/press/press-releases/2020/june/mastercard-to-acquire-finicity-to-advance-open-banking-strategy/", note: "Open-banking data, account-owner verification, and permissioned financial-data connectivity." },
+  { label: "NuData acquisition · official", href: "https://investor.mastercard.com/investor-news/investor-news-details/2017/Mastercard-Enhances-Security-of-the-Internet-of-Things-with-the-Acquisition-of-NuData-Security-Inc/default.aspx", note: "Session and behavioural-biometric indicators for near-real-time fraud decisions." },
+  { label: "RiskRecon acquisition · official", href: "https://newsroom.mastercard.com/news/press/2019/december/mastercard-acquires-riskrecon-to-enhance-cybersecurity-capabilities/", note: "AI and data analytics for cyber-risk discovery, assessment, and continuous monitoring." },
+  { label: "CipherTrace acquisition · official", href: "https://investor.mastercard.com/investor-news/investor-news-details/2021/Mastercard-Strengthens-Digital-Asset-Security-with-Close-of-CipherTrace-Acquisition/default.aspx", note: "Digital-asset security, fraud intelligence, transparency, and compliance support." },
+  { label: "Ethoca network · official", href: "https://www.mastercard.com/news/press/press-releases/2020/april/ethoca-to-bring-digital-receipts-to-consumers-through-collaboration-with-microsoft/", note: "Merchant–issuer fraud and dispute information sharing; Mastercard acquired Ethoca in 2019." },
+  { label: "Experian + Mastercard Identity · partner source", href: "https://www.experianplc.com/newsroom/press-releases/2025/experian-strengthens-its-fraud-fighting-capabilities-with-master", note: "Mastercard Identity Insights integrated into Experian Ascend for identity and fraud decisions." },
+  { label: "Entrust + Mastercard Identity · partner source", href: "https://www.entrust.com/company/newsroom/entrust-and-mastercard-team-to-fight-fraud", note: "Mastercard Identity insights powered by Ekata integrated into adaptive onboarding workflows." },
   { label: "2024 Impact Report · official", href: "https://www.mastercard.com/content/dam/mccom/shared/for-the-world/corporate-impact/pdfs/mastercard-2024-impact-report.pdf", note: "Mastercard Way behaviours and culture expectations." },
   { label: "Brand history · official", href: "https://www.mastercard.com/brandcenter/us/en/brand-history.html", note: "From the 1966 Interbank Card Association to a global technology platform." },
   { label: "Management Committee · official", href: "https://investor.mastercard.com/corporate-governance/management-committee/default.aspx", note: "Current leadership and Michael Miebach’s role in the platform strategy." },
@@ -211,6 +233,124 @@ export const mastercardProductResearch: PrepCard[] = [
     body: "Mastercard’s current strategic signals include Agent Pay and agentic commerce, Merchant Trust Services, digital assets and stablecoin infrastructure, and continued identity/fraud investment. Your point of view: autonomous agents, machines, and new rails increase the need to verify which business or actor is legitimate, what it is authorised to do, and how a decision can be audited.",
     cue: "New commerce models increase the value of trusted identity", color: "blue",
   },
+];
+
+export const acquisitionStackBrief: PrepCard[] = [
+  {
+    title: "The safe strategic answer",
+    body: "Mastercard has expanded its trust and Security Solutions platform through both internal development and acquisitions. Ekata adds identity-verification intelligence; NuData adds session and behavioural signals; Finicity adds permissioned open-banking data; RiskRecon adds cyber-risk assessment; CipherTrace adds digital-asset intelligence; Ethoca adds dispute and fraud collaboration; and Recorded Future adds threat intelligence. Together, these capabilities can support trust before, during, and after an interaction.",
+    cue: "Acquired capabilities reinforce a broader trust platform across the lifecycle", color: "blue",
+  },
+  {
+    title: "What this does—and does not—prove",
+    body: "Mastercard publicly links acquired capabilities to identity, fraud, cybersecurity, open banking, digital assets, and disputes. Public sources do not establish that Business Identity is simply ‘the Ekata layer,’ that every business onboarding decision uses all seven products, or that one internal team owns the full stack. Present the map as strategic context and ask Michael how the Business Identity product actually consumes or contributes signals.",
+    cue: "Confirmed portfolio; internal dependency map must be validated", color: "amber",
+  },
+  {
+    title: "The product tension",
+    body: "Approve legitimate people and businesses quickly while detecting bad actors early. A complete metric view therefore pairs onboarding conversion and time-to-decision with fraud capture, false positives, manual-review load, explainability, data coverage, privacy, and API reliability. This is the same target-metric plus guardrail discipline used throughout the role-prep pages.",
+    cue: "Speed and conversion + fraud and trust guardrails", color: "teal",
+  },
+  {
+    title: "The API-first implication",
+    body: "Mastercard explicitly promotes acquired and internally built capabilities through its developer platform. For this role, the practical PM artifacts are likely APIs, schemas, reason codes, validation rules, non-functional requirements, data lineage, test evidence, and integration guidance. That maps strongly to your Aeroplan, Contingency Management, and Flow Runner experience.",
+    cue: "Acquisition value becomes customer value through usable, reliable integration", color: "purple",
+  },
+  {
+    title: "Partner distribution matters too",
+    body: "Experian integrated Mastercard Identity Insights into Ascend in 2025, while Entrust integrated Mastercard Identity insights powered by Ekata into an adaptive onboarding platform. These examples show that portfolio value is distributed through partner workflows as well as direct Mastercard products. Your Aeroplan story is relevant because it shows secure contracts, quality gates, and cross-company delivery.",
+    cue: "Capability → partner workflow → measurable customer outcome", color: "green",
+  },
+  {
+    title: "Current product naming",
+    body: "Use current Mastercard names where possible: Identity Insights for Accounts, Identity Insights for Transactions, and Identity Review 360. Historical Ekata names can help explain acquisition lineage, but do not assume every legacy product name or architecture remains current. Mastercard’s 2026 account-opening material emphasises contextual identity signals, risk-based routing, and approving trusted users with less friction.",
+    cue: "Know the lineage; speak in current portfolio language", color: "coral",
+  },
+];
+
+export const acquisitionLifecycleCards: PrepCard[] = [
+  { title: "Before the interaction", body: "Threat intelligence and ecosystem posture can inform which entities, credentials, vendors, or infrastructure deserve additional scrutiny. Relevant capabilities include Recorded Future and RiskRecon; identity and open-finance signals may support onboarding decisions.", cue: "Anticipate and assess", color: "purple" },
+  { title: "During onboarding or transaction", body: "Identity, behavioural, device, financial-data, payment, and digital-asset signals can improve risk decisions. Relevant capabilities include Ekata lineage, NuData, Finicity, CipherTrace, and Mastercard network intelligence.", cue: "Verify, authenticate, and decide", color: "blue" },
+  { title: "After the transaction", body: "Fraud and dispute collaboration resolves problems and generates learning that can strengthen future controls. Ethoca is the clearest acquired capability in this stage; threat and fraud intelligence also feed continuous improvement.", cue: "Resolve, learn, and strengthen", color: "green" },
+];
+
+export const acquisitionStackItems: AcquisitionStackItem[] = [
+  {
+    name: "NuData",
+    acquired: "2017",
+    capability: "Session analytics and behavioural-biometric indicators used to distinguish authentic users from higher-risk interactions.",
+    lifecycle: "Login, authentication, and transaction context",
+    safeRelevance: "Shows Mastercard’s layered identity strategy includes behaviour and device interaction—not only static identity attributes.",
+    resumeBridge: "Discuss how post-launch signals and observable behaviour improve product decisions; do not claim behavioural-biometrics delivery experience.",
+    guardrail: "It predates the brief’s 2019–2026 range and is not proof of Business Identity’s internal architecture.",
+    sourceHref: "https://investor.mastercard.com/investor-news/investor-news-details/2017/Mastercard-Enhances-Security-of-the-Internet-of-Things-with-the-Acquisition-of-NuData-Security-Inc/default.aspx",
+  },
+  {
+    name: "Ethoca",
+    acquired: "2019",
+    capability: "Near-real-time merchant–issuer collaboration for digital fraud, disputes, transaction clarity, and chargeback avoidance.",
+    lifecycle: "Post-transaction dispute and fraud resolution",
+    safeRelevance: "Demonstrates that Mastercard creates trust after authorization as well as before it.",
+    resumeBridge: "Skye Bank chargeback lifecycle, deadline discipline, dispute evidence, and payment-network operations.",
+    guardrail: "Treat Ethoca as adjacent dispute/fraud intelligence—not as a core identity-verification engine.",
+    sourceHref: "https://www.mastercard.com/news/press/press-releases/2020/april/ethoca-to-bring-digital-receipts-to-consumers-through-collaboration-with-microsoft/",
+  },
+  {
+    name: "RiskRecon",
+    acquired: "Announced 2019",
+    capability: "AI and data analytics for non-invasive cyber-risk discovery, assessment, and continuous third-party monitoring.",
+    lifecycle: "Before onboarding and ongoing ecosystem monitoring",
+    safeRelevance: "Highlights the importance of the cyber posture of vendors, partners, and connected organisations.",
+    resumeBridge: "Aeroplan vendor SOW, dependency, security, and delivery-risk management are adjacent product disciplines.",
+    guardrail: "Do not claim RiskRecon scores every business joining Mastercard or is automatically part of each Business Identity decision.",
+    sourceHref: "https://newsroom.mastercard.com/news/press/2019/december/mastercard-acquires-riskrecon-to-enhance-cybersecurity-capabilities/",
+  },
+  {
+    name: "Finicity",
+    acquired: "2020 · $825M + potential earn-out",
+    capability: "Permissioned access to financial data, open-banking connectivity, analytics, and account-owner verification capabilities.",
+    lifecycle: "Account linking, account opening, lending, and account-to-account flows",
+    safeRelevance: "Shows how permissioned financial data can complement identity signals and improve account ownership or fraud decisions.",
+    resumeBridge: "Aeroplan secure account linking, API contracts, consent-aware data movement, and partner integration.",
+    guardrail: "Open banking and identity can complement one another; do not describe Finicity as an Ekata product or assume a shared implementation path.",
+    sourceHref: "https://www.mastercard.com/news/press/press-releases/2020/june/mastercard-to-acquire-finicity-to-advance-open-banking-strategy/",
+  },
+  {
+    name: "Ekata",
+    acquired: "2021 · $850M",
+    capability: "Identity-verification data and risk intelligence for online account opening, payments, and other digital interactions.",
+    lifecycle: "Account opening and transaction risk decisions",
+    safeRelevance: "The most directly relevant acquisition lineage for Mastercard’s current Identity Insights portfolio and Michael’s Identity Verification background.",
+    resumeBridge: "Aeroplan token exchange and OpenAPI quality gates; Contingency API validation; risk-aware technical product requirements.",
+    guardrail: "Say Ekata advanced Mastercard Identity capabilities—not that every Business Identity product ‘sits on Ekata’ unless the interviewer confirms it.",
+    sourceHref: "https://investor.mastercard.com/investor-news/investor-news-details/2021/Mastercard-Focuses-on-Digital-Identity-Innovation-with-Close-of-Ekata-Acquisition/default.aspx",
+  },
+  {
+    name: "CipherTrace",
+    acquired: "2021",
+    capability: "Blockchain analytics, digital-asset security, fraud intelligence, transparency, and regulatory/compliance support.",
+    lifecycle: "Digital-asset onboarding, monitoring, and transactions",
+    safeRelevance: "Extends Mastercard’s trust proposition to cryptocurrency businesses, wallets, exchanges, and digital-asset flows.",
+    resumeBridge: "Use your controls, auditability, and API discipline; present crypto-domain experience only if you genuinely have it.",
+    guardrail: "Do not imply CipherTrace verifies the identity of every entity in a crypto transaction; its confirmed focus is intelligence, risk, and compliance.",
+    sourceHref: "https://investor.mastercard.com/investor-news/investor-news-details/2021/Mastercard-Strengthens-Digital-Asset-Security-with-Close-of-CipherTrace-Acquisition/default.aspx",
+  },
+  {
+    name: "Recorded Future",
+    acquired: "2024 · $2.65B",
+    capability: "AI-driven threat intelligence and actionable analytics across cyber threats, with more than 1,900 clients in 75 countries at announcement.",
+    lifecycle: "Across the lifecycle: anticipate threats and enrich identity, fraud, scoring, and cyber services",
+    safeRelevance: "Signals Mastercard’s move toward earlier, predictive and externally informed trust decisions—not only reactive fraud controls.",
+    resumeBridge: "Aeroplan’s security-first decision and audit-ready requirements show the product behaviour needed to operationalise risk intelligence.",
+    guardrail: "Ask how threat intelligence is integrated; do not assert that it directly controls Business Identity onboarding today.",
+    sourceHref: "https://www.mastercard.com/global/en/news-and-trends/press/2024/december/mastercard-finalizes-acquisition-of-recorded-future.html",
+  },
+];
+
+export const acquisitionQuestionsToAsk: PrepCard[] = [
+  { title: "Integration and roadmap", body: "Mastercard has added identity, behavioural, open-finance, cyber-risk, and threat-intelligence capabilities through acquisitions. How does the Business Identity team decide which signals become shared platform capabilities versus product-specific integrations?", cue: "Shows portfolio thinking without assuming the architecture", color: "blue" },
+  { title: "For Michael · product development", body: "Given your experience developing Identity Verification products, where is the hardest integration challenge today: data quality, reason-code consistency, latency, model performance, developer experience, or customer workflow adoption?", cue: "Connects his background to concrete product trade-offs", color: "teal" },
+  { title: "Recorded Future direction", body: "Mastercard has said Recorded Future can enhance identity, fraud prevention, real-time scoring, and cybersecurity. Which opportunities are most relevant to Business Identity, and what evidence would the team need before adding a threat-intelligence signal to a customer decision?", cue: "Research-based and appropriately exploratory", color: "purple" },
 ];
 
 export const mastercardStrategyResearch: PrepCard[] = [

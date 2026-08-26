@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import MentalModelPractice from "@/components/mastercard/MentalModelPractice";
 import SectionLayout from "@/components/ui/SectionLayout";
 import {
+  acquisitionLifecycleCards,
+  acquisitionQuestionsToAsk,
+  acquisitionStackBrief,
+  acquisitionStackItems,
   applicationAlignment,
   featureLaunchFramework,
   focusCards,
@@ -34,6 +38,7 @@ import {
   storyRoutes,
   technicalFollowUps,
   type InterviewQuestion,
+  type AcquisitionStackItem,
   type ApplicationAlignment,
   type MastercardTerm,
   type PrepCard,
@@ -47,6 +52,7 @@ const sidebarGroups = [
   { label: "Company research", items: [
     { id: "mc-intelligence", label: "Research overview" },
     { id: "mc-research-product", label: "1 · Product & market" },
+    { id: "mc-research-acquisitions", label: "Identity acquisition stack" },
     { id: "mc-research-strategy", label: "2 · Strategy & SWOT" },
     { id: "mc-research-culture", label: "3 · Culture & people" },
     { id: "mc-research-role", label: "4 · Role & fit" },
@@ -255,6 +261,42 @@ function CompanyResearchPage({ title, intro, cards }: { title: string; intro: st
   </div>;
 }
 
+function AcquisitionStackTable({ items }: { items: AcquisitionStackItem[] }) {
+  return <div className="overflow-x-auto rounded-xl border border-arch-border">
+    <table className="w-full min-w-[1180px] text-left">
+      <thead className="bg-arch-bg2 text-[9.5px] uppercase tracking-wider text-arch-text3">
+        <tr>{["Acquisition", "Capability & lifecycle", "Interview-safe relevance", "Your evidence bridge", "Do not overclaim"].map((heading) => <th key={heading} className="px-3 py-3 font-semibold">{heading}</th>)}</tr>
+      </thead>
+      <tbody>{items.map((item) => <tr key={item.name} className="border-t border-arch-border align-top text-[10.5px] leading-5 text-arch-text2">
+        <td className="w-[130px] px-3 py-3">
+          <a href={item.sourceHref} target="_blank" rel="noreferrer" className="font-semibold text-arch-blue hover:underline">{item.name} ↗</a>
+          <span className="mt-1 block text-[9.5px] text-arch-text3">{item.acquired}</span>
+        </td>
+        <td className="w-[255px] px-3 py-3"><span className="text-arch-text">{item.capability}</span><span className="mt-1 block text-[9.5px] font-medium text-arch-purple">{item.lifecycle}</span></td>
+        <td className="w-[250px] px-3 py-3">{item.safeRelevance}</td>
+        <td className="w-[245px] px-3 py-3 text-arch-green">{item.resumeBridge}</td>
+        <td className="w-[260px] px-3 py-3 text-arch-coral">{item.guardrail}</td>
+      </tr>)}</tbody>
+    </table>
+  </div>;
+}
+
+function AcquisitionStackPage() {
+  return <div>
+    <Title>Mastercard Identity acquisition stack</Title>
+    <Intro>This is a source-checked map of capabilities Mastercard has added across the trust lifecycle—not a claim about Mastercard&apos;s internal architecture. Use it to show portfolio awareness, connect the role to your own delivery evidence, and ask informed questions where public information stops.</Intro>
+    <div className="mb-5 grid gap-2 md:grid-cols-3">
+      <div className="rounded-lg border border-arch-green/25 bg-arch-green/5 p-3 text-[10.5px] leading-5 text-arch-text2"><span className="font-semibold text-arch-green">Confirmed fact</span><br />Acquisition, capability, timing, and public product positioning backed by the linked source.</div>
+      <div className="rounded-lg border border-arch-amber/25 bg-arch-amber/5 p-3 text-[10.5px] leading-5 text-arch-text2"><span className="font-semibold text-arch-amber">Strategic interpretation</span><br />A defensible point of view to frame as an inference, then validate with the interviewer.</div>
+      <div className="rounded-lg border border-arch-coral/25 bg-arch-coral/5 p-3 text-[10.5px] leading-5 text-arch-text2"><span className="font-semibold text-arch-coral">Avoid claiming</span><br />Internal dependencies, universal product usage, or direct experience that neither public evidence nor your résumé proves.</div>
+    </div>
+    <Cards cards={acquisitionStackBrief} />
+    <div className="mt-7"><Title>Lifecycle mental model</Title><Intro>Mastercard publicly frames Security Solutions across pre-transaction, transaction, and post-transaction stages. This simplified view helps you remember how the acquired capabilities can complement one another without implying a fixed internal system diagram.</Intro><Cards cards={acquisitionLifecycleCards} /></div>
+    <div className="mt-7"><Title>Acquisition-by-acquisition interview map</Title><Intro>Each linked company name opens the supporting source. The final two columns turn research into a credible answer while protecting you from claims that a bar raiser could challenge.</Intro><AcquisitionStackTable items={acquisitionStackItems} /></div>
+    <div className="mt-7"><Title>Questions this research unlocks</Title><Intro>Choose one question that fits the conversation. These are deliberately exploratory: they demonstrate preparation without pretending to know confidential architecture or roadmap details.</Intro><Cards cards={acquisitionQuestionsToAsk} /></div>
+  </div>;
+}
+
 function ResearchQuestionsPage() {
   return <div>
     <Title>Questions and final research checklist</Title>
@@ -316,6 +358,7 @@ export default function MastercardPrepTab() {
     if (activeId === "mc-sample-questions") return <QuestionBank questions={mastercardSampleQuestions} title="17 Mastercard sample questions" intro="Test yourself before reading the suggested response. Reveal one answer at a time, edit it into your own words, and save your version for future practice." answersHidden answersEditable />;
     if (activeId === "mc-intelligence") return <MastercardIntelligence />;
     if (activeId === "mc-research-product") return <CompanyResearchPage title="1 · Product and market" intro="Know what Mastercard sells, who pays for it, how the pieces reinforce one another, and where customer value conflicts with risk or friction. The ‘love and hate’ section is framed as product tensions and discovery hypotheses because this is an enterprise platform—not a consumer app with one universal user experience." cards={mastercardProductResearch} />;
+    if (activeId === "mc-research-acquisitions") return <AcquisitionStackPage />;
     if (activeId === "mc-research-strategy") return <CompanyResearchPage title="2 · Strategy and SWOT" intro="Use this page to form a coherent view, not to memorise a fact list. The central thesis is that Mastercard is using its network, data, and partner distribution to become a broader trusted-commerce platform across payment rails and services." cards={mastercardStrategyResearch} />;
     if (activeId === "mc-research-culture") return <CompanyResearchPage title="3 · Culture, history, and people" intro="Connect the stated culture to how a global trust platform must operate. Outside reviews are included only as directional evidence, and interviewer research is limited to public professional context." cards={mastercardCultureResearch} />;
     if (activeId === "mc-research-role") return <CompanyResearchPage title="4 · The role and your fit" intro="This section combines the submitted job description and résumé with current company context. It separates known role requirements from operating-model inferences and presents improvement ideas as hypotheses to validate—not criticisms of capabilities you have not seen." cards={mastercardRoleResearch} />;
