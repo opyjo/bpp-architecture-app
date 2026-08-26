@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Target } from "lucide-react";
+import { ArrowRight, Eraser, Eye, EyeOff, MessageCircle, Target, X } from "lucide-react";
 import { toast } from "sonner";
 import MentalModelPractice from "@/components/mastercard/MentalModelPractice";
 import SectionLayout from "@/components/ui/SectionLayout";
@@ -61,10 +61,7 @@ import {
   type TechnicalInterviewQuestion,
 } from "@/data/mastercard-prep";
 
-const sidebarItems = [
-  { id: "mc-focus", label: "Four-stage overview" },
-  { id: "mc-chat", label: "Ask AI about this interview" },
-];
+const sidebarItems = [{ id: "mc-focus", label: "Four-stage overview" }];
 const sidebarGroups = [
   { label: "Process", items: [{ id: "mc-rounds", label: "Four-stage roadmap" }] },
   { label: "Card network 101", items: [
@@ -286,7 +283,8 @@ const MASTERCARD_CHAT_PROMPTS = [
   "What should I ask Michael Cacho in Stage 2?",
 ];
 
-function MastercardChat() {
+function MastercardChatWidget() {
+  const [open, setOpen] = useState(false);
   const systemContext = useMemo(() => buildMastercardChatContext(), []);
   const { messages, isStreaming, error, sendMessage, stopStreaming, clearHistory } = useChat(DEFAULT_MODEL_ID, {
     storageKey: "mastercard-interview-chat-v1",
@@ -297,29 +295,48 @@ function MastercardChat() {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, open]);
 
   const isEmpty = messages.length === 0;
 
-  return <div>
-    <Title>Ask AI about this interview</Title>
-    <Intro>Grounded in everything on this Mastercard tab — company research, the technical question bank, your STAR stories, résumé alignment, the acquisition stack, all of it — plus general knowledge for anything this tab doesn&apos;t cover. Use it to rehearse and dig into follow-ups; close it before the live call.</Intro>
-    <div className="flex h-[68vh] flex-col overflow-hidden rounded-xl border border-arch-border bg-arch-bg2">
-      <div ref={scrollRef} className={`flex-1 overflow-y-auto px-4 py-4 ${isEmpty ? "flex flex-col items-center justify-center" : ""}`}>
-        {isEmpty ? <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
-          <div className="mb-1 text-center text-[11.5px] text-arch-text3">Try one of these, or ask anything</div>
-          <div className="flex flex-wrap justify-center gap-1.5">
-            {MASTERCARD_CHAT_PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={() => sendMessage(prompt)} className="rounded-full border border-arch-border px-2.5 py-1 text-[10.5px] text-arch-text3 transition-colors hover:border-arch-purple/40 hover:text-arch-purple">{prompt}</button>)}
-          </div>
-        </div> : <div className="mx-auto flex max-w-3xl flex-col gap-4">
-          {messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
-        </div>}
-        {error && <div className="mt-3 rounded-lg border border-arch-coral/30 bg-arch-coral/10 px-3 py-2 text-[11.5px] text-arch-coral">{error}</div>}
+  if (!open) {
+    return <button
+      type="button"
+      onClick={() => setOpen(true)}
+      aria-label="Ask AI about this Mastercard interview"
+      className="fixed bottom-5 left-5 z-[60] flex items-center gap-2 rounded-full border border-arch-coral/30 bg-arch-coral px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-arch-coral/30 transition-all hover:scale-[1.03] hover:bg-arch-coral/90"
+    >
+      <MessageCircle className="size-4" />
+      Ask about this interview
+    </button>;
+  }
+
+  return <div className="fixed bottom-5 left-5 z-[60] flex h-[70vh] max-h-[640px] w-[420px] max-w-[94vw] flex-col rounded-xl border border-arch-border bg-arch-bg shadow-2xl shadow-black/30">
+    <div className="flex shrink-0 items-center justify-between border-b border-arch-border px-4 py-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-arch-coral/15">
+          <MessageCircle className="h-3.5 w-3.5 text-arch-coral" />
+        </div>
+        <span className="truncate text-[13px] font-semibold text-arch-text">Mastercard interview AI</span>
       </div>
-      <div className="shrink-0 border-t border-arch-border px-4 py-3">
-        {messages.length > 0 && <div className="mb-2 flex justify-end"><button type="button" onClick={clearHistory} className="text-[11px] font-semibold text-arch-text3 transition-colors hover:text-arch-coral">Clear chat</button></div>}
-        <ChatInput onSend={sendMessage} onStop={stopStreaming} isStreaming={isStreaming} placeholder="Ask anything about the Mastercard interview…" />
+      <div className="flex shrink-0 items-center gap-1">
+        {messages.length > 0 && <button type="button" onClick={clearHistory} title="Clear conversation" className="rounded-md p-1.5 text-arch-text3 transition-colors hover:bg-white/10 hover:text-arch-text"><Eraser className="h-4 w-4" /></button>}
+        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="rounded-md p-1.5 text-arch-text3 transition-colors hover:bg-white/10 hover:text-arch-text"><X className="h-4 w-4" /></button>
       </div>
+    </div>
+
+    <div ref={scrollRef} className={`flex-1 overflow-y-auto px-4 py-3 ${isEmpty ? "flex flex-col items-center justify-center" : "space-y-3"}`}>
+      {isEmpty ? <div className="flex flex-col items-center gap-4 text-center">
+        <div className="text-[11.5px] text-arch-text3">Grounded in everything on this tab — company research, the technical bank, your STAR stories, résumé alignment, all of it — plus general knowledge for anything it doesn&apos;t cover.</div>
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {MASTERCARD_CHAT_PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={() => sendMessage(prompt)} className="rounded-lg border border-arch-border bg-arch-bg2 px-2.5 py-1.5 text-[11px] text-arch-text2 transition-colors hover:border-arch-coral/40 hover:text-arch-coral">{prompt}</button>)}
+        </div>
+      </div> : messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
+      {error && <div className="mt-3 rounded-lg border border-arch-coral/30 bg-arch-coral/10 px-3 py-2 text-[11.5px] text-arch-coral">{error}</div>}
+    </div>
+
+    <div className="shrink-0 px-3 pb-3 pt-1">
+      <ChatInput onSend={sendMessage} onStop={stopStreaming} isStreaming={isStreaming} placeholder="Ask anything about the Mastercard interview…" />
     </div>
   </div>;
 }
@@ -591,9 +608,9 @@ function RehearsalChecklist() {
 }
 
 export default function MastercardPrepTab() {
-  return <SectionLayout label="Interview guide" items={sidebarItems} groups={sidebarGroups}>{(activeId) => {
+  return <>
+    <SectionLayout label="Interview guide" items={sidebarItems} groups={sidebarGroups}>{(activeId) => {
     if (activeId === "mc-focus") return <div><Title>Mastercard interview hack</Title><Intro>This page is built around the four-stage virtual process that matches the information from your recruiter. Every answer is anchored to the résumé used in this application, so the later bar-raiser stages can probe without exposing inflated claims.</Intro><Cards cards={focusCards} /></div>;
-    if (activeId === "mc-chat") return <MastercardChat />;
     if (activeId === "mc-rounds") return <InterviewRoadmap />;
     if (activeId === "mc-network-basics") return <CardNetworkBasics />;
     if (activeId === "mc-network-flow") return <CardNetworkFlowPage />;
@@ -619,5 +636,7 @@ export default function MastercardPrepTab() {
     if (activeId === "mc-stories") return <StoryMap />;
     if (activeId === "mc-rehearse") return <RehearsalChecklist />;
     return <div className="flex items-center gap-2 text-arch-text2"><Target className="h-4 w-4" />Select an interview-preparation section.</div>;
-  }}</SectionLayout>;
+  }}</SectionLayout>
+    <MastercardChatWidget />
+  </>;
 }
