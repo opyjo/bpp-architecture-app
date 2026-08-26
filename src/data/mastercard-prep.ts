@@ -67,6 +67,31 @@ export interface StarStory {
   managerFrame: string;
 }
 
+export type PracticeConfidence = "Weak" | "Developing" | "Ready";
+
+export interface MentalModelNode {
+  id: string;
+  label: string;
+  prompt: string;
+  detail: string;
+}
+
+export interface MentalModelFollowUp {
+  question: string;
+  route: string;
+}
+
+export interface StarMentalModel {
+  storyKey: string;
+  storyTitle: string;
+  memoryCode: string;
+  useFor: string;
+  nodes: MentalModelNode[];
+  answer30: string;
+  answer90: string;
+  followUps: MentalModelFollowUp[];
+}
+
 export const interviewStages: InterviewStage[] = [
   { stage: "Recruiter screen", format: "Recruiter conversation", focus: "Background, motivation, compensation, and role fit", status: "Complete" },
   { stage: "Stage 1", format: "Hiring manager chat", focus: "Résumé, past projects, motivations, and behavioural judgment", status: "Complete" },
@@ -783,6 +808,105 @@ export const starStories: StarStory[] = [
     action: "I audited the existing patterns—account type, household eligibility, existing subscriptions, and promotion stacking—and spoke with product, catalog, billing, and partner engineering about rule-change needs and the cost of bad rules. I defined the boundary: Flow Runner executes rules while catalog-api and the policy store own them. With engineering, I modelled a declarative JSON flow that loads product and promotion rules, evaluates the request profile, and returns a qualification outcome with reasons. I specified the OpenAPI contract for /api/v2/flows/:flowId/execute, supported legacy and new rule formats, and validated a pilot against real catalog data to prove parity before cutover.",
     result: "The platform gained one execution point instead of scattered logic, rule changes no longer required redeploying every service, and existing integrations were not disrupted. The reusable recipe model later supported additional validation scenarios.",
     managerFrame: "Frame it as a product-boundary decision: centralise execution for consistency and agility, but leave rule ownership with the systems and people best positioned to manage it.",
+  },
+];
+
+export const starMentalModels: StarMentalModel[] = [
+  {
+    storyKey: "catalog-management",
+    storyTitle: "Catalog Management - promotion-rule conflict and sign-off",
+    memoryCode: "Rules → Conflict → Impact map → Sign-off → Zero defects",
+    useFor: "Stakeholder conflict · influence · complex requirements · alignment",
+    nodes: [
+      { id: "context", label: "Context", prompt: "What system and stakes?", detail: "Bell Catalog Management was the master-data layer for products, promotions, and prices. Incorrect rules could flow directly into customer pricing and billing." },
+      { id: "tension", label: "Tension", prompt: "What was broken?", detail: "Promotion-eligibility rules were undocumented, and marketing, product, and billing interpreted them differently." },
+      { id: "mandate", label: "My mandate", prompt: "What did I own?", detail: "Elicit the complete rules and obtain stakeholder sign-off before engineering built the admin workflows." },
+      { id: "diagnosis", label: "Diagnosis", prompt: "What did I discover?", detail: "Separate sessions exposed the critical disagreement: marketing treated expire and cancel as interchangeable, while billing had a hard dependency on the distinction." },
+      { id: "decision", label: "Key decision", prompt: "What choice did I make?", detail: "Use the downstream pricing and billing impact—not stakeholder seniority or volume—as the evidence for resolving the rule." },
+      { id: "execution", label: "Execution", prompt: "How did I deliver?", detail: "I mapped both interpretations, brought all three groups together, documented the agreed stackability and lifecycle rules, and secured written sign-off." },
+      { id: "evidence", label: "Evidence", prompt: "What proved it worked?", detail: "The feature launched with no requirement-driven defects, and the rules document became the template for later eligibility work." },
+      { id: "lesson", label: "Lesson", prompt: "What is reusable?", detail: "A requirements artifact creates value when it makes consequences visible and becomes a decision and risk-control mechanism." },
+    ],
+    answer30: "Bell’s Catalog platform had undocumented promotion rules that marketing, product, and billing interpreted differently. I mapped the downstream impact—especially the billing dependency between expiring and cancelling a promotion—aligned the groups on the evidence, and obtained written sign-off before build. The feature launched with no requirement-driven defects, and the document became a reusable template.",
+    answer90: "Bell’s Catalog Management system was the master-data layer for products, promotions, and prices, so a rule error could reach customer pricing and billing. I discovered that promotion eligibility was undocumented and understood differently by marketing, product, and billing. My responsibility was to define the complete rules and obtain agreement before engineering built the admin workflows. I met each group separately and found that the central conflict was expiring versus cancelling a promotion: marketing treated them as equivalent, while billing depended on the exact action. I mapped the downstream consequences of both interpretations and used that evidence in a joint decision session. I then documented stackability and lifecycle behaviour and obtained written sign-off. The feature launched without requirement-driven defects, and billing adopted the document as a template for later eligibility work. The lesson was that good requirements are not administrative output; they are a mechanism for alignment and risk reduction.",
+    followUps: [
+      { question: "Why did you meet stakeholders separately first?", route: "Diagnosis → psychological safety and complete constraints" },
+      { question: "What alternative did you consider?", route: "Decision → defer to one owner versus reconcile downstream evidence" },
+      { question: "What was specifically yours?", route: "Mandate → sessions, impact map, rules document, sign-off" },
+      { question: "How did you measure success?", route: "Evidence → defects, rework, and reuse of the template" },
+    ],
+  },
+  {
+    storyKey: "contingency-management",
+    storyTitle: "Contingency Management - API requirements and root-cause resolution",
+    memoryCode: "Observe → Root cause → Correct → Resubmit → Audit",
+    useFor: "Technical depth · operations discovery · APIs · root-cause thinking",
+    nodes: [
+      { id: "context", label: "Context", prompt: "What system and stakes?", detail: "Bell operations manually triaged failed subscription orders—kickouts—across several back-office systems, creating errors and customer delays." },
+      { id: "tension", label: "Tension", prompt: "What was broken?", detail: "The proposed platform lacked a formal service definition, and simply displaying failures would preserve the manual recovery problem." },
+      { id: "mandate", label: "My mandate", prompt: "What did I own?", detail: "Define the API contract and data mapping for search, transaction management, and audit logging while ensuring the product solved the real failure." },
+      { id: "diagnosis", label: "Diagnosis", prompt: "What did I discover?", detail: "Shadowing agents showed that many kickouts came from invalid address data in the upstream CPM feed." },
+      { id: "decision", label: "Key decision", prompt: "What choice did I make?", detail: "Reframe the product from a diagnostic screen into a resolution workflow where agents correct the root cause and safely resubmit." },
+      { id: "execution", label: "Execution", prompt: "How did I deliver?", detail: "I specified address editing, API-boundary validation, resubmission, an automatic-resubmit Lambda, data mapping, endpoint acceptance criteria, and audit logging with ops and engineering." },
+      { id: "evidence", label: "Evidence", prompt: "What proved it worked?", detail: "Agents resolved the common failure class without engineering escalation; corrected transactions no longer required manual reprocessing; engineering built without significant rework." },
+      { id: "lesson", label: "Lesson", prompt: "What is reusable?", detail: "Observe the real workflow before freezing scope: operational users expose hidden states and root causes that process documents miss." },
+    ],
+    answer30: "Bell agents were manually triaging failed subscription orders across several systems. By shadowing them, I found that invalid upstream address data caused many failures, so I reframed the product from showing kickouts to correcting and resubmitting them. I defined the APIs, validation, automated resubmission, and audit trail. Agents could resolve the common failure without engineering escalation or manual reprocessing.",
+    answer90: "Bell’s operations teams manually triaged failed subscription orders across multiple back-office systems, which was slow, error-prone, and delayed customers. The initial platform idea focused on showing those failures, but the service had no formal requirements. I owned the API contract and data mapping and wanted to ensure the tool addressed the actual failure. I shadowed operations agents and found that many kickouts originated in invalid address data from the upstream CPM feed. That changed the product boundary: instead of another diagnostic screen, agents needed to correct the address and resubmit safely. I specified the edit-and-resubmit workflow, API-boundary validation, an automatic-resubmit Lambda, endpoint contracts, acceptance criteria, and audit logging, and reviewed them with operations and engineering before build. Agents could resolve the common failure class without escalation, corrected records no longer needed manual reprocessing, and engineering built from the specification without significant rework. The lesson was to investigate the lived workflow before committing to the requested solution.",
+    followUps: [
+      { question: "Why was a screen not enough?", route: "Tension → visibility did not remove the root cause or reprocessing" },
+      { question: "How did you find the address problem?", route: "Diagnosis → direct observation and failure-pattern analysis" },
+      { question: "What made the API safe?", route: "Execution → validation, controlled resubmission, and audit trail" },
+      { question: "What was the measurable value?", route: "Evidence → fewer escalations, less reprocessing, less rework" },
+    ],
+  },
+  {
+    storyKey: "aeroplan-integration",
+    storyTitle: "Aeroplan loyalty integration - secure contract and vendor delivery",
+    memoryCode: "Privacy risk → Token exchange → Contract gate → Zero regressions",
+    useFor: "Security judgment · APIs · vendor management · UAT · technical risk",
+    nodes: [
+      { id: "context", label: "Context", prompt: "What system and stakes?", detail: "Bell’s Aeroplan integration was a strategically important partnership with a vendor SOW already in place." },
+      { id: "tension", label: "Tension", prompt: "What was broken?", detail: "There was no formal integration specification, security model, or API contract, and the proposed URL parameters exposed customer information." },
+      { id: "mandate", label: "My mandate", prompt: "What did I own?", detail: "Define the product and integration scope before implementation and control delivery against the SOW." },
+      { id: "diagnosis", label: "Diagnosis", prompt: "What did I discover?", detail: "Passing customer payloads through URLs created privacy, leakage, and fraud risk while ambiguous contracts created commercial and quality risk." },
+      { id: "decision", label: "Key decision", prompt: "What choice did I make?", detail: "Replace the URL data flow with a one-time token exchange and make the OpenAPI contract an executable compatibility gate." },
+      { id: "execution", label: "Execution", prompt: "How did I deliver?", detail: "I aligned engineering and security, specified Token API → UUID → BFF retrieval, generated TypeScript types from OpenAPI, wrote flow acceptance criteria, tracked SOW milestones, and led UAT." },
+      { id: "evidence", label: "Evidence", prompt: "What proved it worked?", detail: "Generated types caught two contract mismatches in UAT; both were fixed before production; the launch had zero post-launch integration regressions." },
+      { id: "lesson", label: "Lesson", prompt: "What is reusable?", detail: "Turn security and compatibility expectations into architecture decisions and automated quality gates before code and contract ambiguity harden." },
+    ],
+    answer30: "Bell’s Aeroplan integration began without a security model or API contract, and the proposed design put customer data in URL parameters. I stopped that pattern, aligned teams on a one-time token exchange, and made OpenAPI-generated TypeScript types a compatibility gate. The types caught two mismatches during UAT, both were fixed before release, and production launched with zero integration regressions.",
+    answer90: "Bell’s Aeroplan integration was a strategically important partnership, but a vendor SOW was already in place before the security model and API contract were defined. The original proposal passed customer data in URL query parameters, creating privacy and fraud risk. I owned defining the integration scope and raised the unsafe flow before implementation. I proposed a token exchange where the host sends the payload to a Token API, receives a one-time UUID, and the microfrontend retrieves the data securely through a BFF. After aligning engineering and security, I defined the OpenAPI contract, generated TypeScript types from it as a compile-time quality gate, wrote acceptance criteria for each integration flow, tracked vendor milestones, and led UAT. The generated types caught two contract mismatches before production, and the launch had zero post-launch integration regressions. The architecture also supported future loyalty partners. The lesson was to make security and compatibility executable parts of delivery rather than end-stage reviews.",
+    followUps: [
+      { question: "Why was the URL approach unsafe?", route: "Diagnosis → leakage, logs/history, privacy, and fraud exposure" },
+      { question: "Why a token exchange?", route: "Decision → minimise exposed data and constrain retrieval" },
+      { question: "How did you manage the vendor?", route: "Execution → contract, SOW milestones, acceptance criteria, UAT" },
+      { question: "What did the quality gate prove?", route: "Evidence → two mismatches prevented and zero regressions" },
+    ],
+  },
+  {
+    storyKey: "flow-runner",
+    storyTitle: "Flow Runner - centralising duplicated qualification logic",
+    memoryCode: "Duplication → Boundary → Declarative flow → Parity → Reuse",
+    useFor: "Platform strategy · service boundaries · architecture · migration risk",
+    nodes: [
+      { id: "context", label: "Context", prompt: "What system and stakes?", detail: "Bell’s subscription platform qualified offers across reseller-service, catalog-api, and merchant adapters." },
+      { id: "tension", label: "Tension", prompt: "What was broken?", detail: "Duplicated logic produced inconsistent outcomes, required multiple deployments for rule changes, and obscured the end-to-end decision path." },
+      { id: "mandate", label: "My mandate", prompt: "What did I own?", detail: "Define a central execution service and prove behavioural parity before any consumer cut over." },
+      { id: "diagnosis", label: "Diagnosis", prompt: "What did I discover?", detail: "The services repeated common checks, but rule authorship and rule execution were different responsibilities and should not be centralised together." },
+      { id: "decision", label: "Key decision", prompt: "What choice did I make?", detail: "Flow Runner would own execution only; catalog-api and the policy store would continue owning the rules." },
+      { id: "execution", label: "Execution", prompt: "How did I deliver?", detail: "I audited patterns, aligned product/catalog/billing/partners, modelled reusable JSON recipes, specified the execute API, supported legacy and new formats, and ran a real-data parity pilot." },
+      { id: "evidence", label: "Evidence", prompt: "What proved it worked?", detail: "The platform gained one execution point, rule changes avoided multi-service deployments, existing integrations stayed intact, and the recipe model supported later validation flows." },
+      { id: "lesson", label: "Lesson", prompt: "What is reusable?", detail: "A strong platform boundary centralises the responsibility that needs consistency while leaving domain ownership with the right system and team." },
+    ],
+    answer30: "Bell had offer-qualification logic duplicated across several services, causing inconsistent outcomes and multiple deployments for each rule change. I defined Flow Runner as the central execution layer while leaving rule ownership in catalog and policy systems. We supported old and new formats and proved parity with real data before cutover. The result was consistent execution, safer migration, and a reusable engine for later validation flows.",
+    answer90: "On Bell’s subscription platform, offer-qualification logic was duplicated across reseller-service, catalog-api, and merchant adapters. That created inconsistent decisions, forced several deployments for each rule change, and made the end-to-end qualification path difficult to explain. I owned defining a central execution service and proving it matched legacy behaviour before cutover. I audited the duplicated patterns and spoke with product, catalog, billing, and partner engineering. The key product-boundary decision was that Flow Runner would execute rules but would not own them; catalog-api and the policy store remained the sources of truth. With engineering, I modelled reusable declarative JSON flows, specified the execute endpoint, supported legacy and new formats, and ran a pilot against real catalog data to prove parity. The platform gained one consistent execution point without disrupting existing integrations, rule changes no longer required redeploying every service, and the recipe model later supported additional validation scenarios. The lesson was to centralise the responsibility that needs consistency without absorbing domain ownership unnecessarily.",
+    followUps: [
+      { question: "Why not move the rules too?", route: "Decision → execution consistency versus domain ownership" },
+      { question: "How did you control migration risk?", route: "Execution → dual-format support and real-data parity" },
+      { question: "What was your product contribution?", route: "Mandate → boundary, requirements, stakeholders, contract, validation" },
+      { question: "How did the platform create leverage?", route: "Evidence → one engine, fewer deployments, reusable recipes" },
+    ],
   },
 ];
 

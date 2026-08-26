@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 import { toast } from "sonner";
+import MentalModelPractice from "@/components/mastercard/MentalModelPractice";
 import SectionLayout from "@/components/ui/SectionLayout";
 import {
   applicationAlignment,
@@ -57,7 +58,7 @@ const sidebarGroups = [
   { label: "Stage 2 · Technical", items: [{ id: "mc-interviewer", label: "Michael Cacho prep" }, { id: "mc-round-2", label: "Technical question bank" }] },
   { label: "Stage 3 · Bar raiser", items: [{ id: "mc-round-3", label: "Leadership scenario" }] },
   { label: "Stage 4 · Bar raiser", items: [{ id: "mc-round-4", label: "Program-leadership gauntlet" }] },
-  { label: "Practice", items: [{ id: "mc-stars", label: "Your STAR stories" }, { id: "mc-stories", label: "Story map" }, { id: "mc-rehearse", label: "Rehearsal checklist" }] },
+  { label: "Practice", items: [{ id: "mc-mental-models", label: "Mental model practice" }, { id: "mc-stars", label: "Your STAR stories" }, { id: "mc-stories", label: "Story map" }, { id: "mc-rehearse", label: "Rehearsal checklist" }] },
 ];
 
 const colorClasses: Record<PrepColor, string> = {
@@ -328,6 +329,7 @@ export default function MastercardPrepTab() {
     if (activeId === "mc-round-2") return <RoundPage round={2} questions={technicalFollowUps} />;
     if (activeId === "mc-round-3") return <RoundPage round={3} questions={roundThreeQuestions} framework={featureLaunchFramework} />;
     if (activeId === "mc-round-4") return <RoundPage round={4} questions={roundFourQuestions} />;
+    if (activeId === "mc-mental-models") return <MentalModelPractice />;
     if (activeId === "mc-stars") return <StarBank />;
     if (activeId === "mc-stories") return <StoryMap />;
     if (activeId === "mc-rehearse") return <RehearsalChecklist />;

@@ -111,13 +111,33 @@ create table if not exists public.interview_answers (
     check (char_length(answer) between 1 and 20000)
 );
 
+-- ============================ star_story_practice ==========================
+create table if not exists public.star_story_practice (
+  story_key         text primary key,
+  model             jsonb not null default '{}'::jsonb,
+  confidence        text not null default 'Developing',
+  practice_count    integer not null default 0,
+  last_practiced_at timestamptz,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  constraint star_story_practice_key_format
+    check (story_key ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  constraint star_story_practice_model_object
+    check (jsonb_typeof(model) = 'object'),
+  constraint star_story_practice_confidence
+    check (confidence in ('Weak', 'Developing', 'Ready')),
+  constraint star_story_practice_count_nonnegative
+    check (practice_count >= 0)
+);
+
 -- ---- triggers + RLS for every table ----------------------------------------
 do $$
 declare
   t text;
   tables text[] := array[
     'test_plans','specs','sequence_diagrams',
-    'analyses','chats','teleprompter_cards','interview_answers'
+    'analyses','chats','teleprompter_cards','interview_answers',
+    'star_story_practice'
   ];
 begin
   foreach t in array tables loop
@@ -139,6 +159,8 @@ end $$;
 -- Data API automatically. Grant only the server role used by this app.
 revoke all on table public.interview_answers from anon, authenticated;
 grant select, insert, update on table public.interview_answers to service_role;
+revoke all on table public.star_story_practice from anon, authenticated;
+grant select, insert, update on table public.star_story_practice to service_role;
 
 -- ============================================================================
 -- HARDENING (optional) — when you enable Supabase Auth, drop the "anon_all"
