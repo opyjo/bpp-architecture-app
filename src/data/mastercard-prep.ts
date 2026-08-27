@@ -58,6 +58,37 @@ export interface RoundPlaybook {
   color: PrepColor;
 }
 
+export type ProductDesignStepId =
+  | "clarify"
+  | "users"
+  | "prioritize"
+  | "options"
+  | "trade-offs"
+  | "roadmap"
+  | "summarize";
+
+export interface ProductDesignFrameworkStep {
+  id: ProductDesignStepId;
+  step: number;
+  label: string;
+  focus: string;
+  output: string;
+  color: PrepColor;
+}
+
+export interface ProductDesignPrompt {
+  title: string;
+  prompt: string;
+  possibleUsers: string[];
+  tensions: string[];
+  guardrail: string;
+}
+
+export interface ProductDesignAnswerBeat {
+  label: string;
+  template: string;
+}
+
 export interface MastercardTerm {
   term: string;
   meaning: string;
@@ -880,10 +911,10 @@ export const roundPlaybooks: RoundPlaybook[] = [
   {
     round: "Stage 3",
     title: "Bar raiser: leadership scenario",
-    objective: "Demonstrate owner-level product judgment in an unfamiliar feature-launch scenario.",
-    interviewerFocus: "Planning a feature from discovery through launch; reconciling conflicting priorities; aligning engineering, business, risk, and operational stakeholders.",
+    objective: "Demonstrate owner-level product judgment in an unfamiliar feature-launch or product-design scenario.",
+    interviewerFocus: "Planning a feature from discovery through launch; reconciling conflicting priorities; and aligning engineering, business, risk, and operational stakeholders. A historical Mastercard PM interview guide created in 2019 also describes product-design and product-critique cases as possible formats. It does not assign them to Stage 3 or confirm that they are part of this interview process, so treat them as useful adjacent practice—not a predicted question.",
     evidence: "Subscription Manager, Contingency Management, and Aeroplan show problem framing, risk reduction, cross-functional alignment, and delivery ownership.",
-    preparation: "Use the feature-launch framework. State assumptions, identify users and success measures, prioritise an MVP, surface risks and dependencies, define the delivery loop, then describe launch and learning.",
+    preparation: "For a launch scenario, use the feature-launch framework. For a design or critique case, clarify the goal, identify and prioritise users and needs, compare options, explain trade-offs and edge cases, propose a roadmap, and summarise. State assumptions aloud and check in with the interviewer as you go.",
     color: "purple",
   },
   {
@@ -1499,6 +1530,106 @@ export const featureLaunchFramework: PrepCard[] = [
   { title: "3. Shape the MVP", body: "Prioritise the smallest valuable release. Separate must-haves from later improvements using customer impact, risk, dependency, effort, and cost of delay—not the loudest stakeholder request.", cue: "MVP first; show the prioritisation logic", color: "amber" },
   { title: "4. Align the delivery system", body: "Bring engineering, design, data, operations, security, legal/compliance, and commercial partners in early as applicable. Make workflows, acceptance criteria, interfaces, dependencies, and decision rights explicit.", cue: "Early alignment prevents late surprises", color: "purple" },
   { title: "5. Deliver, launch, learn", body: "Run the delivery cadence, manage risks and scope changes, validate against acceptance criteria, prepare rollout and support, then compare launch metrics with the baseline. Turn the learning into backlog decisions.", cue: "Build → validate → launch → measure → iterate", color: "green" },
+];
+
+export const productDesignFramework: ProductDesignFrameworkStep[] = [
+  {
+    id: "clarify",
+    step: 1,
+    label: "Clarify",
+    focus: "Confirm the goal, context, constraints, scope, and what success means before proposing features.",
+    output: "A one-sentence problem statement plus the assumptions you still need to test.",
+    color: "blue",
+  },
+  {
+    id: "users",
+    step: 2,
+    label: "Users",
+    focus: "Name the people in the workflow and the job, pain, or risk each one needs the product to address.",
+    output: "A short user-and-needs map expressed as outcomes rather than preselected features.",
+    color: "teal",
+  },
+  {
+    id: "prioritize",
+    step: 3,
+    label: "Prioritize",
+    focus: "Choose the primary user and highest-value need using the stated goal, customer impact, risk, and evidence.",
+    output: "One explicit priority and the reason lower-priority needs can wait.",
+    color: "amber",
+  },
+  {
+    id: "options",
+    step: 4,
+    label: "Options",
+    focus: "Generate two or three meaningfully different approaches, then connect each capability to a prioritised need.",
+    output: "A small option set and a recommended direction—not a feature list produced too early.",
+    color: "purple",
+  },
+  {
+    id: "trade-offs",
+    step: 5,
+    label: "Trade-offs",
+    focus: "Compare user value, accuracy, friction, privacy, explainability, operational load, feasibility, and important edge cases.",
+    output: "A defensible choice with risks, guardrails, and what would change the decision.",
+    color: "coral",
+  },
+  {
+    id: "roadmap",
+    step: 6,
+    label: "Roadmap",
+    focus: "Define the smallest useful test or MVP, its success measure, and what evidence unlocks V1 and V2.",
+    output: "A sequenced MVP → V1 → V2 plan tied to learning rather than a wish list.",
+    color: "green",
+  },
+  {
+    id: "summarize",
+    step: 7,
+    label: "Summarize",
+    focus: "Restate the user, need, selected approach, rationale, success measure, and largest unresolved risk.",
+    output: "A concise final recommendation the interviewer can easily challenge or extend.",
+    color: "gray",
+  },
+];
+
+export const productDesignPrompts: ProductDesignPrompt[] = [
+  {
+    title: "Small-business onboarding",
+    prompt: "Design a low-friction identity-verification experience for a small business opening a new digital financial-services account.",
+    possibleUsers: ["Small-business applicant", "Risk or compliance analyst", "Customer-support agent", "Integration developer"],
+    tensions: ["Completion and time to decision versus fraud loss", "Automation versus explainability and manual review", "Data collection versus privacy and accessibility"],
+    guardrail: "Treat this as a hypothetical workflow; do not claim knowledge of Mastercard's confidential product design or decision rules.",
+  },
+  {
+    title: "Manual-review workspace",
+    prompt: "Critique and improve a hypothetical dashboard that fraud analysts use to review uncertain business-identity decisions.",
+    possibleUsers: ["Fraud analyst", "Review-operations manager", "Compliance or audit partner", "Customer affected by the decision"],
+    tensions: ["Decision speed versus investigation quality", "More signals versus cognitive load", "Automation versus accountable human judgment"],
+    guardrail: "Start by asking what the current dashboard, baseline, and failure modes are; do not invent a Mastercard interface and then critique it as fact.",
+  },
+  {
+    title: "Identity API developer experience",
+    prompt: "Design the onboarding and integration experience for a developer adding business-identity verification to an existing customer journey.",
+    possibleUsers: ["Customer developer", "Product or risk owner", "Security reviewer", "Implementation-support team"],
+    tensions: ["Fast integration versus configurable controls", "Simple responses versus useful reason codes", "Sandbox realism versus privacy and test-data safety"],
+    guardrail: "Use public API-product principles and your own integration experience; keep any Mastercard-specific architecture as a question to validate.",
+  },
+];
+
+export const productDesignCheckIns: string[] = [
+  "I will use a simple seven-step approach: clarify, users, prioritise, options, trade-offs, roadmap, and summary. Does that direction work for you?",
+  "Before I prioritise, does this user-and-needs map match the problem you want me to solve?",
+  "I am prioritising this user and need because it best supports the stated goal. Would you like me to explore a different segment?",
+  "I see a few viable approaches. I will compare them briefly before recommending one—does that level of depth make sense?",
+  "This feedback changes one of my assumptions, so I will update the recommendation rather than defend the original path.",
+  "Unless you would like a deeper technical dive, I will close with the MVP, success measures, and the largest remaining risk.",
+];
+
+export const productDesignAnswerSkeleton: ProductDesignAnswerBeat[] = [
+  { label: "Frame", template: "We are solving [problem] for [primary user], within [constraint], and success means [outcome]." },
+  { label: "Choose", template: "I prioritised [need] and compared [options]; I recommend [choice] because [reason]." },
+  { label: "Protect", template: "The main trade-off is [trade-off], managed through [guardrail], with [edge case] requiring special handling." },
+  { label: "Sequence", template: "The MVP tests [assumption] using [metric]; V1 and V2 follow only if the evidence supports them." },
+  { label: "Close", template: "In summary: [user], [need], [solution], [measure], and the largest open risk is [risk]." },
 ];
 
 export const roundFourQuestions: InterviewQuestion[] = [

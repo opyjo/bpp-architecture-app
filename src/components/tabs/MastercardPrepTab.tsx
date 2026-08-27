@@ -42,6 +42,10 @@ import {
   mastercardStrategyResearch,
   mastercardTerms,
   paymentFlowTerms,
+  productDesignAnswerSkeleton,
+  productDesignCheckIns,
+  productDesignFramework,
+  productDesignPrompts,
   rehearsalChecklist,
   roundFourQuestions,
   roundOneQuestions,
@@ -82,7 +86,7 @@ const sidebarGroups = [
   { label: "Application materials", items: [{ id: "mc-jd", label: "Job description" }, { id: "mc-resume", label: "Résumé used to apply" }, { id: "mc-alignment", label: "JD → résumé evidence" }] },
   { label: "✓ Stage 1 · Done", items: [{ id: "mc-round-1", label: "Completed · Hiring manager" }] },
   { label: "Stage 2 · Technical", items: [{ id: "mc-interviewer", label: "Michael Cacho prep" }, { id: "mc-round-2", label: "Detailed technical bank" }] },
-  { label: "Stage 3 · Bar raiser", items: [{ id: "mc-round-3", label: "Leadership scenario" }] },
+  { label: "Stage 3 · Bar raiser", items: [{ id: "mc-round-3", label: "Leadership scenario" }, { id: "mc-product-design", label: "Product design case" }] },
   { label: "Stage 4 · Bar raiser", items: [{ id: "mc-round-4", label: "Program-leadership gauntlet" }] },
   { label: "Practice", items: [{ id: "mc-mental-models", label: "Simple story flow" }, { id: "mc-stars", label: "Your STAR stories" }, { id: "mc-stories", label: "Story map" }, { id: "mc-rehearse", label: "Rehearsal checklist" }] },
 ];
@@ -360,6 +364,93 @@ function RoundPage({ round, questions, framework }: { round: 1 | 3 | 4; question
   </div>;
 }
 
+function ProductDesignCasePage() {
+  return <div>
+    <Title>Product design case</Title>
+    <Intro>A Mastercard-authored guide created in 2019 describes product-design interviews as collaborative exercises focused on users, prioritisation, rationale, and feedback. It does not confirm this format for your 2026 process or assign it to Stage 3, so use this as adjacent bar-raiser practice—not a prediction.</Intro>
+
+    <div className="grid gap-2 md:grid-cols-2">
+      <div className="rounded-xl border border-arch-blue/25 bg-arch-blue/5 p-4">
+        <div className="text-[9px] font-bold uppercase tracking-wider text-arch-blue">What they are testing</div>
+        <p className="mt-1.5 text-[11px] leading-6 text-arch-text2">Can you understand the user, choose what matters, compare credible solutions, and explain why you made each decision?</p>
+      </div>
+      <div className="rounded-xl border border-arch-green/25 bg-arch-green/5 p-4">
+        <div className="text-[9px] font-bold uppercase tracking-wider text-arch-green">What they are not testing</div>
+        <p className="mt-1.5 text-[11px] leading-6 text-arch-text2">Whether you guess the interviewer&apos;s preferred feature or produce a polished mock-up immediately.</p>
+      </div>
+    </div>
+
+    <div className="mt-7">
+      <Title>The seven-step streamline</Title>
+      <Intro>State this approach briefly, then think aloud. The output of each step becomes the input to the next one.</Intro>
+      <div className="overflow-x-auto rounded-xl border border-arch-border bg-arch-bg2 p-2.5" aria-label="Product design case flow">
+        <div className="flex min-w-max items-center gap-1.5">{productDesignFramework.map((item, index) => <div key={item.id} className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 rounded-lg bg-arch-bg px-3 py-2">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-arch-blue/10 text-[9px] font-bold text-arch-blue">{item.step}</span>
+            <span className="text-[10.5px] font-semibold text-arch-text">{item.label}</span>
+          </div>
+          {index < productDesignFramework.length - 1 && <ArrowRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-arch-blue" />}
+        </div>)}</div>
+      </div>
+      <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {productDesignFramework.map((item) => <div key={item.id} className={`rounded-xl border border-arch-border border-l-[3px] ${colorClasses[item.color]} bg-arch-bg2 p-3.5`}>
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-arch-bg text-[9px] font-bold text-arch-amber">{item.step}</span>
+            <h2 className="text-[11.5px] font-semibold text-arch-text">{item.label}</h2>
+          </div>
+          <p className="mt-2 text-[10.5px] leading-[1.7] text-arch-text2">{item.focus}</p>
+          <div className="mt-2 rounded-md bg-arch-bg px-2.5 py-2 text-[9.5px] leading-5 text-arch-text3"><span className="font-semibold text-arch-text2">Leave with:</span> {item.output}</div>
+        </div>)}
+      </div>
+      <div className="mt-2 rounded-lg border border-arch-purple/25 bg-arch-purple/5 px-3 py-2 text-center text-[10.5px] font-medium leading-5 text-arch-purple">Check in with the interviewer throughout ↺</div>
+    </div>
+
+    <div className="mt-7 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+      <section>
+        <Title>Role-relevant practice cases</Title>
+        <Intro>Keep the prompt visible, answer aloud, then open the practice brief to test whether you considered the main users and tensions.</Intro>
+        <div className="space-y-2">{productDesignPrompts.map((item, index) => <details key={item.title} className="group rounded-xl border border-arch-border bg-arch-bg2">
+          <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-3.5 marker:content-none">
+            <div className="flex min-w-0 gap-2.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-arch-coral/10 text-[10px] font-bold text-arch-coral">{index + 1}</span>
+              <div><h2 className="text-[12px] font-semibold text-arch-text">{item.title}</h2><p className="mt-1 text-[10.5px] leading-5 text-arch-text2">{item.prompt}</p></div>
+            </div>
+            <span className="shrink-0 rounded-md border border-arch-blue/30 bg-arch-blue/10 px-2 py-1 text-[9.5px] font-semibold text-arch-blue group-open:hidden">Open brief</span>
+            <span className="hidden shrink-0 rounded-md border border-arch-border px-2 py-1 text-[9.5px] font-semibold text-arch-text3 group-open:inline">Close</span>
+          </summary>
+          <div className="border-t border-arch-border px-3.5 py-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div><div className="text-[9px] font-bold uppercase tracking-wider text-arch-teal">Possible users</div><ul className="mt-1.5 space-y-1">{item.possibleUsers.map((user) => <li key={user} className="text-[10.5px] leading-5 text-arch-text2">• {user}</li>)}</ul></div>
+              <div><div className="text-[9px] font-bold uppercase tracking-wider text-arch-amber">Tensions to explore</div><ul className="mt-1.5 space-y-1">{item.tensions.map((tension) => <li key={tension} className="text-[10.5px] leading-5 text-arch-text2">• {tension}</li>)}</ul></div>
+            </div>
+            <div className="mt-3 rounded-md border border-arch-coral/20 bg-arch-coral/5 px-2.5 py-2 text-[10px] leading-5 text-arch-coral"><span className="font-semibold">Guardrail:</span> {item.guardrail}</div>
+          </div>
+        </details>)}</div>
+      </section>
+
+      <section>
+        <Title>Your closing answer skeleton</Title>
+        <Intro>Use these five beats to close the case in under a minute. Replace the brackets with decisions from the conversation.</Intro>
+        <div className="space-y-2">{productDesignAnswerSkeleton.map((beat, index) => <div key={beat.label} className="flex gap-2.5 rounded-xl border border-arch-border bg-arch-bg2 p-3">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-arch-purple/10 text-[10px] font-bold text-arch-purple">{index + 1}</span>
+          <div><div className="text-[10px] font-semibold text-arch-text">{beat.label}</div><p className="mt-0.5 text-[10.5px] leading-5 text-arch-text2">{beat.template}</p></div>
+        </div>)}</div>
+      </section>
+    </div>
+
+    <div className="mt-7">
+      <Title>Helpful interviewer check-ins</Title>
+      <Intro>Use one when it naturally advances the discussion. The goal is collaboration, not asking permission after every sentence.</Intro>
+      <div className="grid gap-2 md:grid-cols-2">{productDesignCheckIns.map((phrase) => <div key={phrase} className="rounded-lg border border-arch-border bg-arch-bg2 px-3 py-2.5 text-[10.5px] leading-5 text-arch-text2">“{phrase}”</div>)}</div>
+    </div>
+
+    <div className="mt-7 grid gap-2 md:grid-cols-2">
+      <div className="rounded-xl border border-arch-border bg-arch-bg2 p-4"><div className="text-[9px] font-bold uppercase tracking-wider text-arch-blue">Product-design case</div><p className="mt-1.5 text-[11px] leading-6 text-arch-text2">Understand needs and choose the right solution.</p></div>
+      <div className="rounded-xl border border-arch-border bg-arch-bg2 p-4"><div className="text-[9px] font-bold uppercase tracking-wider text-arch-green">Feature-launch scenario</div><p className="mt-1.5 text-[11px] leading-6 text-arch-text2">Deliver and operate an already-shaped solution safely.</p></div>
+    </div>
+  </div>;
+}
+
 function AnswerPlanFlow({ steps }: { steps: TechnicalInterviewQuestion["answerPlan"] }) {
   return <div className="flex flex-wrap items-center gap-1.5">
     {steps.map((step, i) => <div key={step.label} className="flex items-center gap-1.5">
@@ -630,6 +721,7 @@ export default function MastercardPrepTab() {
     if (activeId === "mc-interviewer") return <MichaelCachoPrep />;
     if (activeId === "mc-round-2") return <TechnicalRoundPage questions={technicalFollowUps} />;
     if (activeId === "mc-round-3") return <RoundPage round={3} questions={roundThreeQuestions} framework={featureLaunchFramework} />;
+    if (activeId === "mc-product-design") return <ProductDesignCasePage />;
     if (activeId === "mc-round-4") return <RoundPage round={4} questions={roundFourQuestions} />;
     if (activeId === "mc-mental-models") return <MentalModelPractice />;
     if (activeId === "mc-stars") return <StarBank />;

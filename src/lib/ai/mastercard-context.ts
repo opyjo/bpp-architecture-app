@@ -23,6 +23,10 @@ import {
   mastercardStrategyResearch,
   mastercardTerms,
   paymentFlowTerms,
+  productDesignAnswerSkeleton,
+  productDesignCheckIns,
+  productDesignFramework,
+  productDesignPrompts,
   rehearsalChecklist,
   roundFourQuestions,
   roundOneQuestions,
@@ -170,6 +174,16 @@ export function buildMastercardChatContext(): string {
 
     "\n## Feature-launch framework (for the Stage 3 leadership scenario)",
     cards(featureLaunchFramework),
+
+    "\n## Product-design case practice (possible format; not confirmed for Stage 3)",
+    "A historical Mastercard-authored guide created in 2019 describes product-design and critique cases. Treat this as adjacent practice, not proof of the candidate's 2026 interview format.",
+    productDesignFramework.map((step) => `${step.step}. ${step.label} — ${step.focus} Output: ${step.output}`).join("\n"),
+    "\nPractice prompts:",
+    productDesignPrompts.map((prompt) => `- ${prompt.title}: ${prompt.prompt}\n  Possible users: ${prompt.possibleUsers.join(", ")}\n  Tensions: ${prompt.tensions.join("; ")}\n  Guardrail: ${prompt.guardrail}`).join("\n"),
+    "\nClosing answer skeleton:",
+    productDesignAnswerSkeleton.map((beat) => `- ${beat.label}: ${beat.template}`).join("\n"),
+    "\nCollaborative check-ins:",
+    bullets(productDesignCheckIns),
 
     "\n## Card network fundamentals (how Mastercard/Visa work behind the scenes)",
     cards(cardNetworkFundamentals),
