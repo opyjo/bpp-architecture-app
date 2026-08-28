@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Maximize2, Minimize2, Printer, Target } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Grid2X2, Maximize2, Minimize2, Printer, Target } from "lucide-react";
 import {
   behaviouralQuestions,
   coreQuestions,
@@ -21,82 +21,243 @@ const quickStories = storyKeys
   .map((key) => starMentalModels.find((story) => story.storyKey === key))
   .filter((story): story is StarMentalModel => Boolean(story));
 
-const answerAccents: Record<string, string> = {
-  "tell-me-about-yourself": "border-t-arch-blue",
-  "why-mastercard": "border-t-arch-purple",
-  "leaving-bell": "border-t-arch-teal",
-};
+interface CardAccent {
+  border: string;
+  text: string;
+  bg: string;
+  dot: string;
+  active: string;
+}
 
-const storyAccents: Record<string, { border: string; text: string; bg: string }> = {
-  "contingency-management": {
-    border: "border-l-arch-teal",
-    text: "text-arch-teal",
-    bg: "bg-arch-teal/10",
-  },
-  "aeroplan-integration": {
-    border: "border-l-arch-coral",
-    text: "text-arch-coral",
-    bg: "bg-arch-coral/10",
-  },
-  "flow-runner": {
-    border: "border-l-arch-purple",
-    text: "text-arch-purple",
-    bg: "bg-arch-purple/10",
-  },
-};
+interface AnswerInterviewCard {
+  id: string;
+  kind: "answer";
+  label: string;
+  title: string;
+  question: InterviewQuestion;
+  accent: CardAccent;
+}
 
-function AnswerCard({ question }: { question: InterviewQuestion }) {
+interface StoryInterviewCard {
+  id: string;
+  kind: "story";
+  label: string;
+  title: string;
+  story: StarMentalModel;
+  accent: CardAccent;
+}
+
+type InterviewCard = AnswerInterviewCard | StoryInterviewCard;
+
+const accents: CardAccent[] = [
+  { border: "border-arch-blue", text: "text-arch-blue", bg: "bg-arch-blue/10", dot: "bg-arch-blue", active: "border-arch-blue bg-arch-blue/10" },
+  { border: "border-arch-purple", text: "text-arch-purple", bg: "bg-arch-purple/10", dot: "bg-arch-purple", active: "border-arch-purple bg-arch-purple/10" },
+  { border: "border-arch-teal", text: "text-arch-teal", bg: "bg-arch-teal/10", dot: "bg-arch-teal", active: "border-arch-teal bg-arch-teal/10" },
+  { border: "border-arch-green", text: "text-arch-green", bg: "bg-arch-green/10", dot: "bg-arch-green", active: "border-arch-green bg-arch-green/10" },
+  { border: "border-arch-coral", text: "text-arch-coral", bg: "bg-arch-coral/10", dot: "bg-arch-coral", active: "border-arch-coral bg-arch-coral/10" },
+  { border: "border-arch-amber", text: "text-arch-amber", bg: "bg-arch-amber/10", dot: "bg-arch-amber", active: "border-arch-amber bg-arch-amber/10" },
+];
+
+const interviewCards: InterviewCard[] = [
+  ...quickAnswers.map((question, index): AnswerInterviewCard => ({
+    id: question.key ?? `answer-${index}`,
+    kind: "answer",
+    label: "Core answer",
+    title: question.question,
+    question,
+    accent: accents[index],
+  })),
+  ...quickStories.map((story, index): StoryInterviewCard => ({
+    id: story.storyKey,
+    kind: "story",
+    label: "STAR story",
+    title: story.storyTitle,
+    story,
+    accent: accents[index + quickAnswers.length],
+  })),
+];
+
+function SummaryCard({ card, number, onOpen }: { card: InterviewCard; number: number; onOpen: () => void }) {
   return (
-    <article className={`rounded-xl border border-arch-border border-t-[3px] ${answerAccents[question.key ?? ""] ?? "border-t-arch-blue"} bg-arch-bg2 p-3.5`}>
-      <div className="mb-2 flex items-start justify-between gap-3">
-        <h2 className="text-[13px] font-semibold leading-5 text-arch-text">{question.question}</h2>
-        <span className="shrink-0 rounded-full bg-arch-bg3 px-2 py-1 text-[8.5px] font-semibold uppercase tracking-wider text-arch-text3">60–90 sec</span>
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Open full version of ${card.title}`}
+      className={`group flex h-full flex-col rounded-xl border border-arch-border border-t-[3px] ${card.accent.border} bg-arch-bg2 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-arch-border2 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-arch-blue/50`}
+    >
+      <div className="mb-3 flex items-start gap-3">
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${card.accent.bg} text-xs font-bold ${card.accent.text}`}>{number}</span>
+        <div className="min-w-0">
+          <span className={`text-[10px] font-bold uppercase tracking-[0.14em] ${card.accent.text}`}>{card.label}</span>
+          <h2 className="mt-1 text-[15px] font-semibold leading-5 text-arch-text">{card.title}</h2>
+        </div>
       </div>
-      <ul className="space-y-1.5">
-        {question.quickPeek?.map((point) => (
-          <li key={point} className="flex gap-2 text-[10.5px] leading-[1.45] text-arch-text2">
-            <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-arch-blue" />
-            <span>{point}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2.5 border-t border-arch-border pt-2 text-[9.5px] font-medium leading-4 text-arch-amber">
-        <span className="text-arch-text3">Recall:</span> {question.cue}
-      </p>
-    </article>
+
+      {card.kind === "answer" ? (
+        <ul className="space-y-2">
+          {card.question.quickPeek?.map((point) => (
+            <li key={point} className="flex gap-2.5 text-[12.5px] leading-[1.55] text-arch-text2">
+              <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${card.accent.dot}`} />
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <>
+          <div className={`mb-3 rounded-lg ${card.accent.bg} px-3 py-2.5 text-[11.5px] font-semibold leading-5 ${card.accent.text}`}>{card.story.memoryCode}</div>
+          <p className="text-[12.5px] leading-[1.65] text-arch-text2">{card.story.answer30}</p>
+        </>
+      )}
+
+      <div className={`mt-auto flex items-center justify-end gap-1.5 pt-4 text-[11px] font-semibold ${card.accent.text}`}>
+        Read full version <ArrowRight aria-hidden="true" className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+      </div>
+    </button>
   );
 }
 
-function StoryCard({ story, number }: { story: StarMentalModel; number: number }) {
-  const accent = storyAccents[story.storyKey] ?? storyAccents["contingency-management"];
-  const evidence = story.nodes.find((node) => node.id === "evidence")?.detail;
+function CardNavigator({ selectedIndex, onSelect }: { selectedIndex: number; onSelect: (index: number) => void }) {
+  return (
+    <nav data-no-print aria-label="Interview card navigation" className="sticky top-0 z-20 -mx-1 overflow-x-auto bg-arch-bg/95 px-1 py-2 backdrop-blur">
+      <div className="flex min-w-max gap-2">
+        {interviewCards.map((card, index) => {
+          const selected = index === selectedIndex;
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => onSelect(index)}
+              aria-current={selected ? "page" : undefined}
+              className={`flex w-[165px] items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${selected ? card.accent.active : "border-arch-border bg-arch-bg2 hover:border-arch-border2"}`}
+            >
+              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${selected ? card.accent.bg : "bg-arch-bg3"} text-[9px] font-bold ${selected ? card.accent.text : "text-arch-text3"}`}>{index + 1}</span>
+              <span className={`line-clamp-2 text-[10.5px] font-semibold leading-4 ${selected ? "text-arch-text" : "text-arch-text2"}`}>{card.title}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function FullAnswer({ card }: { card: AnswerInterviewCard }) {
+  return (
+    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.7fr)]">
+      <article className={`rounded-2xl border border-arch-border border-t-[4px] ${card.accent.border} bg-arch-bg2 p-5 sm:p-7`}>
+        <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Complete answer</span>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
+        <div className="mt-5 space-y-4">
+          {card.question.answer.split("\n\n").map((paragraph) => (
+            <p key={paragraph} className="text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8">{paragraph}</p>
+          ))}
+        </div>
+      </article>
+
+      <aside className="space-y-3 xl:sticky xl:top-[86px]">
+        <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
+          <h2 className="text-sm font-semibold text-arch-text">Quick memory guide</h2>
+          <ul className="mt-3 space-y-2.5">
+            {card.question.quickPeek?.map((point) => (
+              <li key={point} className="flex gap-2.5 text-[13px] leading-5 text-arch-text2">
+                <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${card.accent.dot}`} />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section className={`rounded-xl ${card.accent.bg} p-4`}>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-arch-text3">Recall cue</div>
+          <p className={`mt-1.5 text-[13px] font-semibold leading-5 ${card.accent.text}`}>{card.question.cue}</p>
+        </section>
+      </aside>
+    </div>
+  );
+}
+
+function FullStory({ card }: { card: StoryInterviewCard }) {
+  return (
+    <div className="space-y-5">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.7fr)]">
+        <article className={`rounded-2xl border border-arch-border border-t-[4px] ${card.accent.border} bg-arch-bg2 p-5 sm:p-7`}>
+          <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Complete 90-second story</span>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
+          <p className="mt-5 text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8">{card.story.answer90}</p>
+        </article>
+
+        <aside className="space-y-3 xl:sticky xl:top-[86px]">
+          <section className={`rounded-xl ${card.accent.bg} p-4`}>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-arch-text3">Memory path</div>
+            <p className={`mt-1.5 text-sm font-semibold leading-6 ${card.accent.text}`}>{card.story.memoryCode}</p>
+          </section>
+          <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
+            <h2 className="text-sm font-semibold text-arch-text">30-second version</h2>
+            <p className="mt-2 text-[13px] leading-6 text-arch-text2">{card.story.answer30}</p>
+          </section>
+          <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-arch-text3">Best used for</div>
+            <p className="mt-1.5 text-[13px] leading-5 text-arch-text2">{card.story.useFor}</p>
+          </section>
+        </aside>
+      </div>
+
+      <section className="rounded-2xl border border-arch-border bg-arch-bg2 p-5 sm:p-6">
+        <span className={`text-[10px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Story walkthrough</span>
+        <h2 className="mt-1 text-lg font-semibold text-arch-text">The complete sequence behind the answer</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {card.story.nodes.map((node, index) => (
+            <article key={node.id} className="rounded-xl border border-arch-border bg-arch-bg p-4">
+              <div className="flex items-center gap-2">
+                <span className={`flex h-5 w-5 items-center justify-center rounded-full ${card.accent.bg} text-[9px] font-bold ${card.accent.text}`}>{index + 1}</span>
+                <h3 className="text-[12px] font-semibold text-arch-text">{node.label}</h3>
+              </div>
+              <p className="mt-2 text-[12.5px] leading-5 text-arch-text2">{node.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function BottomPager({ selectedIndex, onSelect }: { selectedIndex: number; onSelect: (index: number) => void }) {
+  const previousIndex = (selectedIndex - 1 + interviewCards.length) % interviewCards.length;
+  const nextIndex = (selectedIndex + 1) % interviewCards.length;
 
   return (
-    <article className={`flex min-h-0 flex-col rounded-xl border border-arch-border border-l-[3px] ${accent.border} bg-arch-bg2 p-3.5`}>
-      <div className="flex items-start gap-2.5">
-        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${accent.bg} text-[9px] font-bold ${accent.text}`}>{number}</span>
-        <div className="min-w-0">
-          <h2 className="text-[12px] font-semibold leading-[1.35] text-arch-text">{story.storyTitle}</h2>
-          <p className="mt-1 text-[9px] leading-4 text-arch-text3">{story.useFor}</p>
-        </div>
-      </div>
-      <div className={`mt-2.5 rounded-lg ${accent.bg} px-2.5 py-2 text-[10px] font-semibold leading-4 ${accent.text}`}>
-        {story.memoryCode}
-      </div>
-      <p className="mt-2.5 text-[10.5px] leading-[1.55] text-arch-text2">{story.answer30}</p>
-      {evidence && (
-        <div className="mt-auto pt-2.5">
-          <p className="rounded-lg bg-arch-bg px-2.5 py-2 text-[9.5px] leading-[1.45] text-arch-green">
-            <strong className="text-arch-text3">Result to land:</strong> {evidence}
-          </p>
-        </div>
-      )}
-    </article>
+    <div data-no-print className="grid gap-3 sm:grid-cols-2">
+      <button type="button" onClick={() => onSelect(previousIndex)} className="group rounded-xl border border-arch-border bg-arch-bg2 p-4 text-left transition-colors hover:border-arch-blue/40">
+        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-arch-text3"><ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" /> Previous</span>
+        <span className="mt-1.5 block text-sm font-semibold text-arch-text group-hover:text-arch-blue">{interviewCards[previousIndex].title}</span>
+      </button>
+      <button type="button" onClick={() => onSelect(nextIndex)} className="group rounded-xl border border-arch-border bg-arch-bg2 p-4 text-right transition-colors hover:border-arch-blue/40">
+        <span className="flex items-center justify-end gap-1.5 text-[10px] font-bold uppercase tracking-wider text-arch-text3">Next <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" /></span>
+        <span className="mt-1.5 block text-sm font-semibold text-arch-text group-hover:text-arch-blue">{interviewCards[nextIndex].title}</span>
+      </button>
+    </div>
   );
 }
 
 export default function InterviewDayQuickPeek() {
   const [focusMode, setFocusMode] = useState(false);
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  const scrollToTop = () => {
+    window.requestAnimationFrame(() => {
+      if (focusMode) sectionRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      else sectionRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  };
+
+  const selectCard = (index: number) => {
+    setSelectedCardIndex(index);
+    scrollToTop();
+  };
+
+  const showOverview = () => {
+    setSelectedCardIndex(null);
+    scrollToTop();
+  };
 
   const printQuickPeek = () => {
     const finishPrinting = () => {
@@ -111,85 +272,98 @@ export default function InterviewDayQuickPeek() {
   };
 
   useEffect(() => {
-    if (!focusMode) return;
+    const bodyWasLocked = document.body.classList.contains("overflow-hidden");
+    if (focusMode && !bodyWasLocked) document.body.classList.add("overflow-hidden");
 
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setFocusMode(false);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
+
+      const resetCardPosition = () => {
+        window.requestAnimationFrame(() => {
+          if (focusMode) sectionRef.current?.scrollTo({ top: 0 });
+          else sectionRef.current?.scrollIntoView({ block: "start" });
+        });
+      };
+
+      if (event.key === "Escape") {
+        if (selectedCardIndex !== null) setSelectedCardIndex(null);
+        else if (focusMode) setFocusMode(false);
+        resetCardPosition();
+        return;
+      }
+
+      const numericIndex = Number(event.key) - 1;
+      if (numericIndex >= 0 && numericIndex < interviewCards.length) {
+        setSelectedCardIndex(numericIndex);
+        resetCardPosition();
+        return;
+      }
+
+      if (selectedCardIndex === null) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setSelectedCardIndex((selectedCardIndex - 1 + interviewCards.length) % interviewCards.length);
+        resetCardPosition();
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setSelectedCardIndex((selectedCardIndex + 1) % interviewCards.length);
+        resetCardPosition();
+      }
     };
 
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
+      if (focusMode && !bodyWasLocked) document.body.classList.remove("overflow-hidden");
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [focusMode]);
+  }, [focusMode, selectedCardIndex]);
+
+  const selectedCard = selectedCardIndex === null ? null : interviewCards[selectedCardIndex];
 
   return (
-    <section
-      data-interview-quick-peek
-      className={focusMode
-        ? "fixed inset-0 z-[100] overflow-y-auto bg-arch-bg p-4 lg:p-5"
-        : "min-h-[calc(100vh-150px)]"
-      }
-    >
-      <div className="mx-auto flex min-h-full max-w-[1500px] flex-col gap-2.5">
-        <header className="flex shrink-0 items-center justify-between gap-4">
+    <section ref={sectionRef} data-interview-quick-peek className={focusMode ? "fixed inset-0 z-[100] overflow-y-auto bg-arch-bg p-4 lg:p-6" : "min-h-[calc(100vh-150px)]"}>
+      <div className="mx-auto max-w-[1500px] space-y-4">
+        <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="mb-0.5 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.18em] text-arch-coral">
-              <span className="h-1.5 w-1.5 rounded-full bg-arch-coral" />
-              Interview day
-            </div>
-            <h1 className="text-lg font-semibold tracking-tight text-arch-text">Mastercard quick peek</h1>
-            <p className="text-[10px] text-arch-text3">Technical product leadership · Payments and risk · Trusted digital commerce</p>
+            <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-arch-coral"><span className="h-1.5 w-1.5 rounded-full bg-arch-coral" /> Interview day</div>
+            <h1 className="text-xl font-semibold tracking-tight text-arch-text">Mastercard quick peek</h1>
+            <p className="mt-1 text-xs text-arch-text3">Choose a card for the complete, easy-to-read version.</p>
           </div>
-          <div data-no-print className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={printQuickPeek}
-              className="flex items-center gap-1.5 rounded-lg border border-arch-border bg-arch-bg2 px-2.5 py-2 text-[10px] font-semibold text-arch-text2 transition-colors hover:border-arch-blue/40 hover:text-arch-blue"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Print
-            </button>
-            <button
-              type="button"
-              onClick={() => setFocusMode((current) => !current)}
-              className="flex items-center gap-1.5 rounded-lg bg-arch-blue px-2.5 py-2 text-[10px] font-semibold text-white transition-opacity hover:opacity-90"
-            >
-              {focusMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-              {focusMode ? "Exit focus" : "Focus mode"}
+          <div data-no-print className="flex flex-wrap items-center gap-2">
+            {selectedCard && (
+              <button type="button" onClick={showOverview} className="flex items-center gap-1.5 rounded-lg border border-arch-border bg-arch-bg2 px-3 py-2 text-xs font-semibold text-arch-text2 transition-colors hover:border-arch-blue/40 hover:text-arch-blue"><Grid2X2 aria-hidden="true" className="h-4 w-4" /> All cards</button>
+            )}
+            <button type="button" onClick={printQuickPeek} className="flex items-center gap-1.5 rounded-lg border border-arch-border bg-arch-bg2 px-3 py-2 text-xs font-semibold text-arch-text2 transition-colors hover:border-arch-blue/40 hover:text-arch-blue"><Printer aria-hidden="true" className="h-4 w-4" /> Print</button>
+            <button type="button" onClick={() => setFocusMode((current) => !current)} className="flex items-center gap-1.5 rounded-lg bg-arch-blue px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90">
+              {focusMode ? <Minimize2 aria-hidden="true" className="h-4 w-4" /> : <Maximize2 aria-hidden="true" className="h-4 w-4" />}{focusMode ? "Exit focus" : "Focus mode"}
             </button>
           </div>
         </header>
 
-        <div className="grid shrink-0 grid-cols-1 gap-2.5 lg:grid-cols-3">
-          {quickAnswers.map((question) => <AnswerCard key={question.key} question={question} />)}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="h-px flex-1 bg-arch-border" />
-          <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-arch-text3">Three stories to reach for</span>
-          <div className="h-px flex-1 bg-arch-border" />
-        </div>
-
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-2.5 lg:grid-cols-3">
-          {quickStories.map((story, index) => <StoryCard key={story.storyKey} story={story} number={index + 1} />)}
-        </div>
-
-        <footer className="grid shrink-0 gap-2 rounded-xl border border-arch-border bg-arch-bg2 px-3 py-2.5 lg:grid-cols-[1.2fr_1fr]">
-          <div className="flex items-start gap-2">
-            <Target className="mt-0.5 h-3.5 w-3.5 shrink-0 text-arch-green" />
-            <p className="text-[9.5px] font-medium leading-4 text-arch-text2">
-              <span className="text-arch-text">Listen</span> → answer the question → state my ownership → explain the decision → give the result → stop.
-            </p>
-          </div>
-          <p className="text-[9.5px] leading-4 text-arch-text3 lg:text-right">
-            Security/vendor: <span className="text-arch-coral">Aeroplan</span> · Discovery/root cause: <span className="text-arch-teal">Contingency</span> · Architecture/platform: <span className="text-arch-purple">Flow Runner</span> · Stakeholder conflict: <span className="text-arch-amber">Catalog backup</span>
-          </p>
-        </footer>
+        {selectedCard && selectedCardIndex !== null ? (
+          <>
+            <CardNavigator selectedIndex={selectedCardIndex} onSelect={selectCard} />
+            <div className="flex items-center justify-between gap-3 text-xs text-arch-text3">
+              <button data-no-print type="button" onClick={showOverview} className="flex items-center gap-1.5 font-semibold text-arch-blue hover:underline"><ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" /> Back to overview</button>
+              <span>Card {selectedCardIndex + 1} of {interviewCards.length}</span>
+            </div>
+            {selectedCard.kind === "answer" ? <FullAnswer card={selectedCard} /> : <FullStory card={selectedCard} />}
+            <BottomPager selectedIndex={selectedCardIndex} onSelect={selectCard} />
+            <p data-no-print className="text-center text-[11px] text-arch-text3">Use ← and → to move between cards · Press 1–6 to jump directly · Esc returns to the overview</p>
+          </>
+        ) : (
+          <>
+            <div className="grid gap-4 lg:grid-cols-3">
+              {interviewCards.map((card, index) => <SummaryCard key={card.id} card={card} number={index + 1} onOpen={() => selectCard(index)} />)}
+            </div>
+            <footer className="grid gap-3 rounded-xl border border-arch-border bg-arch-bg2 px-4 py-3 lg:grid-cols-[1.1fr_1fr]">
+              <div className="flex items-start gap-2"><Target aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-arch-green" /><p className="text-xs font-medium leading-5 text-arch-text2"><span className="text-arch-text">Listen</span> → answer the question → state my ownership → explain the decision → give the result → stop.</p></div>
+              <p className="text-xs leading-5 text-arch-text3 lg:text-right">Security/vendor: <span className="text-arch-coral">Aeroplan</span> · Discovery: <span className="text-arch-green">Contingency</span> · Architecture: <span className="text-arch-amber">Flow Runner</span> · Stakeholder conflict: <span className="text-arch-purple">Catalog backup</span></p>
+            </footer>
+          </>
+        )}
       </div>
     </section>
   );
