@@ -971,6 +971,19 @@ export const coreQuestions: InterviewQuestion[] = [
     answer: "I offer three directly relevant strengths. First, I have seven-plus years of technical product ownership, including backlog management, acceptance criteria, platform delivery, and measurable launch outcomes. Second, I bring direct Visa and Mastercard chargeback and card-launch experience, so the payments-risk context is familiar rather than abstract. Third, my CPA and ACCA background, together with controls and compliance work at CIBC and the CRA, helps me build products that are not only useful but also auditable and risk-aware.",
     cue: "Technical PM execution + payments context + compliance rigor",
   },
+  {
+    key: "closing-value",
+    question: "Closing statement: the value I would bring",
+    audience: "Final minute of the interview",
+    answer: "Before we close, I want to leave you with the value I believe I would bring to this team. I combine three perspectives that are not always found together: technical product leadership across a complex microservices platform, first-hand payments-risk experience, and a strong controls and accounting discipline. That means I can help turn ambiguous identity and fraud problems into clear product decisions, engineering-ready requirements, secure API contracts, and measurable launches.\n\nI would also bring a collaborative working style. I listen to engineering, data science, commercial, risk, and operational partners; make trade-offs and dependencies visible; and keep people aligned on the customer and risk outcomes we are trying to achieve. I know Business Identity has domain depth that I will continue to learn, and I would approach that with curiosity and humility while contributing immediately in discovery, prioritisation, technical delivery, and cross-functional execution.\n\nIf hired, my goal would be not only to ship features, but to help the team move with greater clarity and confidence—from the initial problem through to a secure, measurable production outcome.",
+    cue: "Technical execution + payments risk + controls discipline + team clarity + measurable outcomes",
+    quickPeek: [
+      "Technical product leadership across a complex microservices platform.",
+      "First-hand payments-risk experience and strong controls discipline.",
+      "Turn ambiguity into clear decisions, requirements, secure contracts, and measurable launches.",
+      "Help the team move with greater clarity, alignment, and confidence.",
+    ],
+  },
 ];
 
 export const behaviouralQuestions: InterviewQuestion[] = [

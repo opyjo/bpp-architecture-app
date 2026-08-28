@@ -10,7 +10,7 @@ import {
   type StarMentalModel,
 } from "@/data/mastercard-prep";
 
-const answerKeys = ["tell-me-about-yourself", "why-mastercard", "leaving-bell"];
+const answerKeys = ["tell-me-about-yourself", "why-mastercard", "leaving-bell", "closing-value"];
 const storyKeys = ["contingency-management", "aeroplan-integration", "flow-runner"];
 
 const quickAnswers = answerKeys
@@ -56,6 +56,7 @@ const accents: CardAccent[] = [
   { border: "border-arch-green", text: "text-arch-green", bg: "bg-arch-green/10", dot: "bg-arch-green", active: "border-arch-green bg-arch-green/10" },
   { border: "border-arch-coral", text: "text-arch-coral", bg: "bg-arch-coral/10", dot: "bg-arch-coral", active: "border-arch-coral bg-arch-coral/10" },
   { border: "border-arch-amber", text: "text-arch-amber", bg: "bg-arch-amber/10", dot: "bg-arch-amber", active: "border-arch-amber bg-arch-amber/10" },
+  { border: "border-arch-gray", text: "text-arch-gray", bg: "bg-arch-gray/10", dot: "bg-arch-gray", active: "border-arch-gray bg-arch-gray/10" },
 ];
 
 const interviewCards: InterviewCard[] = [
@@ -76,6 +77,119 @@ const interviewCards: InterviewCard[] = [
     accent: accents[index + quickAnswers.length],
   })),
 ];
+
+const PROMPTER_KEYWORDS = [
+  "zero post-launch integration regressions",
+  "features, user stories, and acceptance criteria",
+  "discovery, prioritisation, technical delivery, and cross-functional execution",
+  "trust, onboarding, fraud prevention, and compliance",
+  "technical product leadership",
+  "first-hand payments-risk experience",
+  "controls and accounting discipline",
+  "engineering-ready requirements",
+  "secure, measurable production outcome",
+  "clear product decisions",
+  "secure API contracts",
+  "measurable launches",
+  "greater clarity and confidence",
+  "collaborative working style",
+  "customer and risk outcomes",
+  "trade-offs and dependencies",
+  "curiosity and humility",
+  "complex microservices platform",
+  "payments-risk operations",
+  "accuracy and auditability",
+  "secure, measurable delivery",
+  "pull toward a specific opportunity",
+  "payments and trust domain",
+  "fit and impact",
+  "Senior Technical Product Manager",
+  "more than 60 microservices",
+  "60+ microservices",
+  "Go-based backend",
+  "Go backend",
+  "Next.js micro-frontend",
+  "Next.js microfrontend",
+  "product strategy",
+  "technical requirements",
+  "cross-functional teams",
+  "cross-functional execution",
+  "API contracts",
+  "launch validation",
+  "external partners",
+  "post-launch reviews",
+  "edge cases",
+  "Business Identity",
+  "fraud prevention",
+  "global scale",
+  "Visa and Mastercard",
+  "Visa/Mastercard",
+  "chargeback and card-issuance",
+  "chargebacks and card-launch operations",
+  "technical product craft",
+  "digital trust",
+  "safer onboarding",
+  "lower fraud",
+  "trusted digital commerce",
+  "technical product ownership",
+  "payments-risk experience",
+  "controls discipline",
+  "measurable outcomes",
+  "root cause",
+  "invalid address data",
+  "correct the address and resubmit",
+  "automatic resubmission",
+  "API-boundary validation",
+  "audit logging",
+  "engineering escalation",
+  "manual reprocessing",
+  "one-time token exchange",
+  "token exchange",
+  "URL query parameters",
+  "privacy and fraud risk",
+  "Token API",
+  "one-time UUID",
+  "OpenAPI contract",
+  "OpenAPI-generated TypeScript types",
+  "compile-time quality gate",
+  "two contract mismatches",
+  "UAT",
+  "duplicated logic",
+  "inconsistent outcomes",
+  "central execution service",
+  "rule ownership",
+  "declarative JSON flows",
+  "execute endpoint",
+  "legacy and new formats",
+  "real catalog data",
+  "behavioural parity",
+  "one execution point",
+  "fewer deployments",
+  "reusable engine",
+  "seven-plus years",
+  "over seven years",
+  "7+ years",
+  "CPA and ACCA",
+  "Mastercard",
+  "Bell",
+] as const;
+
+const prompterKeywordSet = new Set<string>(PROMPTER_KEYWORDS.map((keyword) => keyword.toLowerCase()));
+const prompterKeywordPattern = new RegExp(
+  `(${[...PROMPTER_KEYWORDS]
+    .sort((left, right) => right.length - left.length)
+    .map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|")})`,
+  "gi",
+);
+
+function HighlightedText({ text }: { text: string }) {
+  return <>{text.split(prompterKeywordPattern).map((part, index) => (
+    prompterKeywordSet.has(part.toLowerCase())
+      ? <mark key={`${part}-${index}`} className="box-decoration-clone rounded-sm bg-arch-amber/20 px-0.5 font-semibold text-arch-text ring-1 ring-arch-amber/15">{part}</mark>
+      : part
+  ))}</>;
+}
 
 function SummaryCard({ card, number, onOpen }: { card: InterviewCard; number: number; onOpen: () => void }) {
   return (
@@ -98,14 +212,14 @@ function SummaryCard({ card, number, onOpen }: { card: InterviewCard; number: nu
           {card.question.quickPeek?.map((point) => (
             <li key={point} className="flex gap-2.5 text-[12.5px] leading-[1.55] text-arch-text2">
               <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${card.accent.dot}`} />
-              <span>{point}</span>
+              <span><HighlightedText text={point} /></span>
             </li>
           ))}
         </ul>
       ) : (
         <>
           <div className={`mb-3 rounded-lg ${card.accent.bg} px-3 py-2.5 text-[11.5px] font-semibold leading-5 ${card.accent.text}`}>{card.story.memoryCode}</div>
-          <p className="text-[12.5px] leading-[1.65] text-arch-text2">{card.story.answer30}</p>
+          <p className="text-[12.5px] leading-[1.65] text-arch-text2"><HighlightedText text={card.story.answer30} /></p>
         </>
       )}
 
@@ -148,7 +262,7 @@ function FullAnswer({ card }: { card: AnswerInterviewCard }) {
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
         <div className="mt-5 space-y-4">
           {card.question.answer.split("\n\n").map((paragraph) => (
-            <p key={paragraph} className="text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8">{paragraph}</p>
+            <p key={paragraph} className="text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8"><HighlightedText text={paragraph} /></p>
           ))}
         </div>
       </article>
@@ -160,14 +274,14 @@ function FullAnswer({ card }: { card: AnswerInterviewCard }) {
             {card.question.quickPeek?.map((point) => (
               <li key={point} className="flex gap-2.5 text-[13px] leading-5 text-arch-text2">
                 <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${card.accent.dot}`} />
-                <span>{point}</span>
+                <span><HighlightedText text={point} /></span>
               </li>
             ))}
           </ul>
         </section>
         <section className={`rounded-xl ${card.accent.bg} p-4`}>
           <div className="text-[10px] font-bold uppercase tracking-wider text-arch-text3">Recall cue</div>
-          <p className={`mt-1.5 text-[13px] font-semibold leading-5 ${card.accent.text}`}>{card.question.cue}</p>
+          <p className={`mt-1.5 text-[13px] font-semibold leading-5 ${card.accent.text}`}><HighlightedText text={card.question.cue} /></p>
         </section>
       </aside>
     </div>
@@ -181,21 +295,21 @@ function FullStory({ card }: { card: StoryInterviewCard }) {
         <article className={`rounded-2xl border border-arch-border border-t-[4px] ${card.accent.border} bg-arch-bg2 p-5 sm:p-7`}>
           <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Complete 90-second story</span>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
-          <p className="mt-5 text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8">{card.story.answer90}</p>
+          <p className="mt-5 text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8"><HighlightedText text={card.story.answer90} /></p>
         </article>
 
         <aside className="space-y-3 xl:sticky xl:top-[86px]">
           <section className={`rounded-xl ${card.accent.bg} p-4`}>
             <div className="text-[10px] font-bold uppercase tracking-wider text-arch-text3">Memory path</div>
-            <p className={`mt-1.5 text-sm font-semibold leading-6 ${card.accent.text}`}>{card.story.memoryCode}</p>
+            <p className={`mt-1.5 text-sm font-semibold leading-6 ${card.accent.text}`}><HighlightedText text={card.story.memoryCode} /></p>
           </section>
           <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
             <h2 className="text-sm font-semibold text-arch-text">30-second version</h2>
-            <p className="mt-2 text-[13px] leading-6 text-arch-text2">{card.story.answer30}</p>
+            <p className="mt-2 text-[13px] leading-6 text-arch-text2"><HighlightedText text={card.story.answer30} /></p>
           </section>
           <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
             <div className="text-[10px] font-bold uppercase tracking-wider text-arch-text3">Best used for</div>
-            <p className="mt-1.5 text-[13px] leading-5 text-arch-text2">{card.story.useFor}</p>
+            <p className="mt-1.5 text-[13px] leading-5 text-arch-text2"><HighlightedText text={card.story.useFor} /></p>
           </section>
         </aside>
       </div>
@@ -210,7 +324,7 @@ function FullStory({ card }: { card: StoryInterviewCard }) {
                 <span className={`flex h-5 w-5 items-center justify-center rounded-full ${card.accent.bg} text-[9px] font-bold ${card.accent.text}`}>{index + 1}</span>
                 <h3 className="text-[12px] font-semibold text-arch-text">{node.label}</h3>
               </div>
-              <p className="mt-2 text-[12.5px] leading-5 text-arch-text2">{node.detail}</p>
+              <p className="mt-2 text-[12.5px] leading-5 text-arch-text2"><HighlightedText text={node.detail} /></p>
             </article>
           ))}
         </div>
@@ -351,7 +465,7 @@ export default function InterviewDayQuickPeek() {
             </div>
             {selectedCard.kind === "answer" ? <FullAnswer card={selectedCard} /> : <FullStory card={selectedCard} />}
             <BottomPager selectedIndex={selectedCardIndex} onSelect={selectCard} />
-            <p data-no-print className="text-center text-[11px] text-arch-text3">Use ← and → to move between cards · Press 1–6 to jump directly · Esc returns to the overview</p>
+            <p data-no-print className="text-center text-[11px] text-arch-text3">Use ← and → to move between cards · Press 1–7 to jump directly · Esc returns to the overview</p>
           </>
         ) : (
           <>
