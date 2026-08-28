@@ -186,7 +186,7 @@ const prompterKeywordPattern = new RegExp(
 function HighlightedText({ text }: { text: string }) {
   return <>{text.split(prompterKeywordPattern).map((part, index) => (
     prompterKeywordSet.has(part.toLowerCase())
-      ? <mark key={`${part}-${index}`} className="box-decoration-clone rounded-sm bg-arch-amber/20 px-0.5 font-semibold text-arch-text ring-1 ring-arch-amber/15">{part}</mark>
+      ? <mark key={`${part}-${index}`} className="box-decoration-clone rounded-sm bg-arch-amber/10 px-0.5 font-semibold text-arch-text">{part}</mark>
       : part
   ))}</>;
 }
