@@ -5,13 +5,15 @@ import { ArrowLeft, ArrowRight, Grid2X2, Maximize2, Minimize2, Printer, Target }
 import {
   behaviouralQuestions,
   coreQuestions,
+  interviewDayPrompterCards,
   starMentalModels,
+  type InterviewDayPrompterCard,
   type InterviewQuestion,
   type StarMentalModel,
 } from "@/data/mastercard-prep";
 
 const answerKeys = ["tell-me-about-yourself", "why-mastercard", "leaving-bell", "closing-value"];
-const storyKeys = ["contingency-management", "aeroplan-integration", "flow-runner"];
+const storyKeys = ["contingency-management", "catalog-management", "aeroplan-integration"];
 
 const quickAnswers = answerKeys
   .map((key) => [...coreQuestions, ...behaviouralQuestions].find((question) => question.key === key))
@@ -64,15 +66,15 @@ const interviewCards: InterviewCard[] = [
     id: question.key ?? `answer-${index}`,
     kind: "answer",
     label: "Core answer",
-    title: question.question,
+    title: interviewDayPrompterCards[question.key ?? ""]?.title ?? question.question,
     question,
     accent: accents[index],
   })),
   ...quickStories.map((story, index): StoryInterviewCard => ({
     id: story.storyKey,
     kind: "story",
-    label: "STAR story",
-    title: story.storyTitle,
+    label: "Mental model",
+    title: interviewDayPrompterCards[story.storyKey]?.title ?? story.storyTitle,
     story,
     accent: accents[index + quickAnswers.length],
   })),
@@ -191,6 +193,47 @@ function HighlightedText({ text }: { text: string }) {
   ))}</>;
 }
 
+const explicitEmphasisPattern = /(\*\*[^*]+\*\*)/g;
+
+function PrompterText({ text }: { text: string }) {
+  return <>{text.split(explicitEmphasisPattern).map((part, index) => {
+    const isExplicitlyHighlighted = part.startsWith("**") && part.endsWith("**");
+    if (isExplicitlyHighlighted) {
+      const visibleText = part.slice(2, -2);
+      return <mark key={`${visibleText}-${index}`} className="box-decoration-clone rounded-sm bg-arch-amber/10 px-0.5 font-semibold text-arch-text">{visibleText}</mark>;
+    }
+    return <HighlightedText key={`${part}-${index}`} text={part} />;
+  })}</>;
+}
+
+function MentalModelDocument({ content, accent }: { content: InterviewDayPrompterCard; accent: CardAccent }) {
+  return (
+    <article className={`rounded-2xl border border-arch-border border-t-[4px] ${accent.border} bg-arch-bg2 p-5 sm:p-7`}>
+      <h1 className="text-xl font-semibold leading-7 tracking-tight text-arch-text sm:text-2xl">{content.title}</h1>
+      <p className={`mt-2 text-xs font-semibold uppercase tracking-[0.12em] ${accent.text}`}>{content.subtitle}</p>
+      <div className="mt-5 flex items-center gap-3">
+        <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${accent.text}`}>Mental Model</span>
+        <span className="h-px flex-1 bg-arch-border" />
+      </div>
+      <div className="mt-5 space-y-5">
+        {content.sections.map((section) => (
+          <section key={section.heading}>
+            <h2 className={`text-xs font-bold uppercase tracking-[0.13em] ${accent.text}`}>{section.heading}</h2>
+            <ul className="mt-2.5 space-y-3">
+              {section.bullets.map((bullet) => (
+                <li key={bullet} className="flex gap-3 text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8">
+                  <span className={`mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full ${accent.dot}`} />
+                  <span><PrompterText text={bullet} /></span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 function SummaryCard({ card, number, onOpen }: { card: InterviewCard; number: number; onOpen: () => void }) {
   return (
     <button
@@ -255,17 +298,21 @@ function CardNavigator({ selectedIndex, onSelect }: { selectedIndex: number; onS
 }
 
 function FullAnswer({ card }: { card: AnswerInterviewCard }) {
+  const prompterContent = interviewDayPrompterCards[card.id];
+
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.7fr)]">
-      <article className={`rounded-2xl border border-arch-border border-t-[4px] ${card.accent.border} bg-arch-bg2 p-5 sm:p-7`}>
-        <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Complete answer</span>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
-        <div className="mt-5 space-y-4">
-          {card.question.answer.split("\n\n").map((paragraph) => (
-            <p key={paragraph} className="text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8"><HighlightedText text={paragraph} /></p>
-          ))}
-        </div>
-      </article>
+      {prompterContent ? <MentalModelDocument content={prompterContent} accent={card.accent} /> : (
+        <article className={`rounded-2xl border border-arch-border border-t-[4px] ${card.accent.border} bg-arch-bg2 p-5 sm:p-7`}>
+          <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Complete answer</span>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
+          <div className="mt-5 space-y-4">
+            {card.question.answer.split("\n\n").map((paragraph) => (
+              <p key={paragraph} className="text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8"><HighlightedText text={paragraph} /></p>
+            ))}
+          </div>
+        </article>
+      )}
 
       <aside className="space-y-3 xl:sticky xl:top-[86px]">
         <section className="rounded-xl border border-arch-border bg-arch-bg2 p-4">
@@ -289,14 +336,18 @@ function FullAnswer({ card }: { card: AnswerInterviewCard }) {
 }
 
 function FullStory({ card }: { card: StoryInterviewCard }) {
+  const prompterContent = interviewDayPrompterCards[card.id];
+
   return (
     <div className="space-y-5">
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.7fr)]">
-        <article className={`rounded-2xl border border-arch-border border-t-[4px] ${card.accent.border} bg-arch-bg2 p-5 sm:p-7`}>
-          <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Complete 90-second story</span>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
-          <p className="mt-5 text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8"><HighlightedText text={card.story.answer90} /></p>
-        </article>
+        {prompterContent ? <MentalModelDocument content={prompterContent} accent={card.accent} /> : (
+          <article className={`rounded-2xl border border-arch-border border-t-[4px] ${card.accent.border} bg-arch-bg2 p-5 sm:p-7`}>
+            <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Complete 90-second story</span>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-arch-text">{card.title}</h1>
+            <p className="mt-5 text-[15px] leading-7 text-arch-text2 sm:text-base sm:leading-8"><HighlightedText text={card.story.answer90} /></p>
+          </article>
+        )}
 
         <aside className="space-y-3 xl:sticky xl:top-[86px]">
           <section className={`rounded-xl ${card.accent.bg} p-4`}>
@@ -314,7 +365,7 @@ function FullStory({ card }: { card: StoryInterviewCard }) {
         </aside>
       </div>
 
-      <section className="rounded-2xl border border-arch-border bg-arch-bg2 p-5 sm:p-6">
+      {!prompterContent && <section className="rounded-2xl border border-arch-border bg-arch-bg2 p-5 sm:p-6">
         <span className={`text-[10px] font-bold uppercase tracking-[0.15em] ${card.accent.text}`}>Story walkthrough</span>
         <h2 className="mt-1 text-lg font-semibold text-arch-text">The complete sequence behind the answer</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -328,7 +379,7 @@ function FullStory({ card }: { card: StoryInterviewCard }) {
             </article>
           ))}
         </div>
-      </section>
+      </section>}
     </div>
   );
 }
@@ -474,7 +525,7 @@ export default function InterviewDayQuickPeek() {
             </div>
             <footer className="grid gap-3 rounded-xl border border-arch-border bg-arch-bg2 px-4 py-3 lg:grid-cols-[1.1fr_1fr]">
               <div className="flex items-start gap-2"><Target aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-arch-green" /><p className="text-xs font-medium leading-5 text-arch-text2"><span className="text-arch-text">Listen</span> → answer the question → state my ownership → explain the decision → give the result → stop.</p></div>
-              <p className="text-xs leading-5 text-arch-text3 lg:text-right">Security/vendor: <span className="text-arch-coral">Aeroplan</span> · Discovery: <span className="text-arch-green">Contingency</span> · Architecture: <span className="text-arch-amber">Flow Runner</span> · Stakeholder conflict: <span className="text-arch-purple">Catalog backup</span></p>
+              <p className="text-xs leading-5 text-arch-text3 lg:text-right">API/operations: <span className="text-arch-coral">Contingency</span> · Stakeholder conflict/alignment: <span className="text-arch-amber">Catalog</span> · Security/vendor delivery: <span className="text-arch-gray">Aeroplan</span></p>
             </footer>
           </>
         )}

@@ -154,6 +154,15 @@ export interface StarMentalModel {
   followUps: MentalModelFollowUp[];
 }
 
+export interface InterviewDayPrompterCard {
+  title: string;
+  subtitle: string;
+  sections: Array<{
+    heading: string;
+    bullets: string[];
+  }>;
+}
+
 export const interviewStages: InterviewStage[] = [
   { stage: "Recruiter screen", format: "Recruiter conversation", focus: "Background, motivation, compensation, and role fit", status: "Complete" },
   { stage: "Stage 1", format: "Hiring manager chat", focus: "Résumé, past projects, motivations, and behavioural judgment", status: "Complete" },
@@ -928,6 +937,133 @@ export const roundPlaybooks: RoundPlaybook[] = [
     color: "coral",
   },
 ];
+
+export const interviewDayPrompterCards: Record<string, InterviewDayPrompterCard> = {
+  "tell-me-about-yourself": {
+    title: "Tell me about Yourself",
+    subtitle: "MasterCard - PM - Technical",
+    sections: [
+      {
+        heading: "Intro",
+        bullets: [
+          "I'm a **Senior** **Technical** **Product** **Manager** with 7+ years **translating** **product** **strategy** into well-defined technical requirements and driving execution across cross-functional teams — from ideation through to shipped production systems.",
+          "For the past 4 years, I've been The Technical Product Manager **Bell** **Canada's** **subscription** **management** **platform** — a **60-plus** **microservice** **Go** **backend** integrated with a **Next.js** **micro-frontend**.",
+          "The SM Platform lets Bell **consumers(residential** **customers)** **subscribe** to **streaming** **services** like **Netflix,** **Disney+,** and **crave** through their Bell accounts.",
+        ],
+      },
+      {
+        heading: "Roles",
+        bullets: [
+          "I **own** the **product** **scope** **end-to-end.**",
+          "**Translate** roadmaps into features, user stories and acceptance criteria, **Prioritize** backlogs and decompose epics. **Identify** gaps and manage cross team dependencies, **Evaluate** technical implications of requirements, **Review** demos against acceptance criteria, **Document** using workflows, diagrams, state transition models, **Gather** requirements from stakeholders and partners, **Facilitate** demos, handoffs, post-launch reviews, **Engage** stakeholders continuously to incorporate feedback.",
+        ],
+      },
+      {
+        heading: "Value Proposition",
+        bullets: [
+          "A lot of my **value** came from **sitting** **between** **business** **stakeholders** — product, legal, billing — and engineering teams, asking the **questions** that **exposed** **edge** **cases** before they became **production** **issues.**",
+          "I bring that **same** **technical** **requirements** **discipline,** **cross-functional** **delivery,** and **mentoring** **experience** to **Mastercard's** **Business** **Identity** **product** **team.**",
+        ],
+      },
+      {
+        heading: "Closing",
+        bullets: [
+          "What draws me to this role is that the **core** **challenge** is the same one I've been **solving** at **Bell:** **translating** **high-level** **product** **strategy** into **technical** **requirements** and API contracts that engineering can execute **against** — but here it's in service of **business** **identity** **verification** and fraud prevention, where accuracy and auditability carry even higher stakes.",
+        ],
+      },
+    ],
+  },
+  "contingency-management": {
+    title: "CONTINGENCY MANAGEMENT - API requirements, data mapping, technical depth, working with operations",
+    subtitle: "MasterCard - PM - Technical",
+    sections: [
+      {
+        heading: "Situation",
+        bullets: [
+          "Bell's operations teams were **manually** **triaging** **failed** **subscription** **orders** — **\"kickouts\"** — across the back-office systems. It was **slow,** **error-prone,** and **caused** **customer** **delays.** The **Contingency** **Management** **platform** was being built to fix it, but no one **had** **formally** **documented** what the **service** **actually** **needed** to support.",
+        ],
+      },
+      {
+        heading: "Task",
+        bullets: [
+          "Specify the **API** **contract** and the **data** **mapping** **between** the agent-facing views and the backend — order search, transaction management, audit logging — and make sure the solution actually addressed why orders were failing in the first place.",
+        ],
+      },
+      {
+        heading: "Action",
+        bullets: [
+          "I started by **shadowing** **operations** **agents** to understand the real **exception-handling** **workflow,** not the documented one. Through that **analysis** we found the **pattern:** a large share of the kickouts traced back to bad **address** **data** **coming** in from the **upstream** **CPM** feed — orders were failing downstream because the **address** **wouldn't** **validate.** So the requirement wasn't just **\"let** **agents** **see** failed orders,\" it was **\"let** **agents** **fix** the root cause and get the order through.\" I specified two things from that: first, a **capability** for **agents** to edit the **address** directly on the **kicked-out** **transaction** and resubmit it; and **second,** a **Lambda** **function** that **automatically** **resubmits** **failed** **transactions** once the data's corrected. I produced the data-mapping document, the endpoint specs, the validation rules at the API boundary, and acceptance criteria per endpoint — and reviewed all of it with both ops and dev before any backend code was written.",
+        ],
+      },
+      {
+        heading: "Result",
+        bullets: [
+          "Agents could **resolve** the **most** **common** **class** of failure themselves instead of escalating, and the auto-resubmit Lambda cleared failures without manual reprocessing — so resolution went from a **manual,** **multi-system** **effort** to **something** **handled** in the tool. The dev team built directly against the specs with no significant rework, and the audit logging I specified as a compliance requirement gives a full trace of what changed on each transaction.",
+        ],
+      },
+    ],
+  },
+  "catalog-management": {
+    title: "CATALOG MGT STORY - Stakeholder Conflict, Alignment Issues, Complex Requirement, Getting Sign-off",
+    subtitle: "MasterCard - PM - Technical",
+    sections: [
+      {
+        heading: "Situation",
+        bullets: [
+          "**Bell's** **Catalog** **Management** **system** is the **master-data** **layer** for everything Bell sells( products, promotions, prices) Any **error** there **flows** straight into **customer-facing** **pricing** and **billing.** When I picked up the BSA work, **I** **REALISED** the **business** **rules** around **promotion** **eligibility** were **undocumented** and **understood** **differently** by marketing, product, and billing.",
+        ],
+      },
+      {
+        heading: "Task",
+        bullets: [
+          "**Elicit,** **document,** and **get** **stakeholder** **sign-off** on the **complete** **business** **rules** before the **dev** team **built** **the** **admin** **workflows** — specifically the **stackability** **logic** and the **distinction** **between** **expiring** and **cancelling** a promotion, which had materially different downstream effects.",
+        ],
+      },
+      {
+        heading: "Action",
+        bullets: [
+          "I ran **separate** **requirements** **sessions** with **marketing,** **product,** and **billing,** then **brought** **them** **together** to **reconcile** the **differences.** The key conflict was **expire-versus-cancel:** marketing treated them as interchangeable; billing had a hard dependency on which action was taken. I **mapped** the **downstream** **impact** of each **interpretation** and **presented** it to all **three** **groups** **together.** Once they saw the **billing** **dependency** laid out **explicitly,** **alignment** came quickly. I produced a formal **business-rules** **document,** got written sign-off from all three, and the dev team built directly against it.",
+        ],
+      },
+      {
+        heading: "Result",
+        bullets: [
+          "No requirement-driven defects on launch. The billing team noted it was the first time they'd seen a **complete,** **agreed-upon** **rules** **document** before a Catalog feature went to dev. It became the template for how we documented eligibility logic on later features.",
+        ],
+      },
+    ],
+  },
+  "aeroplan-integration": {
+    title: "AEROPLAN LOYALTY INTEGRATION",
+    subtitle: "MasterCard - PM - Technical",
+    sections: [
+      {
+        heading: "Situation",
+        bullets: [
+          "Bell's Aeroplan loyalty integration was a strategically critical commercial partnership with no formal integration spec, no documented security model, and no API contract in place. A vendor SOW was already in place — so requirement ambiguity was both a quality and a commercial risk.",
+        ],
+      },
+      {
+        heading: "Task",
+        bullets: [
+          "Define the full product scope before engineering built anything — security model, API contract, TypeScript type contracts as a compile-time quality gate, acceptance criteria per flow, and vendor delivery against the SOW.",
+        ],
+      },
+      {
+        heading: "Action",
+        bullets: [
+          "The first thing I locked down was the security model. The original plan was to pass customer data as URL query parameters — I flagged this as a privacy and fraud risk and proposed a token-based exchange instead: host platform sends customer payload to a Token API, gets a one-time UUID, MFE retrieves it securely via BFF — no sensitive data in a URL. Got alignment from engineering and security before any code was written. From there I produced the API contract, specified TypeScript types auto-generated from the OpenAPI YAML spec as the quality gate, and wrote acceptance criteria for every integration flow. Tracked vendor delivery against SOW milestones and managed UAT across the full deployment pipeline.",
+        ],
+      },
+      {
+        heading: "Result",
+        bullets: [
+          "Zero post-launch integration regressions. The OpenAPI-driven type generation caught two contract mismatches during UAT — both resolved before production. The multi-program architecture I specified from day one made the platform extensible to future loyalty partners without rearchitecting the integration layer.",
+        ],
+      },
+    ],
+  },
+};
 
 export const coreQuestions: InterviewQuestion[] = [
   {
