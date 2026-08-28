@@ -213,6 +213,46 @@
   }
 }
 
+@page mastercard-quick-peek {
+  size: landscape;
+  margin: 8mm;
+}
+
+@media print {
+  body[data-print-interview-quick-peek] * {
+    visibility: hidden !important;
+  }
+
+  body[data-print-interview-quick-peek] [data-interview-quick-peek],
+  body[data-print-interview-quick-peek] [data-interview-quick-peek] * {
+    visibility: visible !important;
+  }
+
+  body[data-print-interview-quick-peek] [data-interview-quick-peek] {
+    --arch-bg: #ffffff;
+    --arch-bg2: #ffffff;
+    --arch-bg3: #f3f5f8;
+    --arch-border: rgba(0, 0, 0, 0.12);
+    --arch-text: #181b28;
+    --arch-text2: #4d5568;
+    --arch-text3: #747d91;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #181b28 !important;
+    page: mastercard-quick-peek;
+    print-color-adjust: exact;
+  }
+
+  body[data-print-interview-quick-peek] [data-no-print] {
+    display: none !important;
+  }
+}
+
 .markdown-pre > code {
   font-family: inherit;
   background: transparent;

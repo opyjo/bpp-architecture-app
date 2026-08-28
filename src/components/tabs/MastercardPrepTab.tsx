@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Eraser, Eye, EyeOff, MessageCircle, Target, X } from "lucide-react";
 import { toast } from "sonner";
+import InterviewDayQuickPeek from "@/components/mastercard/InterviewDayQuickPeek";
 import MentalModelPractice from "@/components/mastercard/MentalModelPractice";
 import SectionLayout from "@/components/ui/SectionLayout";
 import FlowDiagram from "@/components/ui/FlowDiagram";
@@ -65,7 +66,10 @@ import {
   type TechnicalInterviewQuestion,
 } from "@/data/mastercard-prep";
 
-const sidebarItems = [{ id: "mc-focus", label: "Four-stage overview" }];
+const sidebarItems = [
+  { id: "mc-quick-peek", label: "Interview Day · Quick Peek" },
+  { id: "mc-focus", label: "Four-stage overview" },
+];
 const sidebarGroups = [
   { label: "Process", items: [{ id: "mc-rounds", label: "Four-stage roadmap" }] },
   { label: "Card network 101", items: [
@@ -711,6 +715,7 @@ function RehearsalChecklist() {
 export default function MastercardPrepTab() {
   return <>
     <SectionLayout label="Interview guide" items={sidebarItems} groups={sidebarGroups}>{(activeId) => {
+    if (activeId === "mc-quick-peek") return <InterviewDayQuickPeek />;
     if (activeId === "mc-focus") return <div><Title>Mastercard interview hack</Title><Intro>This page is built around the four-stage virtual process that matches the information from your recruiter. Every answer is anchored to the résumé used in this application, so the later bar-raiser stages can probe without exposing inflated claims.</Intro><Cards cards={focusCards} /></div>;
     if (activeId === "mc-rounds") return <InterviewRoadmap />;
     if (activeId === "mc-network-basics") return <CardNetworkBasics />;

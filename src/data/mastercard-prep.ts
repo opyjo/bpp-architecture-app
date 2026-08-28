@@ -15,6 +15,7 @@ export interface InterviewQuestion {
   audience: string;
   answer: string;
   cue: string;
+  quickPeek?: string[];
 }
 
 export interface TechnicalInterviewQuestion extends InterviewQuestion {
@@ -935,6 +936,13 @@ export const coreQuestions: InterviewQuestion[] = [
     audience: "All interview rounds",
     answer: "I'm a Senior Technical Product Manager with over seven years of experience translating product strategy into well-defined technical requirements and driving execution across cross-functional teams—from ideation through to production.\n\nFor the past four years, I've been the Technical Product Manager for Bell Canada's Subscription Management platform: a Go-based backend with more than 60 microservices, integrated with a Next.js micro-frontend. The platform enables Bell's residential customers to subscribe to streaming services such as Netflix, Disney+, and Crave through their Bell accounts.\n\nI own the product scope end to end. I translate roadmaps into features, user stories, and acceptance criteria; prioritise backlogs and decompose epics; identify gaps and manage cross-team dependencies; evaluate the technical implications of requirements; and review demos against acceptance criteria. I also document workflows, diagrams, and state-transition models, gather requirements from stakeholders and partners, and facilitate demos, handoffs, and post-launch reviews.\n\nA lot of my value comes from sitting between business stakeholders—such as product, legal, and billing—and engineering teams, and asking the questions that expose edge cases before they become production issues.\n\nWhat draws me to this Mastercard role is that the core challenge is the same one I've been solving at Bell: translating high-level product strategy into technical requirements and API contracts that engineering can execute against—but here it supports business identity verification and fraud prevention, where accuracy and auditability carry even higher stakes. I would bring that same technical-requirements discipline, cross-functional delivery, and mentoring experience to Mastercard's Business Identity product team.",
     cue: "7+ years → Bell's 60+ service platform → end-to-end scope → bridge business and engineering → Business Identity fit",
+    quickPeek: [
+      "7+ years translating product strategy into technical delivery.",
+      "Bell platform: Go backend, 60+ microservices, and a Next.js microfrontend.",
+      "Own scope, requirements, backlog, API contracts, dependencies, and launch validation.",
+      "Bridge business, engineering, security, billing, and external partners.",
+      "Next step: bring that discipline to Business Identity, fraud prevention, and trust.",
+    ],
   },
   {
     key: "why-mastercard",
@@ -942,6 +950,12 @@ export const coreQuestions: InterviewQuestion[] = [
     audience: "All interview rounds",
     answer: "Mastercard brings together two parts of my background that have usually been separate: technical product ownership and payments-risk operations. I started in Visa and Mastercard chargeback and card-issuance work, where accuracy, deadlines, and auditability mattered every day. Since then, I have built products at Bell and the CRA by turning complex requirements into secure, measurable delivery. Business Identity is compelling because it applies that same discipline to trust, onboarding, fraud prevention, and compliance at a global scale.",
     cue: "Payments foundation + technical product craft + digital trust",
+    quickPeek: [
+      "Started in Visa/Mastercard chargebacks and card-launch operations.",
+      "Built secure enterprise products at Bell and the CRA.",
+      "Business Identity combines my payments foundation with my technical product craft.",
+      "The impact is global: safer onboarding, lower fraud, and trusted digital commerce.",
+    ],
   },
   {
     key: "cross-functional-team",
@@ -973,6 +987,12 @@ export const behaviouralQuestions: InterviewQuestion[] = [
     audience: "Motivation and professionalism",
     answer: "Bell has been a strong place to deepen my technical product-management experience, and I am proud of what I have built there. This move is a pull toward a specific opportunity: Mastercard lets me apply the product craft I have developed at Bell to the payments and trust domain where I began my career. It is about the fit and impact of this role, not dissatisfaction with my current employer.",
     cue: "Move toward Mastercard; never move away from Bell",
+    quickPeek: [
+      "Bell has been a strong place to grow, and I am proud of what I built there.",
+      "I am ready to apply that product experience to payments and digital trust.",
+      "Mastercard is a specific opportunity for greater fit, growth, and impact.",
+      "This is a move toward Mastercard—not a move away from Bell.",
+    ],
   },
   {
     key: "significant-challenge",
