@@ -520,16 +520,26 @@ function TechnicalQuestionCard({ item, index, confidence, onConfidenceChange }: 
 
 function TechnicalQuestionBank({ questions }: { questions: TechnicalInterviewQuestion[] }) {
   const categories = Array.from(new Set(questions.map((question) => question.category)));
+  const [categoryFilter, setCategoryFilter] = useState<string>("All topics");
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("All");
   const { statuses: confidenceStatuses, syncNote: confidenceSyncNote, setConfidence } = useQuestionPractice(true);
   const questionKeys = questions.map((question, index) => question.key ?? `question-${index + 1}`);
+  const visibleCategories = categoryFilter === "All topics" ? categories : categories.filter((category) => category === categoryFilter);
 
   return <div>
     <Title>Stage 2 detailed technical question bank</Title>
-    <Intro>Grouped by theme, hardest-hitting first within each group. Every card shows what the question actually tests and a plain-English translation up front; reveal the full spoken answer to see the résumé anchor, key terms to use precisely, and the follow-ups Michael is likely to ask next.</Intro>
+    <Intro>Choose one topic at a time or study the complete bank. Every card shows what the question actually tests and a plain-English translation up front; reveal the full spoken answer to see the résumé anchor, key terms to use precisely, and likely follow-up questions.</Intro>
+    <div className="mb-3 rounded-lg border border-arch-border bg-arch-bg2 p-2.5" aria-label="Filter technical questions by topic">
+      <div className="mb-2 text-[9.5px] font-semibold uppercase tracking-wider text-arch-text3">Study topic</div>
+      <div className="flex flex-wrap gap-1.5">{["All topics", ...categories].map((category) => {
+        const count = category === "All topics" ? questions.length : questions.filter((question) => question.category === category).length;
+        const label = category.replace(/^\d+\s·\s/, "");
+        return <button key={category} type="button" aria-pressed={categoryFilter === category} onClick={() => setCategoryFilter(category)} className={`rounded-md border px-2.5 py-1.5 text-[10px] font-semibold transition-colors ${categoryFilter === category ? "border-arch-blue bg-arch-blue/15 text-arch-blue" : "border-arch-border text-arch-text2 hover:border-arch-blue/30"}`}>{label} ({count})</button>;
+      })}</div>
+    </div>
     <ConfidenceFilterBar filter={confidenceFilter} onChange={setConfidenceFilter} statuses={confidenceStatuses} questionKeys={questionKeys} />
     {confidenceSyncNote && <p className="mb-3 text-[10px] leading-5 text-arch-amber">{confidenceSyncNote}</p>}
-    <div className="space-y-7">{categories.map((category) => {
+    <div className="space-y-7">{visibleCategories.map((category) => {
       const items = questions
         .map((question, index) => ({ question, questionKey: questionKeys[index] }))
         .filter(({ question }) => question.category === category)
