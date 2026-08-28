@@ -81,6 +81,20 @@ const interviewCards: InterviewCard[] = [
 ];
 
 const PROMPTER_KEYWORDS = [
+  "pure card-network processor",
+  "technology service company",
+  "inclusive digital Economy",
+  "DECENCY QUOTIENT",
+  "trust infrastructure",
+  "Verifying businesses",
+  "reducing onboarding fraud",
+  "enabling secure commerce at scale",
+  "whole network trustworthy",
+  "security toekn exchange",
+  "vendor onboarding",
+  "natural next step in scope and stakes",
+  "formal Manager title",
+  "TELCO to a TECHCO",
   "zero post-launch integration regressions",
   "features, user stories, and acceptance criteria",
   "discovery, prioritisation, technical delivery, and cross-functional execution",

@@ -973,6 +973,30 @@ export const interviewDayPrompterCards: Record<string, InterviewDayPrompterCard>
       },
     ],
   },
+  "why-mastercard": {
+    title: "WHY CHOOSE MASTERCARD",
+    subtitle: "MasterCard - PM - Technical",
+    sections: [
+      {
+        heading: "Mission, purpose and business values of Mastercard",
+        bullets: [
+          "**MISSION:** Mastercard Reshapes the digital Economy so that Everyone can realize their Ambitions",
+          "**PURPOSE:** To connect and power an inclusive digital Economy",
+          "**VALUE** : DECENCY QUOTIENT - Inclusion, trust, Partnership, Innovation",
+          "**BUSINESS-SHAPE:** Mastercard has shifted from pure card-network processor to a technology service company",
+          "**SUMMARY:** Mastercard is going through the same phase bell is also going through which is moving from just being a TELCO to a TECHCO and I also believe Mastercard is moving from just being a pure card-network to a technology service company",
+        ],
+      },
+      {
+        heading: "Why do I want to work for Mastercard?",
+        bullets: [
+          "**Beat1:** The Project which Business identity team is working on really escites me whiich involves building trust infrastructure - Verifying businesses, reducing onboarding fraud, enabling secure commerce at scale. This is not a generic payment job, This is the later that makes the whole network trustworthy. This problem genuinely interests me.",
+          "**Beat2:** At Bell I spent the last 4 years owning exaclty the kind of work at a smaller scale - API contracts, security toekn exchange, vendor onboarding, cross-functional delivery where getting the identity wrong has real downstream cost. This role is the natural next step in scope and stakes.",
+          "**Beat3:** It is also the right next step for me - a role where technical product ownership converts into a formal Manager title which is where I am headed",
+        ],
+      },
+    ],
+  },
   "contingency-management": {
     title: "CONTINGENCY MANAGEMENT - API requirements, data mapping, technical depth, working with operations",
     subtitle: "MasterCard - PM - Technical",
@@ -1084,13 +1108,14 @@ export const coreQuestions: InterviewQuestion[] = [
     key: "why-mastercard",
     question: "Why do you want to work for Mastercard?",
     audience: "All interview rounds",
-    answer: "Mastercard brings together two parts of my background that have usually been separate: technical product ownership and payments-risk operations. I started in Visa and Mastercard chargeback and card-issuance work, where accuracy, deadlines, and auditability mattered every day. Since then, I have built products at Bell and the CRA by turning complex requirements into secure, measurable delivery. Business Identity is compelling because it applies that same discipline to trust, onboarding, fraud prevention, and compliance at a global scale.",
-    cue: "Payments foundation + technical product craft + digital trust",
+    answer: "MISSION: Mastercard Reshapes the digital Economy so that Everyone can realize their Ambitions. PURPOSE: To connect and power an inclusive digital Economy. VALUE: DECENCY QUOTIENT - Inclusion, trust, Partnership, Innovation. BUSINESS-SHAPE: Mastercard has shifted from pure card-network processor to a technology service company. SUMMARY: Mastercard is going through the same phase bell is also going through which is moving from just being a TELCO to a TECHCO and I also believe Mastercard is moving from just being a pure card-network to a technology service company.\n\nBeat1: The Project which Business identity team is working on really escites me whiich involves building trust infrastructure - Verifying businesses, reducing onboarding fraud, enabling secure commerce at scale. This is not a generic payment job, This is the later that makes the whole network trustworthy. This problem genuinely interests me.\n\nBeat2: At Bell I spent the last 4 years owning exaclty the kind of work at a smaller scale - API contracts, security toekn exchange, vendor onboarding, cross-functional delivery where getting the identity wrong has real downstream cost. This role is the natural next step in scope and stakes.\n\nBeat3: It is also the right next step for me - a role where technical product ownership converts into a formal Manager title which is where I am headed",
+    cue: "Mission and purpose → trust infrastructure → Bell experience → next step in scope, stakes, and title",
     quickPeek: [
-      "Started in Visa/Mastercard chargebacks and card-launch operations.",
-      "Built secure enterprise products at Bell and the CRA.",
-      "Business Identity combines my payments foundation with my technical product craft.",
-      "The impact is global: safer onboarding, lower fraud, and trusted digital commerce.",
+      "Mastercard has shifted from pure card-network processor to a technology service company.",
+      "Business Identity involves building trust infrastructure - Verifying businesses, reducing onboarding fraud, enabling secure commerce at scale.",
+      "At Bell I spent the last 4 years owning exaclty the kind of work at a smaller scale.",
+      "This role is the natural next step in scope and stakes.",
+      "Technical product ownership converts into a formal Manager title which is where I am headed.",
     ],
   },
   {
